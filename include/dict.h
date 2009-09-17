@@ -19,8 +19,8 @@
 #include "hash.h"
 // if we take care of the next include here, it should fix some of the problems
 // caused by relative includes on ancient compilers, like Turbo C
-#include "../llist/llnodes.h"
-#include "../llist/dllist.h"
+#include "llnodes.h"
+#include "dllist.h"
 
 #if __STDC_VERSION__ < 199901L
 #define restrict
