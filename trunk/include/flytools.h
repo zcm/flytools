@@ -15,9 +15,8 @@
 #ifndef __ZCM_FLYTOOLS_H__
 #define __ZCM_FLYTOOLS_H__
 
-#include "dict/dict.h"
-#include "justify/justify.h"
-#include "llist/llist.h"
-#include "memcheck/memcheck.h"
+#include "dict.h"
+#include "justify.h"
+#include "llist.h"
 
 #endif
