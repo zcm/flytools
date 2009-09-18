@@ -166,8 +166,8 @@ void *dict_remove(dict * restrict d, const char * restrict key) {
 	dllistnode *current = d->buckets[index]->head->next;
 	void *ret;
 	while(d->buckets[index]->head != current) {
-		if(strcmp(((dictnode *)current->elem)->key, key) == 0) {
-			dictnode *dnode = ((dictnode *)current->elem);
+		if(strcmp(((dictnode *)current->data)->key, key) == 0) {
+			dictnode *dnode = ((dictnode *)current->data);
 			ret = dnode->data;
 			(void)dllist_remove_node(d->buckets[index], current);
 			dictnode_destroy(dnode);
@@ -183,8 +183,8 @@ void *dict_find(dict *d, const char * restrict key) {
 	dllistnode *current = d->buckets[index]->head->next;
 	void *ret;
 	while(d->buckets[index]->head != current) {
-		if(strcmp(((dictnode *)current->elem)->key, key) == 0) {
-			dictnode *dnode = ((dictnode *)current->elem);
+		if(strcmp(((dictnode *)current->data)->key, key) == 0) {
+			dictnode *dnode = ((dictnode *)current->data);
 			ret = dnode->data;
 			return ret;
 		}
@@ -198,7 +198,7 @@ void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {
 	while(i < d->maxsize) {
 		dllistnode *current = d->buckets[i]->head->next;
 		while(d->buckets[i]->head != current) {
-			(*callback)(current->elem);
+			(*callback)(current->data);
 			current = current->next;
 		}
 		i++;
