@@ -147,7 +147,7 @@ void *dllist_remove_node(dllist *list, dllistnode *node) {
 	if(list->size > 0) {
 		node->prev->next = node->next;
 		node->next->prev = node->prev;
-		ret = node->elem;
+		ret = node->data;
 		dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
 		list->size--;
 		return ret;
@@ -157,70 +157,70 @@ void *dllist_remove_node(dllist *list, dllistnode *node) {
 
 // doubly linked list functions (on elements)
 
-void dllist_insert_elem_after_head(dllist *list, void *elem) {
+void dllist_insert_item_after_head(dllist *list, void *data) {
 	dllistnode *node = dllistnode_alloc_with(list->alloc_callback);
-	node->elem = elem;
+	node->data = data;
 	dllist_insert_node_after_head(list, node);
 }
 
 // alias function
-void dllist_insert_left(dllist *list, void *elem) {
-	dllist_insert_elem_after_head(list, elem);
+void dllist_insert_left(dllist *list, void *data) {
+	dllist_insert_item_after_head(list, data);
 }
 
 // alias function
-void dllist_push(dllist *list, void *elem) {
-	dllist_insert_elem_after_head(list, elem);
+void dllist_push(dllist *list, void *data) {
+	dllist_insert_item_after_head(list, data);
 }
 
-void dllist_insert_elem_before_head(dllist *list, void *elem) {
+void dllist_insert_item_before_head(dllist *list, void *data) {
 	dllistnode *node = dllistnode_alloc_with(list->alloc_callback);
-	node->elem = elem;
+	node->data = data;
 	dllist_insert_node_before_head(list, node);
 }
 
 // alias function
-void dllist_insert_right(dllist *list, void *elem) {
-	dllist_insert_elem_before_head(list, elem);
+void dllist_insert_right(dllist *list, void *data) {
+	dllist_insert_item_before_head(list, data);
 }
 
 // alias function
-void dllist_enqueue(dllist *list, void *elem) {
-	dllist_insert_elem_before_head(list, elem);
+void dllist_enqueue(dllist *list, void *data) {
+	dllist_insert_item_before_head(list, data);
 }
 
-void *dllist_remove_first_elem(dllist *list) {
+void *dllist_remove_first_item(dllist *list) {
 	dllistnode *node = dllist_remove_first_node(list);
-	void *ret = node->elem;
+	void *ret = node->data;
 	dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
 	return ret;
 }
 
 // alias function
 void *dllist_remove_leftmost(dllist *list) {
-	return dllist_remove_first_elem(list);
+	return dllist_remove_first_item(list);
 }
 
 // alias function
 void *dllist_pop(dllist *list) {
-	return dllist_remove_first_elem(list);
+	return dllist_remove_first_item(list);
 }
 
 // alias function
 void *dllist_dequeue(dllist *list) {
-	return dllist_remove_first_elem(list);
+	return dllist_remove_first_item(list);
 }
 
-void *dllist_remove_last_elem(dllist *list) {
+void *dllist_remove_last_item(dllist *list) {
 	dllistnode *node = dllist_remove_last_node(list);
-	void *ret = node->elem;
+	void *ret = node->data;
 	dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
 	return ret;
 }
 
 // alias function
 void *dllist_remove_rightmost(dllist *list) {
-	return dllist_remove_last_elem(list);
+	return dllist_remove_last_item(list);
 }
 
 // other functions
@@ -236,9 +236,9 @@ void dllist_empty_and_free(dllist *list) {
 void dllist_empty_callback(dllist *list, void (*callback)(void *)) {
 	while(list->size > 0) {
 		if(callback) {
-			(*callback)(dllist_remove_first_elem(list));
+			(*callback)(dllist_remove_first_item(list));
 		} else {
-			dllist_remove_first_elem(list);
+			dllist_remove_first_item(list);
 		}
 	}
 }
