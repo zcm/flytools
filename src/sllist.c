@@ -141,12 +141,12 @@ void sllist_insert_item_after_head(sllist *list, void *data) {
 
 // alias function
 void sllist_insert_left(sllist *list, void *data) {
-	sllist_insert_data_after_head(list, data);
+	sllist_insert_item_after_head(list, data);
 }
 
 // alias function
 void sllist_push(sllist *list, void *data) {
-	sllist_insert_data_after_head(list, data);
+	sllist_insert_item_after_head(list, data);
 }
 
 void *sllist_remove_first_item(sllist *list) {

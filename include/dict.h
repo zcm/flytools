@@ -17,7 +17,7 @@
 #define __ZCM_DICT_H__
 
 #include "hash.h"
-#include "dict.h"
+#include "dllist.h"
 
 #if __STDC_VERSION__ < 199901L
 #define restrict

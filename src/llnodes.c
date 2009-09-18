@@ -61,24 +61,24 @@ void sllistnode_destroy(sllistnode *node) {
 // linked list node operations
 
 dllistnode *dllistnode_next_node(dllistnode *curnode) {
-	return curnode->next->elem == NULL ? curnode->next->next : curnode->next;
+	return curnode->next->data == NULL ? curnode->next->next : curnode->next;
 }
 
 dllistnode *dllistnode_prev_node(dllistnode *curnode) {
-	return curnode->prev->elem == NULL ? curnode->prev->prev : curnode->prev;
+	return curnode->prev->data == NULL ? curnode->prev->prev : curnode->prev;
 }
 
 sllistnode *sllistnode_next_node(sllistnode *curnode) {
-	return curnode->next->elem == NULL ? curnode->next->next : curnode->next;
+	return curnode->next->data == NULL ? curnode->next->next : curnode->next;
 }
 
 void sllistnode_head_init(sllistnode *head) {
-	head->elem = NULL;
+	head->data = NULL;
 	head->next = head;
 }
 
 void dllistnode_head_init(dllistnode *head) {
-	head->elem = NULL;
+	head->data = NULL;
 	head->next = head;
 	head->prev = head;
 }
