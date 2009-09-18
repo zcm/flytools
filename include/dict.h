@@ -17,10 +17,7 @@
 #define __ZCM_DICT_H__
 
 #include "hash.h"
-// if we take care of the next include here, it should fix some of the problems
-// caused by relative includes on ancient compilers, like Turbo C
-#include "llnodes.h"
-#include "dllist.h"
+#include "dict.h"
 
 #if __STDC_VERSION__ < 199901L
 #define restrict
@@ -31,12 +28,9 @@
  * a dictionary. This node represents a key/value pair for the dictionary.
  * @see dict
  */
-typedef struct DICT_NODE {
+typedef struct dictnode {
+	void *data; //!< The data pointer for this node.
 	char *key; //!< The key string for this node.
-	/**
-	 * The data pointer for this node. Points to the value stored in this node.
-	 */
-	void *data;
 } dictnode;
 
 /**
@@ -44,7 +38,7 @@ typedef struct DICT_NODE {
  * structure should be used explicitly with the provided dictionary-specific
  * API functions.
  */
-typedef struct DICTIONARY {
+typedef struct dict {
 	/**
 	 * An array of dllist instances that represent the buckets in this
 	 * dictionary. The size of this array is stored in the maxsize member.
@@ -74,8 +68,8 @@ typedef struct DICTIONARY {
 } dict;
 
 /**
- * Allocates a new dictionary node with the specified allocation callback. Does no
- * initialization.
+ * Allocates a new dictionary node with the specified allocation callback. Does
+ * no initialization.
  * @param alloc_callback the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary node
  */

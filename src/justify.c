@@ -1,11 +1,12 @@
 /** @file justify.c
- * This file contains the text justification routines that are provided by the Flytools. This
- * file depends on the scanning routines in the scanner module.
+ * This file contains the text justification routines that are provided by the
+ * Flytools. This file depends on the scanning routines in the scanner module.
  *
- * This source file is a part of the Flytools and is copyright (c) 2008-2009 Zachary Murray,
- * all rights reserved. This source file may not be redistributed, in whole or in part. By
- * viewing and/or using this file, you agree not to redistribute the source files without the
- * express written permission of the author(s). Doing so is a violation of international
+ * This source file is a part of the Flytools and is copyright (c) 2008-2009
+ * Zachary Murray, all rights reserved. This source file may not be
+ * redistributed, in whole or in part. By viewing and/or using this file, you
+ * agree not to redistribute the source files without the express written
+ * permission of the author(s). Doing so is a violation of international
  * copyright laws.
  *
  * @author Zachary Murray (dremelofdeath@gmail.com)
