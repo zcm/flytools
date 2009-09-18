@@ -58,7 +58,7 @@ dllist *__internal_parse_all_paragraphs() {
 	// i.e., the last element of the last paragraph scanned is not of type MATCH_TYPE_PARAGRAPH
 	do {
 		dllist_insert_right(ret, parse_paragraph(NULL));
-	} while(((matchresult *)((dllist *)ret->head->prev->elem)->head->prev->elem)->type == MATCH_TYPE_PARAGRAPH);
+	} while(((matchresult *)((dllist *)ret->head->prev->data)->head->prev->data)->type == MATCH_TYPE_PARAGRAPH);
 	return ret;
 }
 
@@ -103,8 +103,8 @@ char *justify_next_line(dllist *paragraph, const int width) {
 	matchresult *match;
 	// calculate how many words will fit on one line
 	while(!(ranout = (current = current->next) == paragraph->head) &&
-	      len + __min(longest_english_word, ((matchresult *)current->elem)->len) < width) {
-		len += __min(longest_english_word, ((matchresult *)current->elem)->len) + 1;
+	      len + __min(longest_english_word, ((matchresult *)current->data)->len) < width) {
+		len += __min(longest_english_word, ((matchresult *)current->data)->len) + 1;
 		nwords++;
 	}
 	len--;
