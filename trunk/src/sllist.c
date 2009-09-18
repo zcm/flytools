@@ -123,7 +123,7 @@ void *sllist_remove_node(sllist *list, sllistnode *node) {
 	if(list->size > 0) {
 		sllistnode *prev = sllist_get_prev_node(list, node);
 		prev->next = node->next;
-		ret = node->elem;
+		ret = node->data;
 		sllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
 		list->size--;
 		return ret;
@@ -133,42 +133,42 @@ void *sllist_remove_node(sllist *list, sllistnode *node) {
 
 // singly linked list functions (on elements)
 
-void sllist_insert_elem_after_head(sllist *list, void *elem) {
+void sllist_insert_item_after_head(sllist *list, void *data) {
 	sllistnode *node = sllistnode_alloc_with(list->alloc_callback);
-	node->elem = elem;
+	node->data = data;
 	sllist_insert_node_after_head(list, node);
 }
 
 // alias function
-void sllist_insert_left(sllist *list, void *elem) {
-	sllist_insert_elem_after_head(list, elem);
+void sllist_insert_left(sllist *list, void *data) {
+	sllist_insert_data_after_head(list, data);
 }
 
 // alias function
-void sllist_push(sllist *list, void *elem) {
-	sllist_insert_elem_after_head(list, elem);
+void sllist_push(sllist *list, void *data) {
+	sllist_insert_data_after_head(list, data);
 }
 
-void *sllist_remove_first_elem(sllist *list) {
+void *sllist_remove_first_item(sllist *list) {
 	sllistnode *node = sllist_remove_first_node(list);
-	void *ret = node->elem;
+	void *ret = node->data;
 	sllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
 	return ret;
 }
 
 // alias function
 void *sllist_remove_leftmost(sllist *list) {
-	return sllist_remove_first_elem(list);
+	return sllist_remove_first_item(list);
 }
 
 // alias function
 void *sllist_pop(sllist *list) {
-	return sllist_remove_first_elem(list);
+	return sllist_remove_first_item(list);
 }
 
 // alias function
 void *sllist_dequeue(sllist *list) {
-	return sllist_remove_first_elem(list);
+	return sllist_remove_first_item(list);
 }
 
 // other functions
@@ -184,9 +184,9 @@ void sllist_empty_and_free(sllist *list) {
 void sllist_empty_callback(sllist *list, void (*callback)(void *)) {
 	while(list->size > 0) {
 		if(callback) {
-			(*callback)(sllist_remove_first_elem(list));
+			(*callback)(sllist_remove_first_item(list));
 		} else {
-			sllist_remove_first_elem(list);
+			sllist_remove_first_item(list);
 		}
 	}
 }

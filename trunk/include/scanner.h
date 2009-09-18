@@ -6,7 +6,8 @@
 #define __ZCM_SCANNER_H__
 
 /**
- * An enumeration of possible match types. Set internally by the rules when matched.
+ * An enumeration of possible match types. Set internally by the rules when
+ * matched.
  */
 enum MATCH_TYPE {
 	MATCH_TYPE_EOF,
