@@ -25,3 +25,4 @@ flytools.a($(OBJ)): $(OBJ)
 clean:
 	rm -rf build/
 	rm -f src/*.o
+	rm -f src/scanner.c

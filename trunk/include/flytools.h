@@ -18,6 +18,7 @@
 
 #include "dict.h"
 #include "justify.h"
-#include "llist.h"
+#include "dllist.h"
+#include "sllist.h"
 
 #endif
