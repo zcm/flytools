@@ -10,8 +10,8 @@
  * permission of the author(s). Doing so is a violation of international
  * copyright laws.
  *
- * @author Zachary Murray (dremelofdeath@gmail.com) @date 11/13/2008 19:06:55
- * EST (creation)
+ * @author Zachary Murray (dremelofdeath@gmail.com)
+ * @date 11/13/2008 19:06:55 EST (creation)
  */
 
 #include <stdio.h>

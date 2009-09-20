@@ -19,13 +19,44 @@
 #include <stdio.h>
 
 /**
- * Computes the uncompressed hash of the given string, returned as an unsigned
- * integer. This hash can be used for many things, such as for verification or
- * for indices into a dictionary or associative list.
+ * Computes the uncompressed hash of the given string, ignoring null characters,
+ * continuing until @c limit characters have been hashed. This function should
+ * generally be avoided due to its power of ignoring null characters; it is used
+ * internally for some magic regarding pointers. Only use this function if you
+ * have a good reason to ignore the null character check.
  * @param s the string to hash
+ * @param limit the number of characters to hash
  * @return the hash of the string s as an unsigned integer
  */
+unsigned int blind_bounded_hash_string(const char *s, const size_t limit);
+/**
+ * Computes the uncompressed hash of the given string. The hash continues
+ * hashing characters one at a time until either a null character is encountered
+ * or @c limit characters have been hashed. In general, this is the best
+ * function to use when dealing with strings.
+ * @param s the string to hash
+ * @param limit the maximum number of characters to hash
+ * @return the hash of the string s as an unsigned integer
+ */
+unsigned int hash_nstring(const char *s, const size_t limit);
+/**
+ * Computes the uncompressed hash of the given string, returned as an unsigned
+ * integer. This hash can be used for many things, such as for verification or
+ * for indices into a dictionary or associative list. In general, it is
+ * preferrable to bound your message's length; to do this, please see
+ * hash_nstring().
+ * @param s the string to hash
+ * @return the hash of the string s as an unsigned integer
+ * @see hash_nstring()
+ */
 unsigned int hash_string(const char *s);
+/**
+ * Computes the uncompressed hash of the given pointer. Pointer hashing runs in
+ * constant time.
+ * @param ptr the pointer to hash
+ * @return the hash of the pointer ptr as an unsigned integer
+ */
+unsigned int hash_pointer(const void *ptr);
 /**
  * Compresses a given hash key k over the possible range n. In other words, this
  * function ensures that a hash k is suitable for use as an index into an array
