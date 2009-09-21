@@ -15,6 +15,7 @@
  */
 
 #include "hash.h"
+#include "fugue.h"
 
 // Turbo C doesn't like "static inline."
 // In light of this, if we're using Turbo C, we change this to a macro.
@@ -62,6 +63,24 @@ unsigned int hash_string(const char *s) {
 #undef hash_macro
 #undef hash_macro_c
 #undef hash_macro_v
+
+#define FUGUE_OUT_SIZE 80
+
+unsigned int fugue_hash_wrapper(const char *s, const size_t limit) {
+    const size_t uioutsize = FUGUE_OUT_SIZE*sizeof(char)/sizeof(unsigned int);
+    unsigned char out[FUGUE_OUT_SIZE] = {0};
+    int i = 1;
+    unsigned int ret = 0, *u_out;
+    fugue_hash(out, (unsigned char *)s, (unsigned long long)limit);
+    u_out = (unsigned int *)out;
+    ret = *u_out;
+    for(i = 1; i < uioutsize; i++) {
+        ret ^= u_out[i];
+    }
+    return ret;
+}
+
+#undef FUGUE_OUT_SIZE
 
 unsigned int
 hash_pointer_using(const void *ptr,
