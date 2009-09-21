@@ -51,14 +51,17 @@ unsigned int hash_nstring(const char *s, const size_t limit);
  */
 unsigned int hash_string(const char *s);
 /**
- * A wrapper to the fugue_hash() function in fugue.c that makes the function
- * behave more like the other hash functions already in the flytools hash
- * library.
- * @param s the string to hash
- * @return the hash of the string s as an unsigned integer
- * @see fugue_hash()
+ * Bootstraps a pointer and uses a function that is intended to hash a string to
+ * instead hash the given pointer. The bootstrapper then returns the hash as an
+ * unsigned integer.
+ * @param ptr the pointer to hash
+ * @param hashfn the callback of the hash function with which to process the
+ * pointer
+ * @return the hash of the pointer as an unsigned integer
  */
-unsigned int fugue_hash_wrapper(const char *s, const size_t limit);
+unsigned int
+hash_pointer_using(const void *ptr,
+                   unsigned int (*hashfn)(const char *, const size_t));
 /**
  * Computes the uncompressed hash of the given pointer. Pointer hashing runs in
  * constant time.
