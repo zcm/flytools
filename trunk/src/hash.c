@@ -20,12 +20,21 @@
 // In light of this, if we're using Turbo C, we change this to a macro.
 // It should give us the same runtime efficiency.
 #ifdef __TURBOC__
-#define _rotr(value, shift) \
-    (((value) >> ((shift) & 31)) | ((value) << (32 - ((shift) & 31))))
+#define _rotr1(value) (((value) >> 1) | ((value) << 31))
 #else
-static inline unsigned int _rotr(unsigned int value, int shift) {
-    shift &= 31;
-    return (value >> shift) | (value << (32 - shift));
+#ifdef __STRICT_ANSI__
+#define inline
+#endif
+static inline unsigned int _rotr1(unsigned int value) {
+#if defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(NO_ASM)
+    asm ("rorl $1,%1" : "=a" (value) : "0" (value));
+    return value;
+#else
+    return (value >> 1) | (value << 31);
+#endif
+#ifdef __STRICT_ANSI__
+#undef inline
+#endif
 }
 #endif
 
@@ -34,7 +43,7 @@ static inline unsigned int _rotr(unsigned int value, int shift) {
     register unsigned int ret = constant; \
     while( terminal_case ) { \
         ret ^= (unsigned int)s[itr]+itr; \
-        ret = _rotr(ret, 1); \
+        ret = _rotr1(ret); \
         itr_body \
         i++; \
     } \
