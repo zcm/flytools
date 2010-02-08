@@ -25,14 +25,14 @@
  */
 typedef struct sllist {
     /** The stored allocation routine for allocating new nodes. */
-	void *(*alloc_callback)(size_t);
+    void *(*alloc_callback)(size_t);
     /**
      * The stored freeing routine for destroying the structure and nodes. If
      * null, the standard free() will be used.
      */
     void (*free_callback)(void *);
-	int size; //!< The number of nodes contained within this linked list.
-	sllistnode *head; //!< The header or sentinel node for this linked list.
+    int size; //!< The number of nodes contained within this linked list.
+    sllistnode *head; //!< The header or sentinel node for this linked list.
 } sllist;
 
 // allocation
