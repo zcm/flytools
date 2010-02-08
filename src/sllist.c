@@ -20,180 +20,180 @@
 // allocation
 
 sllist *sllist_alloc_with(void *(*alloc_callback)(size_t)) {
-	sllist *ret = (sllist *)(*alloc_callback)(sizeof(sllist));
-	if(!ret) {
-		fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
-		abort();
-	}
-	return ret;
+    sllist *ret = (sllist *)(*alloc_callback)(sizeof(sllist));
+    if(!ret) {
+        fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
+        abort();
+    }
+    return ret;
 }
 
 sllist *sllist_alloc() {
-	return sllist_alloc_with(&malloc);
+    return sllist_alloc_with(&malloc);
 }
 
 void sllist_destroy_with(sllist *list, void (*free_callback)(void *)) {
-	sllist_empty_callback(list, free_callback);
-	(*free_callback)(list);
+    sllist_empty_callback(list, free_callback);
+    (*free_callback)(list);
 }
 
 void sllist_destroy(sllist *list) {
-	sllist_destroy_with(list, !list->free_callback ? &free : list->free_callback);
+    sllist_destroy_with(list, !list->free_callback ? &free : list->free_callback);
 }
 
 // initialization
 
 void sllist_init_with(sllist *list, void *(*alloc_callback)(size_t)) {
-	list->head = sllistnode_alloc_with(alloc_callback);
-	sllistnode_head_init(list->head);
-	list->size = 0;
-	list->alloc_callback = alloc_callback;
-	list->free_callback = NULL;
+    list->head = sllistnode_alloc_with(alloc_callback);
+    sllistnode_head_init(list->head);
+    list->size = 0;
+    list->alloc_callback = alloc_callback;
+    list->free_callback = NULL;
 }
 
 void sllist_init(sllist *list) {
-	sllist_init_with(list, &malloc);
+    sllist_init_with(list, &malloc);
 }
 
 sllist *sllist_create_with(void *(*alloc_callback)(size_t)) {
-	sllist *ret = sllist_alloc_with(alloc_callback);
-	sllist_init_with(ret, alloc_callback);
-	return ret;
+    sllist *ret = sllist_alloc_with(alloc_callback);
+    sllist_init_with(ret, alloc_callback);
+    return ret;
 }
 
 sllist *sllist_create() {
-	return sllist_create_with(&malloc);
+    return sllist_create_with(&malloc);
 }
 
 void sllist_set_destructor(sllist *list, void (*free_callback)(void *)) {
-	list->free_callback = free_callback;
+    list->free_callback = free_callback;
 }
 
 // singly linked list functions (on nodes)
 
 void sllist_insert_node_after_head(sllist *list, sllistnode *node) {
-	node->next = list->head->next;
-	list->head->next = node;
-	list->size++;
+    node->next = list->head->next;
+    list->head->next = node;
+    list->size++;
 }
 
 // alias function
 void sllist_insert_left_node(sllist *list, sllistnode *node) {
-	sllist_insert_node_after_head(list, node);
+    sllist_insert_node_after_head(list, node);
 }
 
 // alias function
 void sllist_push_node(sllist *list, sllistnode *node) {
-	sllist_insert_node_after_head(list, node);
+    sllist_insert_node_after_head(list, node);
 }
 
 sllistnode *sllist_remove_first_node(sllist *list) {
-	sllistnode *ret = list->head->next;
-	list->head->next = ret->next;
-	list->size--;
-	return ret;
+    sllistnode *ret = list->head->next;
+    list->head->next = ret->next;
+    list->size--;
+    return ret;
 }
 
 // alias function
 sllistnode *sllist_remove_leftmost_node(sllist *list) {
-	return sllist_remove_first_node(list);
+    return sllist_remove_first_node(list);
 }
 
 // alias function
 sllistnode *sllist_pop_node(sllist *list) {
-	return sllist_remove_first_node(list);
+    return sllist_remove_first_node(list);
 }
 
 // alias function
 sllistnode *sllist_dequeue_node(sllist *list) {
-	return sllist_remove_first_node(list);
+    return sllist_remove_first_node(list);
 }
 
 sllistnode *sllist_get_prev_node(sllist *list, sllistnode *node) {
-	sllistnode *ret = node;
-	register int i = 0;
-	while(i++ < list->size) {
-		ret = ret->next;
-	}
-	return ret;
+    sllistnode *ret = node;
+    register int i = 0;
+    while(i++ < list->size) {
+        ret = ret->next;
+    }
+    return ret;
 }
 
 void *sllist_remove_node(sllist *list, sllistnode *node) {
-	void *ret;
-	if(list->size > 0) {
-		sllistnode *prev = sllist_get_prev_node(list, node);
-		prev->next = node->next;
-		ret = node->data;
-		sllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
-		list->size--;
-		return ret;
-	}
-	return NULL;
+    void *ret;
+    if(list->size > 0) {
+        sllistnode *prev = sllist_get_prev_node(list, node);
+        prev->next = node->next;
+        ret = node->data;
+        sllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
+        list->size--;
+        return ret;
+    }
+    return NULL;
 }
 
 // singly linked list functions (on elements)
 
 void sllist_insert_item_after_head(sllist *list, void *data) {
-	sllistnode *node = sllistnode_alloc_with(list->alloc_callback);
-	node->data = data;
-	sllist_insert_node_after_head(list, node);
+    sllistnode *node = sllistnode_alloc_with(list->alloc_callback);
+    node->data = data;
+    sllist_insert_node_after_head(list, node);
 }
 
 // alias function
 void sllist_insert_left(sllist *list, void *data) {
-	sllist_insert_item_after_head(list, data);
+    sllist_insert_item_after_head(list, data);
 }
 
 // alias function
 void sllist_push(sllist *list, void *data) {
-	sllist_insert_item_after_head(list, data);
+    sllist_insert_item_after_head(list, data);
 }
 
 void *sllist_remove_first_item(sllist *list) {
-	sllistnode *node = sllist_remove_first_node(list);
-	void *ret = node->data;
-	sllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
-	return ret;
+    sllistnode *node = sllist_remove_first_node(list);
+    void *ret = node->data;
+    sllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
+    return ret;
 }
 
 // alias function
 void *sllist_remove_leftmost(sllist *list) {
-	return sllist_remove_first_item(list);
+    return sllist_remove_first_item(list);
 }
 
 // alias function
 void *sllist_pop(sllist *list) {
-	return sllist_remove_first_item(list);
+    return sllist_remove_first_item(list);
 }
 
 // alias function
 void *sllist_dequeue(sllist *list) {
-	return sllist_remove_first_item(list);
+    return sllist_remove_first_item(list);
 }
 
 // other functions
 
 void sllist_empty(sllist *list) {
-	sllist_empty_callback(list, NULL);
+    sllist_empty_callback(list, NULL);
 }
 
 void sllist_empty_and_free(sllist *list) {
-	sllist_empty_callback(list, &free);
+    sllist_empty_callback(list, &free);
 }
 
 void sllist_empty_callback(sllist *list, void (*callback)(void *)) {
-	while(list->size > 0) {
-		if(callback) {
-			(*callback)(sllist_remove_first_item(list));
-		} else {
-			sllist_remove_first_item(list);
-		}
-	}
+    while(list->size > 0) {
+        if(callback) {
+            (*callback)(sllist_remove_first_item(list));
+        } else {
+            sllist_remove_first_item(list);
+        }
+    }
 }
 
 void sllist_iterate_callback(sllist *list, void (*callback)(sllistnode *)) {
-	sllistnode *current = list->head;
-	while(current->next != list->head) {
-		(*callback)(current = current->next);
-	}
+    sllistnode *current = list->head;
+    while(current->next != list->head) {
+        (*callback)(current = current->next);
+    }
 }
