@@ -56,6 +56,10 @@ static inline unsigned int _rotr1(unsigned int value) {
 #define hash_macro(itr, terminal_case) \
     hash_macro_c(0xFAFAFAFA, itr, terminal_case)
 
+#ifdef __TURBOC__
+#undef _rotr1
+#endif
+
 unsigned int blind_bounded_hash_string(const char *s, const size_t limit) {
     hash_macro(i, i < limit);
 }
@@ -86,6 +90,3 @@ unsigned int compress_hash(const unsigned int k, const unsigned int n) {
     return k % n;
 }
 
-#ifdef __TURBOC__
-#undef _rotr1
-#endif
