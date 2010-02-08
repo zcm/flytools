@@ -87,5 +87,5 @@ unsigned int compress_hash(const unsigned int k, const unsigned int n) {
 }
 
 #ifdef __TURBOC__
-#undef _rotr
+#undef _rotr1
 #endif
