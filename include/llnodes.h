@@ -17,6 +17,7 @@
 #define __ZCM_LINKED_LIST_NODES_H__
 
 #include <stdlib.h>
+#include "common.h"
 
 // node structs
 
@@ -102,21 +103,28 @@ void sllistnode_destroy(sllistnode *node);
  * @param curnode the node of which to return the next node
  * @return a pointer to the node after the current node
  */
-dllistnode *dllistnode_next_node(dllistnode *curnode);
+dllistnode *dllistnode_get_next(dllistnode *curnode);
 /**
  * Returns the node pointed to by the given doubly linked list node's prev
  * pointer.
  * @param curnode the node of which to return the prev node
  * @return a pointer to the node before the current node
  */
-dllistnode *dllistnode_prev_node(dllistnode *curnode);
+dllistnode *dllistnode_get_prev(dllistnode *curnode);
 /**
  * Returns the node pointed to by the given singly linked list node's next
  * pointer.
  * @param curnode the node of which to return the next node
  * @return a pointer to the node after the current node
  */
-sllistnode *sllistnode_next_node(sllistnode *curnode);
+sllistnode *sllistnode_get_next(sllistnode *curnode);
+void dllistnode_set_next(dllistnode *curnode, dllistnode *next);
+void dllistnode_set_prev(dllistnode *curnode, dllistnode *prev);
+void sllistnode_set_next(sllistnode *curnode, sllistnode *next);
+void *dllistnode_get_data(dllistnode *node);
+void dllistnode_set_data(dllistnode *node, void *data);
+void *sllistnode_get_data(sllistnode *node);
+void sllistnode_set_data(sllistnode *node, void *data);
 /**
  * Initializes the specified singly linked list node to be a header node. Makes
  * the data pointer NULL and makes the respective links of the node point to

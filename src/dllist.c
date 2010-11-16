@@ -19,233 +19,182 @@
 
 // allocation
 
-dllist *dllist_alloc_with(void *(*alloc_callback)(size_t)) {
-    dllist *ret = (dllist *)(*alloc_callback)(sizeof(dllist));
-    if(!ret) {
-        fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
-        abort();
-    }
-    return ret;
+FLYAPI dllist *dllist_alloc_with(void *(*alloc_callback)(size_t)) {
+  dllist *ret = (dllist *)(*alloc_callback)(sizeof(dllist));
+  if(!ret) {
+    fprintf(stderr, "alloc failed: %s, line %d.\n", __FILE__, __LINE__);
+    abort();
+  }
+  return ret;
 }
 
-dllist *dllist_alloc() {
-    return dllist_alloc_with(&malloc);
+FLYAPI dllist *dllist_alloc() {
+  return dllist_alloc_with(&malloc);
 }
 
-void dllist_destroy_with(dllist *list, void (*free_callback)(void *)) {
-    dllist_empty_callback(list, free_callback);
-    (*free_callback)(list);
+FLYAPI void dllist_destroy_with(dllist *list, void (*free_callback)(void *)) {
+  dllist_empty_callback(list, free_callback);
+  (*free_callback)(list);
 }
 
-void dllist_destroy(dllist *list) {
-    dllist_destroy_with(list, !list->free_callback ? &free : list->free_callback);
+FLYAPI void dllist_destroy(dllist *list) {
+  dllist_destroy_with(list, !list->free_callback ? &free : list->free_callback);
+}
+
+// struct member interaction
+
+FLYAPI dllistnode *dllist_get_head(dllist *list) {
+  return list->head;
+}
+
+FLYAPI void dllist_set_head(dllist *list, dllistnode *head) {
+  list->head = head;
+}
+
+FLYAPI int dllist_get_size(dllist *list) {
+  return list->size;
+}
+
+//private
+void dllist_set_size(dllist *list, int size) {
+  list->size = size;
+}
+
+//private
+void dllist_inc_size(dllist *list) {
+  dllist_set_size(list, dllist_get_size(list) + 1);
+}
+
+//private
+void dllist_dec_size(dllist *list) {
+  dllist_set_size(list, dllist_get_size(list) - 1);
+}
+
+FLYAPI void dllist_set_destructor(dllist *list, void (*free_callback)(void *)) {
+  list->free_callback = free_callback;
 }
 
 // initialization
 
-void dllist_init_with(dllist *list, void *(*alloc_callback)(size_t)) {
-    list->head = dllistnode_alloc_with(alloc_callback);
-    dllistnode_head_init(list->head);
-    list->size = 0;
-    list->alloc_callback = alloc_callback;
-    list->free_callback = NULL;
+FLYAPI void dllist_init_with(dllist *list, void *(*alloc_callback)(size_t)) {
+  dllist_set_head(list, dllistnode_alloc_with(alloc_callback));
+  dllistnode_head_init(list->head);
+  dllist_set_size(list, 0);
+  list->alloc_callback = alloc_callback;
+  dllist_set_destructor(list, NULL);
 }
 
-void dllist_init(dllist *list) {
-    dllist_init_with(list, &malloc);
+FLYAPI void dllist_init(dllist *list) {
+  dllist_init_with(list, &malloc);
 }
 
-dllist *dllist_create_with(void *(*alloc_callback)(size_t)) {
-    dllist *ret = dllist_alloc_with(alloc_callback);
-    dllist_init_with(ret, alloc_callback);
-    return ret;
+FLYAPI dllist *dllist_create_with(void *(*alloc_callback)(size_t)) {
+  dllist *ret = dllist_alloc_with(alloc_callback);
+  dllist_init_with(ret, alloc_callback);
+  return ret;
 }
 
-dllist *dllist_create() {
-    return dllist_create_with(&malloc);
-}
-
-void dllist_set_destructor(dllist *list, void (*free_callback)(void *)) {
-    list->free_callback = free_callback;
+FLYAPI dllist *dllist_create() {
+  return dllist_create_with(&malloc);
 }
 
 // doubly linked list functions (on nodes)
 
-void dllist_insert_node_after_head(dllist *list, dllistnode *node) {
-    node->next = list->head->next;
-    node->prev = list->head;
-    list->head->next->prev = node;
-    list->head->next = node;
-    list->size++;
+FLYAPI void dllist_push_node(dllist *list, dllistnode *node) {
+  dllistnode_set_next(node, dllistnode_get_next(dllist_get_head(list)));
+  dllistnode_set_prev(node, dllist_get_head(list));
+  dllistnode_set_prev(dllistnode_get_next(dllist_get_head(list)), node);
+  dllistnode_set_next(dllist_get_head(list), node);
+  dllist_inc_size(list);
 }
 
-// alias function
-void dllist_insert_left_node(dllist *list, dllistnode *node) {
-    dllist_insert_node_after_head(list, node);
+FLYAPI void dllist_shift_node(dllist *list, dllistnode *node) {
+  dllistnode_set_next(node, dllist_get_head(list));
+  dllistnode_set_prev(node, dllistnode_get_prev(dllist_get_head(list)));
+  dllistnode_set_next(dllistnode_get_prev(dllist_get_head(list)), node);
+  dllistnode_set_prev(dllist_get_head(list), node);
+  dllist_inc_size(list);
 }
 
-// alias function
-void dllist_push_node(dllist *list, dllistnode *node) {
-    dllist_insert_node_after_head(list, node);
+FLYAPI dllistnode *dllist_pop_node(dllist *list) {
+  dllistnode *ret = dllistnode_get_next(dllist_get_head(list));
+  dllistnode_set_prev(dllistnode_get_next(ret), dllist_get_head(list));
+  dllistnode_set_next(dllist_get_head(list), dllistnode_get_next(ret));
+  dllist_dec_size(list);
+  return ret;
 }
 
-void dllist_insert_node_before_head(dllist *list, dllistnode *node) {
-    node->next = list->head;
-    node->prev = list->head->prev;
-    list->head->prev->next = node;
-    list->head->prev = node;
-    list->size++;
+FLYAPI dllistnode *dllist_unshift_node(dllist *list) {
+  dllistnode *ret = dllistnode_get_prev(dllist_get_head(list));
+  dllistnode_set_next(dllistnode_get_prev(ret), dllist_get_head(list));
+  dllistnode_set_prev(dllist_get_head(list), dllistnode_get_prev(ret));
+  dllist_dec_size(list);
+  return ret;
 }
 
-// alias function
-void dllist_insert_right_node(dllist *list, dllistnode *node) {
-    dllist_insert_node_before_head(list, node);
-}
-
-// alias function
-void dllist_enqueue_node(dllist *list, dllistnode *node) {
-    dllist_insert_node_before_head(list, node);
-}
-
-dllistnode *dllist_remove_first_node(dllist *list) {
-    dllistnode *ret = list->head->next;
-    ret->next->prev = list->head;
-    list->head->next = ret->next;
-    list->size--;
-    return ret;
-}
-
-// alias function
-dllistnode *dllist_remove_leftmost_node(dllist *list) {
-    return dllist_remove_first_node(list);
-}
-
-// alias function
-dllistnode *dllist_pop_node(dllist *list) {
-    return dllist_remove_first_node(list);
-}
-
-// alias function
-dllistnode *dllist_dequeue_node(dllist *list) {
-    return dllist_remove_first_node(list);
-}
-
-dllistnode *dllist_remove_last_node(dllist *list) {
-    dllistnode *ret = list->head->prev;
-    ret->prev->next = list->head;
-    list->head->prev = ret->prev;
-    list->size--;
-    return ret;
-}
-
-dllistnode *dllist_remove_rightmost_node(dllist *list) {
-    return dllist_remove_last_node(list);
-}
-
-void *dllist_remove_node(dllist *list, dllistnode *node) {
-    void *ret;
-    if(list->size > 0) {
-        node->prev->next = node->next;
-        node->next->prev = node->prev;
-        ret = node->data;
-        dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
-        list->size--;
-        return ret;
-    }
-    return NULL;
+FLYAPI void *dllist_remove_node(dllist *list, dllistnode *node) {
+  void *ret = NULL;
+  if(dllist_get_size(list) > 0) {
+    dllistnode_set_next(dllistnode_get_prev(node), dllistnode_get_next(node));
+    dllistnode_set_prev(dllistnode_get_next(node), dllistnode_get_prev(node));
+    ret = dllistnode_get_data(node);
+    dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
+    dllist_dec_size(list);
+  }
+  return ret;
 }
 
 // doubly linked list functions (on elements)
 
-void dllist_insert_item_after_head(dllist *list, void *data) {
-    dllistnode *node = dllistnode_alloc_with(list->alloc_callback);
-    node->data = data;
-    dllist_insert_node_after_head(list, node);
+FLYAPI void dllist_push(dllist *list, void *data) {
+  dllistnode *node = dllistnode_alloc_with(list->alloc_callback);
+  dllistnode_set_data(node, data);
+  dllist_push_node(list, node);
 }
 
-// alias function
-void dllist_insert_left(dllist *list, void *data) {
-    dllist_insert_item_after_head(list, data);
+FLYAPI void dllist_shift(dllist *list, void *data) {
+  dllistnode *node = dllistnode_alloc_with(list->alloc_callback);
+  dllistnode_set_data(node, data);
+  dllist_shift_node(list, node);
 }
 
-// alias function
-void dllist_push(dllist *list, void *data) {
-    dllist_insert_item_after_head(list, data);
+FLYAPI void *dllist_pop(dllist *list) {
+  dllistnode *node = dllist_pop_node(list);
+  void *ret = dllistnode_get_data(node);
+  dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
+  return ret;
 }
 
-void dllist_insert_item_before_head(dllist *list, void *data) {
-    dllistnode *node = dllistnode_alloc_with(list->alloc_callback);
-    node->data = data;
-    dllist_insert_node_before_head(list, node);
-}
-
-// alias function
-void dllist_insert_right(dllist *list, void *data) {
-    dllist_insert_item_before_head(list, data);
-}
-
-// alias function
-void dllist_enqueue(dllist *list, void *data) {
-    dllist_insert_item_before_head(list, data);
-}
-
-void *dllist_remove_first_item(dllist *list) {
-    dllistnode *node = dllist_remove_first_node(list);
-    void *ret = node->data;
-    dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
-    return ret;
-}
-
-// alias function
-void *dllist_remove_leftmost(dllist *list) {
-    return dllist_remove_first_item(list);
-}
-
-// alias function
-void *dllist_pop(dllist *list) {
-    return dllist_remove_first_item(list);
-}
-
-// alias function
-void *dllist_dequeue(dllist *list) {
-    return dllist_remove_first_item(list);
-}
-
-void *dllist_remove_last_item(dllist *list) {
-    dllistnode *node = dllist_remove_last_node(list);
-    void *ret = node->data;
-    dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
-    return ret;
-}
-
-// alias function
-void *dllist_remove_rightmost(dllist *list) {
-    return dllist_remove_last_item(list);
+FLYAPI void *dllist_unshift(dllist *list) {
+  dllistnode *node = dllist_unshift_node(list);
+  void *ret = dllistnode_get_data(node);
+  dllistnode_destroy_with(node, !list->free_callback ? &free : list->free_callback);
+  return ret;
 }
 
 // other functions
 
-void dllist_empty(dllist *list) {
-    dllist_empty_callback(list, NULL);
+FLYAPI void dllist_empty(dllist *list) {
+  dllist_empty_callback(list, NULL);
 }
 
-void dllist_empty_and_free(dllist *list) {
-    dllist_empty_callback(list, &free);
+FLYAPI void dllist_empty_and_free(dllist *list) {
+  dllist_empty_callback(list, &free);
 }
 
-void dllist_empty_callback(dllist *list, void (*callback)(void *)) {
-    while(list->size > 0) {
-        if(callback) {
-            (*callback)(dllist_remove_first_item(list));
-        } else {
-            dllist_remove_first_item(list);
-        }
+FLYAPI void dllist_empty_callback(dllist *list, void (*proc)(void *)) {
+  while(dllist_get_size(list) > 0) {
+    if(proc) {
+      (*proc)(dllist_pop(list));
+    } else {
+      dllist_pop(list);
     }
+  }
 }
 
-void dllist_iterate_callback(dllist *list, void (*callback)(dllistnode *)) {
-    dllistnode *current = list->head;
-    while(current->next != list->head) {
-        (*callback)(current = current->next);
-    }
+FLYAPI void dllist_iterate_callback(dllist *list, void (*proc)(dllistnode *)) {
+  dllistnode *current = dllist_get_head(list);
+  while(dllistnode_get_next(current) != dllist_get_head(list)) {
+    (*proc)(current = dllistnode_get_next(current));
+  }
 }

@@ -14,6 +14,8 @@
  * @date 09/19/2009 15:58:12 EDT (creation)
  */
 
+#include "common.h"
+
 #ifndef __FLY_GENERIC__
 #define __FLY_GENERIC__
 
@@ -22,3 +24,5 @@ typedef struct flyobj {
 	void *(*alloc_callback)(size_t);
 	void (*free_callback)(void *);
 }
+
+#endif

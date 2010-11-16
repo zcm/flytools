@@ -16,6 +16,7 @@
 #include <stdlib.h>
 // This takes care of a problem with realtive includes on some legacy
 // compilers.
+#include "common.h"
 #include "llnodes.h"
 #include "dllist.h"
 
