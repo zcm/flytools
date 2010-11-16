@@ -17,6 +17,7 @@
 #define __ZCM_HASH_CS_410_H
 
 #include <stdio.h>
+#include "common.h"
 
 /**
  * Computes the uncompressed hash of the given string, ignoring null characters,
@@ -28,7 +29,9 @@
  * @param limit the number of characters to hash
  * @return the hash of the string s as an unsigned integer
  */
-unsigned int blind_bounded_hash_string(const char *s, const size_t limit);
+FLYAPI unsigned int blind_bounded_hash_string(
+    const char *s,
+    const size_t limit);
 /**
  * Computes the uncompressed hash of the given string. The hash continues
  * hashing characters one at a time until either a null character is encountered
@@ -38,7 +41,7 @@ unsigned int blind_bounded_hash_string(const char *s, const size_t limit);
  * @param limit the maximum number of characters to hash
  * @return the hash of the string s as an unsigned integer
  */
-unsigned int hash_nstring(const char *s, const size_t limit);
+FLYAPI unsigned int hash_nstring(const char *s, const size_t limit);
 /**
  * Computes the uncompressed hash of the given string, returned as an unsigned
  * integer. This hash can be used for many things, such as for verification or
@@ -49,7 +52,7 @@ unsigned int hash_nstring(const char *s, const size_t limit);
  * @return the hash of the string s as an unsigned integer
  * @see hash_nstring()
  */
-unsigned int hash_string(const char *s);
+FLYAPI unsigned int hash_string(const char *s);
 /**
  * Bootstraps a pointer and uses a function that is intended to hash a string to
  * instead hash the given pointer. The bootstrapper then returns the hash as an
@@ -59,16 +62,16 @@ unsigned int hash_string(const char *s);
  * pointer
  * @return the hash of the pointer as an unsigned integer
  */
-unsigned int
-hash_pointer_using(const void *ptr,
-                   unsigned int (*hashfn)(const char *, const size_t));
+FLYAPI unsigned int hash_pointer_using(
+    const void *ptr,
+    unsigned int (*hashfn)(const char *, const size_t));
 /**
  * Computes the uncompressed hash of the given pointer. Pointer hashing runs in
  * constant time.
  * @param ptr the pointer to hash
  * @return the hash of the pointer ptr as an unsigned integer
  */
-unsigned int hash_pointer(const void *ptr);
+FLYAPI unsigned int hash_pointer(const void *ptr);
 /**
  * Compresses a given hash key k over the possible range n. In other words, this
  * function ensures that a hash k is suitable for use as an index into an array
@@ -77,6 +80,6 @@ unsigned int hash_pointer(const void *ptr);
  * @param n the range over which to compress the given hash key
  * @return the compressed hash as an unsigned integer
  */
-unsigned int compress_hash(const unsigned int k, const unsigned int n);
+FLYAPI unsigned int compress_hash(const unsigned int k, const unsigned int n);
 
 #endif

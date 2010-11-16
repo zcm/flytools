@@ -12,8 +12,8 @@
  * @author Zachary Murray (dremelofdeath@gmail.com)
  */
 
-// alloca.h is not included with Turbo C, so we should fix it
-#ifdef __TURBOC__
+// alloca.h is not included with Turbo C or Visual C++, so we should fix it
+#if defined(__TURBOC__) || defined(_MSC_VER)
 #define __JUSTIFY_FIX_ALLOCA__
 #endif
 
@@ -23,6 +23,8 @@
 #endif
 #include "justify.h"
 #include "scanner.h"
+
+#include "internal.h"
 
 static const int longest_english_word = 28;
 
@@ -79,7 +81,7 @@ dllist *parse_all_paragraphs_string(const char *str) {
 	return __internal_parse_all_paragraphs();
 }
 
-#ifdef __TURBOC__
+#if defined(__TURBOC__) || defined(_MSC_VER)
 #define __min(a, b) \
 	(((a) < (b)) ? (a) : (b))
 #else

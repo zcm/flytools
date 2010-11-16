@@ -1,5 +1,5 @@
-#include "llist/dllist.h"
-#include "testcase/testcase.h"
+#include "dllist.h"
+#include "testcase.h"
 
 static dllist *dltemp;
 static dllistnode *dlntemp;

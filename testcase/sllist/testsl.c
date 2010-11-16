@@ -1,5 +1,5 @@
-#include "llist/sllist.h"
-#include "testcase/testcase.h"
+#include "sllist.h"
+#include "testcase.h"
 
 static sllist *sltemp;
 static sllistnode *slntemp;

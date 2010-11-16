@@ -1,20 +1,20 @@
 OBJ = src/dict.o src/hash.o src/scanner.o src/dllist.o src/justify.o \
 	  src/llnodes.o src/sllist.o
-CFLAGS += -Iinclude -Wall -O3
+CFLAGS += -Iinclude -Wall -O3 -DFLYAPIBUILD
 VPATH = src:include:.
 
 all: $(OBJ) build/flytools.a($(OBJ))
 
 .PHONY: clean
 
-src/dict.o: hash.h dict.h
-src/hash.o: hash.h
+src/dict.o: hash.h dict.h common.h
+src/hash.o: hash.h common.h
 src/scanner.c: scanner.h
-src/scanner.o: scanner.h scanner.c
-src/dllist.o: dllist.h llnodes.h
-src/justify.o: justify.h scanner.h
-src/llnodes.o: llnodes.h
-src/sllist.o: sllist.h llnodes.h
+src/scanner.o: scanner.h scanner.c common.h
+src/dllist.o: dllist.h llnodes.h common.h
+src/justify.o: justify.h scanner.h common.h
+src/llnodes.o: llnodes.h common.h
+src/sllist.o: sllist.h llnodes.h common.h
 
 flytools.a($(OBJ)): $(OBJ)
 

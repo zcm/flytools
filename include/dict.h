@@ -16,6 +16,7 @@
 #ifndef __ZCM_DICT_H__
 #define __ZCM_DICT_H__
 
+#include "common.h"
 #include "hash.h"
 #include "dllist.h"
 
@@ -73,12 +74,12 @@ typedef struct dict {
  * @param alloc_callback the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary node
  */
-dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t));
+FLYAPI dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t));
 /**
  * Allocates a new node for a dictionary. Does no initialization.
  * @return a pointer to the newly allocated dictionary node
  */
-dictnode *dictnode_alloc();
+FLYAPI dictnode *dictnode_alloc();
 /**
  * Creates and initializes a new dictionary node with the specified key/value
  * pair and the allocation callback. No hashing is done at this time.
@@ -87,7 +88,7 @@ dictnode *dictnode_alloc();
  * @param alloc_callback the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary node
  */
-dictnode *dictnode_create_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t));
+FLYAPI dictnode *dictnode_create_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t));
 /**
  * Creates and initializes a new dictionary node with the specified key/value
  * pair. No hashing is done at this time.
@@ -95,7 +96,7 @@ dictnode *dictnode_create_with(const char * restrict key, void *data, void *(*al
  * @param data the generic pointer to the element stored in this node
  * @return a pointer to the newly allocated dictionary node
  */
-dictnode *dictnode_create(const char * restrict key, void *data);
+FLYAPI dictnode *dictnode_create(const char * restrict key, void *data);
 /**
  * Frees the specified dictionary node with the given callback function. Since
  * the callback function cannot be set with a destructor, this function must be
@@ -103,13 +104,13 @@ dictnode *dictnode_create(const char * restrict key, void *data);
  * @param dnode the dictionary node to destroy
  * @param free_callback the callback function used to destroy the node
  */
-void dictnode_destroy_with(dictnode *dnode, void (*free_callback)(void *));
+FLYAPI void dictnode_destroy_with(dictnode *dnode, void (*free_callback)(void *));
 /**
  * Frees the specified dictionary node. Uses the default freeing routine,
  * free().
  * @param dnode the dictionary node to destroy
  */
-void dictnode_destroy(dictnode *dnode);
+FLYAPI void dictnode_destroy(dictnode *dnode);
 
 /**
  * Allocates a new dictionary using the specified callback function. Does no
@@ -117,12 +118,12 @@ void dictnode_destroy(dictnode *dnode);
  * @param alloc_callback the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary
  */
-dict *dict_alloc_with(void *(*alloc_callback)(size_t));
+FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t));
 /**
  * Allocates a new dictionary. Does no initialization.
  * @return a pointer to the newly allocated dictionary
  */
-dict *dict_alloc();
+FLYAPI dict *dict_alloc();
 /**
  * Frees the specified dictionary using the given callback function. Normally,
  * one does not need to call this function since the destructor should be set at
@@ -132,7 +133,7 @@ dict *dict_alloc();
  * @param free_callback the callback function used to free the dictionary
  * @see dict_set_destructor()
  */
-void dict_destroy_with(dict *d, void (*free_callback)(void *));
+FLYAPI void dict_destroy_with(dict *d, void (*free_callback)(void *));
 /**
  * Frees the specified dictionary. Uses the default freeing routine, free(),
  * unless a destructor callback has been set for the given dictionary. In that
@@ -140,7 +141,7 @@ void dict_destroy_with(dict *d, void (*free_callback)(void *));
  * @param d the dictionary to destroy
  * @see dict_set_destructor()
  */
-void dict_destroy(dict *d);
+FLYAPI void dict_destroy(dict *d);
 /**
  * Initializes the specified dictionary with a bucket array of size, using the
  * given allocation callback. The bucket array is an array of doubly linked
@@ -152,7 +153,7 @@ void dict_destroy(dict *d);
  * @param alloc_callback the callback function for allocating this dictionary
  * @see dllist
  */
-void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(size_t));
+FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(size_t));
 /**
  * Initializes the specified dictionary with a bucket array of size. The bucket
  * array is an array of doubly linked lists (dllist *). The performance of this
@@ -163,7 +164,7 @@ void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(si
  * @param size the number of buckets for this dictionary
  * @see dllist
  */
-void dict_init(dict *d, const unsigned int size);
+FLYAPI void dict_init(dict *d, const unsigned int size);
 /**
  * Allocates and initializes a new dictionary with the specified number of
  * buckets (size) and the given allocation callback. The performance of this
@@ -174,7 +175,7 @@ void dict_init(dict *d, const unsigned int size);
  * @param alloc_callback the callback function for allocating this dictionary
  * @return a pointer to the newly created dictionary
  */
-dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(size_t));
+FLYAPI dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(size_t));
 /**
  * Allocates and initializes a new dictionary with the specified number of
  * buckets (size). The performance of this dictionary is much, much better when
@@ -183,7 +184,7 @@ dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(size_t))
  * @param size the number of buckets for this dictionary
  * @return a pointer to the newly created dictionary
  */
-dict *dict_create(const unsigned int size);
+FLYAPI dict *dict_create(const unsigned int size);
 /**
  * Sets the freeing routine for the specified dictionary. This function should
  * be called at creation time or soon after so that the correct destructor is
@@ -195,7 +196,7 @@ dict *dict_create(const unsigned int size);
  * @see dict_remove()
  * @see dict_destroy()
  */
-void dict_set_destructor(dict *d, void (*free_callback)(void *));
+FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *));
 /**
  * Gets the index in a dictionary d for the specified key. That is, the key is
  * hashed and then compressed based on the parameters for the given dictionary.
@@ -203,7 +204,7 @@ void dict_set_destructor(dict *d, void (*free_callback)(void *));
  * @param key the key for which to calculate the index
  * @return the calculated hash index for the specified key
  */
-unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key);
+FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key);
 /**
  * Inserts a value into the specified dictionary with they given key. That is,
  * the value argument is associated with the given key in the dictionary.
@@ -211,7 +212,7 @@ unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key);
  * @param key the key string to associate with the value
  * @param value the value that is being inserted into the dictionary
  */
-void dict_insert(dict * restrict d, const char * restrict key, void *value);
+FLYAPI void dict_insert(dict * restrict d, const char * restrict key, void *value);
 /**
  * Finds and removes a value for the given key from the specified dictionary.
  * The value found is the value returned. In the event that there are multiple
@@ -224,7 +225,7 @@ void dict_insert(dict * restrict d, const char * restrict key, void *value);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise, a pointer to that value
  */
-void *dict_remove(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_remove(dict * restrict d, const char * restrict key);
 /**
  * Finds a value for the given key from the specified dictionary. The value
  * found is the value returned. In the event that there are multple values with
@@ -237,14 +238,14 @@ void *dict_remove(dict * restrict d, const char * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
-void *dict_find(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_find(dict * restrict d, const char * restrict key);
 /**
  * Iterates through the dictionary, applying the specified callback function to
  * each node in the dictionary.
  * @param d the dictionary through which to iterate
  * @param callback the callback function to apply to all of the nodes
  */
-void dict_iterate_callback(dict *d, void (*callback)(dictnode *));
+FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *));
 
 #if __STDC_VERSION__ < 199901L
 #undef restrict

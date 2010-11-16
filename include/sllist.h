@@ -17,6 +17,7 @@
 #define __ZCM_SLLIST_H__
 
 #include <stdlib.h>
+#include "common.h"
 #include "llnodes.h"
 
 // link structures
