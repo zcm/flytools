@@ -16,6 +16,7 @@
 #ifndef __ZCM_FLYTOOLS_H__
 #define __ZCM_FLYTOOLS_H__
 
+#include "common.h"
 #include "dict.h"
 #include "justify.h"
 #include "dllist.h"

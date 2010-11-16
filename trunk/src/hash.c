@@ -22,7 +22,7 @@
 #ifdef __TURBOC__
 #define _rotr1(value) (((value) >> 1) | ((value) << 31))
 #else
-#ifdef __STRICT_ANSI__
+#if defined(__STRICT_ANSI__) || defined(_MSC_VER)
 #define inline
 #endif
 static inline unsigned int _rotr1(unsigned int value) {
@@ -32,7 +32,7 @@ static inline unsigned int _rotr1(unsigned int value) {
 #else
     return (value >> 1) | (value << 31);
 #endif
-#ifdef __STRICT_ANSI__
+#if defined(__STRICT_ANSI__) || defined(_MSC_VER)
 #undef inline
 #endif
 }
@@ -60,33 +60,35 @@ static inline unsigned int _rotr1(unsigned int value) {
 #undef _rotr1
 #endif
 
-unsigned int blind_bounded_hash_string(const char *s, const size_t limit) {
-    hash_macro(i, i < limit);
+FLYAPI unsigned int blind_bounded_hash_string(
+    const char *s,
+    const size_t limit) {
+  hash_macro(i, i < limit);
 }
 
 unsigned int hash_nstring(const char *s, const size_t limit) {
-    hash_macro(i, s[i] && i < limit);
+  hash_macro(i, s[i] && i < limit);
 }
 
 unsigned int hash_string(const char *s) {
-    hash_macro(i, s[i]);
+  hash_macro(i, s[i]);
 }
 
 #undef hash_macro
 #undef hash_macro_c
 #undef hash_macro_v
 
-unsigned int
-hash_pointer_using(const void *ptr,
-                   unsigned int (*hashfn)(const char *, const size_t)) {
-    return (*hashfn)((char *)&ptr, sizeof(void *)/sizeof(char));
+FLYAPI unsigned int hash_pointer_using(
+    const void *ptr,
+    unsigned int (*hashfn)(const char *, const size_t)) {
+  return (*hashfn)((char *)&ptr, sizeof(void *)/sizeof(char));
 }
 
-unsigned int hash_pointer(const void *ptr) {
-    return hash_pointer_using(ptr, &blind_bounded_hash_string);
+FLYAPI unsigned int hash_pointer(const void *ptr) {
+  return hash_pointer_using(ptr, &blind_bounded_hash_string);
 }
 
-unsigned int compress_hash(const unsigned int k, const unsigned int n) {
-    return k % n;
+FLYAPI unsigned int compress_hash(const unsigned int k, const unsigned int n) {
+  return k % n;
 }
 

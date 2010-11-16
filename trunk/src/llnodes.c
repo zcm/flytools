@@ -60,16 +60,44 @@ void sllistnode_destroy(sllistnode *node) {
 
 // linked list node operations
 
-dllistnode *dllistnode_next_node(dllistnode *curnode) {
+dllistnode *dllistnode_get_next(dllistnode *curnode) {
 	return curnode->next->data == NULL ? curnode->next->next : curnode->next;
 }
 
-dllistnode *dllistnode_prev_node(dllistnode *curnode) {
+dllistnode *dllistnode_get_prev(dllistnode *curnode) {
 	return curnode->prev->data == NULL ? curnode->prev->prev : curnode->prev;
 }
 
-sllistnode *sllistnode_next_node(sllistnode *curnode) {
+sllistnode *sllistnode_get_next(sllistnode *curnode) {
 	return curnode->next->data == NULL ? curnode->next->next : curnode->next;
+}
+
+void dllistnode_set_next(dllistnode *curnode, dllistnode *next) {
+  curnode->next = next;
+}
+
+void dllistnode_set_prev(dllistnode *curnode, dllistnode *prev) {
+  curnode->prev = prev;
+}
+
+void sllistnode_set_next(sllistnode *curnode, sllistnode *next) {
+  curnode->next = next;
+}
+
+void *dllistnode_get_data(dllistnode *node) {
+  return node->data;
+}
+
+void dllistnode_set_data(dllistnode *node, void *data) {
+  node->data = data;
+}
+
+void *sllistnode_get_data(sllistnode *node) {
+  return node->data;
+}
+
+void sllistnode_set_data(sllistnode *node, void *data) {
+  node->data = data;
 }
 
 void sllistnode_head_init(sllistnode *head) {
