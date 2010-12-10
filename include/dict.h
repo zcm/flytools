@@ -18,7 +18,7 @@
 
 #include "common.h"
 #include "hash.h"
-#include "dllist.h"
+#include "list.h"
 
 #if __STDC_VERSION__ < 199901L
 #define restrict
@@ -41,11 +41,11 @@ typedef struct dictnode {
  */
 typedef struct dict {
 	/**
-	 * An array of dllist instances that represent the buckets in this
+	 * An array of list instances that represent the buckets in this
 	 * dictionary. The size of this array is stored in the maxsize member.
 	 * @see maxsize
 	 */
-	dllist **buckets;
+	list **buckets;
 	unsigned int size; //!< The number of elements stored in this dictionary.
 	/**
 	 * The number of buckets in this dictionary. Named because it is the maximum
@@ -55,7 +55,7 @@ typedef struct dict {
 	/**
 	 * The stored allocation routine for allocating new nodes. This member is
 	 * also stored in the buckets for this dictionary.
-	 * @see dllist
+	 * @see list
 	 */
 	void *(*alloc_callback)(size_t);
 	/**
@@ -145,24 +145,24 @@ FLYAPI void dict_destroy(dict *d);
 /**
  * Initializes the specified dictionary with a bucket array of size, using the
  * given allocation callback. The bucket array is an array of doubly linked
- * lists (dllist *). The performance of this dictionary is much, much better
+ * lists (list *). The performance of this dictionary is much, much better
  * when the number of buckets chosen is a prime number. This is due to the
  * inherent inefficiencies in non-prime hash compression.
  * @param d the dictionary to initialize
  * @param size the number of buckets for this dictionary
  * @param alloc_callback the callback function for allocating this dictionary
- * @see dllist
+ * @see list
  */
 FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(size_t));
 /**
  * Initializes the specified dictionary with a bucket array of size. The bucket
- * array is an array of doubly linked lists (dllist *). The performance of this
+ * array is an array of doubly linked lists (list *). The performance of this
  * dictionary is much, much better when the number of buckets chosen is a prime
  * number. This is due to the inherent inefficiencies in non-prime hash
  * compression.
  * @param d the dictionary to initialize
  * @param size the number of buckets for this dictionary
- * @see dllist
+ * @see list
  */
 FLYAPI void dict_init(dict *d, const unsigned int size);
 /**
