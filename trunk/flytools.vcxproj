@@ -73,19 +73,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\dict.c" />
-    <ClCompile Include="src\dllist.c" />
+    <ClCompile Include="src\generics.c" />
     <ClCompile Include="src\hash.c" />
+    <ClCompile Include="src\list.c" />
     <ClCompile Include="src\llnodes.c" />
     <ClCompile Include="src\sllist.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\common.h" />
     <ClInclude Include="include\dict.h" />
-    <ClInclude Include="include\dllist.h" />
-    <ClInclude Include="include\flyobj.h" />
+    <ClInclude Include="include\generics.h" />
     <ClInclude Include="include\flytools.h" />
     <ClInclude Include="include\hash.h" />
+    <ClInclude Include="include\list.h" />
     <ClInclude Include="include\llnodes.h" />
     <ClInclude Include="include\sllist.h" />
   </ItemGroup>

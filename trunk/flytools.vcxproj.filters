@@ -15,12 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\dict.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\dllist.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\hash.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -30,15 +24,15 @@
     <ClCompile Include="src\sllist.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\generics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dict.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\dllist.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\flyobj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\flytools.h">
@@ -54,6 +48,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\generics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

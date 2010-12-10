@@ -1,6 +1,6 @@
 /** @file dict.c
  * This file contains the dictionary type for the Flytools. The dictionary may
- * contain any pointer type (i.e., a void * pointer), and depends on the dllist
+ * contain any pointer type (i.e., a void * pointer), and depends on the list
  * Flytools structure.
  *
  * This source file is a part of the Flytools and is copyright (c) 2008-2009
@@ -94,7 +94,7 @@ FLYAPI void dict_init_with(
     dict *d, const unsigned int size,
     void *(*alloc_callback)(size_t)) {
 	register unsigned int i = 0;
-	d->buckets = (dllist **)(*alloc_callback)(size * sizeof(dllist *));
+	d->buckets = (list **)(*alloc_callback)(size * sizeof(list *));
 	if(d->buckets == NULL) {
 		fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
 		exit(EXIT_FAILURE);
@@ -103,8 +103,8 @@ FLYAPI void dict_init_with(
 	d->maxsize = size;
 	d->alloc_callback = alloc_callback;
 	while(i < size) {
-		d->buckets[i] = dllist_alloc_with(alloc_callback);
-		dllist_init_with(d->buckets[i], alloc_callback);
+		d->buckets[i] = list_alloc_with(alloc_callback);
+		list_init_with(d->buckets[i], alloc_callback);
 		i++;
 	}
 }
@@ -138,9 +138,9 @@ FLYAPI void dict_destroy_with(
     void (*free_callback)(void *)) /*@-compdestroy@*/ {
 	unsigned int i = 0;
 	while(i < d->maxsize) {
-		dllist_empty_callback(d->buckets[i], &__callback_dictnode_destroy);
+		list_empty_callback(d->buckets[i], &__callback_dictnode_destroy);
 		assert(d->buckets[i]->size == 0);
-		dllist_destroy(d->buckets[i]);
+		list_destroy(d->buckets[i]);
 		i++;
 	}
 	(*free_callback)(d->buckets);
@@ -155,7 +155,7 @@ FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *)) {
 	unsigned int i = 0;
 	d->free_callback = free_callback;
 	while(i < d->maxsize) {
-		dllist_set_destructor(d->buckets[i], free_callback);
+		list_set_destructor(d->buckets[i], free_callback);
 		i++;
 	}
 }
@@ -172,7 +172,7 @@ FLYAPI void dict_insert(
     void *value) {
 	unsigned int index = dict_get_hash_index(d, key);
 	dictnode *newnode = dictnode_create_with(key, value, d->alloc_callback);
-	dllist_push(d->buckets[index], newnode);
+	list_push(d->buckets[index], newnode);
 	d->size++;
 }
 
@@ -186,7 +186,7 @@ FLYAPI void *dict_remove(
 		if(strcmp(((dictnode *)current->data)->key, key) == 0) {
 			dictnode *dnode = ((dictnode *)current->data);
 			ret = dnode->data;
-			(void)dllist_remove_node(d->buckets[index], current);
+			(void)list_remove_node(d->buckets[index], current);
 			dictnode_destroy(dnode);
 			return ret;
 		}
