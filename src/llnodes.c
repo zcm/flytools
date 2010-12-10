@@ -61,15 +61,15 @@ void sllistnode_destroy(sllistnode *node) {
 // linked list node operations
 
 dllistnode *dllistnode_get_next(dllistnode *curnode) {
-	return curnode->next->data == NULL ? curnode->next->next : curnode->next;
+	return curnode->next;
 }
 
 dllistnode *dllistnode_get_prev(dllistnode *curnode) {
-	return curnode->prev->data == NULL ? curnode->prev->prev : curnode->prev;
+	return curnode->prev;
 }
 
 sllistnode *sllistnode_get_next(sllistnode *curnode) {
-	return curnode->next->data == NULL ? curnode->next->next : curnode->next;
+	return curnode->next;
 }
 
 void dllistnode_set_next(dllistnode *curnode, dllistnode *next) {

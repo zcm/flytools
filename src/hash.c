@@ -22,8 +22,10 @@
 #ifdef __TURBOC__
 #define _rotr1(value) (((value) >> 1) | ((value) << 31))
 #else
-#if defined(__STRICT_ANSI__) || defined(_MSC_VER)
+#if defined(__STRICT_ANSI__)
 #define inline
+#elif defined(_MSC_VER)
+#define inline __inline
 #endif
 static inline unsigned int _rotr1(unsigned int value) {
 #if defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(NO_ASM)

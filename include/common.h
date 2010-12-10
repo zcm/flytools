@@ -28,4 +28,31 @@
 
 #endif
 
+#define FLYTOOLS_TYPE_GENERIC 0x00000000
+#define FLYTOOLS_TYPE_LIST    0x00000001
+#define FLYTOOLS_TYPE_DICT    0x00000002
+
+#define FLYTOOLS_TYPE_NODE    0x10000000
+#define FLYTOOLS_TYPE_KIND    0x20000000
+
+#ifndef FLYNITROIF
+#ifdef FLYNITRO
+#define FLYNITROIF(if_case, then_block) \
+  { then_block; }
+#else
+#define FLYNITROIF(if_case, then_block) \
+  if(if_case) { then_block; }
+#endif
+#endif
+
+#ifndef FLYNITROIFELSE
+#ifdef FLYNITRO
+#define FLYNITROIFELSE(if_case, then_block, else_block) \
+  { then_block; }
+#else
+#define FLYNITROIFELSE(if_case, then_block, else_block) \
+  if( if_case ) { then_block; } else { else_block; }
+#endif
+#endif
+
 #endif
