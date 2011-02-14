@@ -77,7 +77,6 @@
     <ClCompile Include="src\hash.c" />
     <ClCompile Include="src\list.c" />
     <ClCompile Include="src\llnodes.c" />
-    <ClCompile Include="src\sllist.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\common.h" />
@@ -87,7 +86,6 @@
     <ClInclude Include="include\hash.h" />
     <ClInclude Include="include\list.h" />
     <ClInclude Include="include\llnodes.h" />
-    <ClInclude Include="include\sllist.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

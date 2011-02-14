@@ -1,7 +1,7 @@
 /** @file list.h
- * This is the header file for the doubly linked list abstract data type
- * provided by the Flytools. To use this type, simply include this header file
- * in your source code.
+ * This is the header file for the linked list abstract data type provided by
+ * the Flytools. To use this type, simply include this header file in your
+ * source code.
  *
  * This source file is a part of the Flytools and is copyright (c) 2008-2009
  * Zachary Murray, all rights reserved. This source file may not be
@@ -44,7 +44,11 @@ typedef struct listkind {
   void (*concat)(list *l1, list *l2);
 } listkind;
 
-extern FLYAPI listkind LISTKIND_DLINK;
+extern FLYAPI listkind LISTKIND_DLINK_DEFINITION;
+extern FLYAPI listkind LISTKIND_SLINK_DEFINITION;
+
+#define LISTKIND_DLINK &LISTKIND_DLINK_DEFINITION
+#define LISTKIND_SLINK &LISTKIND_SLINK_DEFINITION
 
 FLYAPI list *list_create();
 FLYAPI list *list_create_kind(listkind *kind);
@@ -69,6 +73,16 @@ FLYAPI void listkind_dlink_unshift(list *l, void *data);
 FLYAPI void *listkind_dlink_pop(list *l);
 FLYAPI void *listkind_dlink_shift(list *l);
 FLYAPI void listkind_dlink_concat(list *l1, list *l2);
+
+FLYAPI void listkind_slink_init(list *l);
+FLYAPI void listkind_slink_destroy(list *l);
+FLYAPI size_t listkind_slink_get_size(list *l);
+FLYAPI void listkind_slink_set_size(list *l, size_t size);
+FLYAPI void listkind_slink_push(list *l, void *data);
+FLYAPI void listkind_slink_unshift(list *l, void *data);
+FLYAPI void *listkind_slink_pop(list *l);
+FLYAPI void *listkind_slink_shift(list *l);
+FLYAPI void listkind_slink_concat(list *l1, list *l2);
 
 #if defined(_MSC_VER)
 #undef restrict
