@@ -25,17 +25,17 @@
  * A structure that encapsulates a singly linked list node.
  */
 typedef struct sllistnode {
-	struct sllistnode *next; //!< The next node in the list.
 	void *data; //!< A generic pointer to the element contained in this node.
+	struct sllistnode *next; //!< The next node in the list.
 } sllistnode;
 
 /**
  * A structure that encapsulates a doubly linked list node.
  */
 typedef struct dllistnode {
+	void *data; //!< A generic pointer to the element contained in this node.
 	struct dllistnode *next; //!< The next node in the list.
 	struct dllistnode *prev; //!< The previous node in the list.
-	void *data; //!< A generic pointer to the element contained in this node.
 } dllistnode;
 
 // allocation
@@ -46,6 +46,7 @@ typedef struct dllistnode {
  * @return the newly allocated doubly linked list node
  */
 dllistnode *dllistnode_alloc_with(void *(*alloc_callback)(size_t));
+
 /**
  * Allocates a sllistnode using the given allocation routine.
  * @param alloc_callback an allocation routine, such as malloc(), that will be
@@ -53,18 +54,21 @@ dllistnode *dllistnode_alloc_with(void *(*alloc_callback)(size_t));
  * @return the newly allocated doubly linked list node
  */
 sllistnode *sllistnode_alloc_with(void *(*alloc_callback)(size_t));
+
 /**
  * Allocates (but does not initialize) a new doubly linked list node. Allocates
  * memory using the default allocation routine, malloc().
  * @return the newly allocated doubly linked list node
  */
 dllistnode *dllistnode_alloc();
+
 /**
  * Allocates (but does not initialize) a new singly linked list node. Allocates
  * memory using the default allocation routine, malloc().
  * @return the newly allocated singly linked list node
  */
 sllistnode *sllistnode_alloc();
+
 /**
  * Frees the memory associated with this doubly linked list node using the
  * specified freeing routine.
@@ -73,6 +77,7 @@ sllistnode *sllistnode_alloc();
  * return the memory for the node to the system
  */
 void dllistnode_destroy_with(dllistnode *node, void (*free_callback)(void *));
+
 /**
  * Frees the memory associated with this doubly linked list node. Frees the
  * memory using the default allocation routine, free().  Does not free the
@@ -80,6 +85,7 @@ void dllistnode_destroy_with(dllistnode *node, void (*free_callback)(void *));
  * @param node the node to destroy
  */
 void dllistnode_destroy(dllistnode *node);
+
 /**
  * Frees the memory associated with this singly linked list node using the
  * specified freeing routine.
@@ -88,6 +94,7 @@ void dllistnode_destroy(dllistnode *node);
  * return the memory for the node to the system
  */
 void sllistnode_destroy_with(sllistnode *node, void (*free_callback)(void *));
+
 /**
  * Frees the memory associated with this singly linked list node. Frees the
  * memory using the default allocation routine, free().  Does not free the
@@ -104,6 +111,7 @@ void sllistnode_destroy(sllistnode *node);
  * @return a pointer to the node after the current node
  */
 dllistnode *dllistnode_get_next(dllistnode *curnode);
+
 /**
  * Returns the node pointed to by the given doubly linked list node's prev
  * pointer.
@@ -111,6 +119,7 @@ dllistnode *dllistnode_get_next(dllistnode *curnode);
  * @return a pointer to the node before the current node
  */
 dllistnode *dllistnode_get_prev(dllistnode *curnode);
+
 /**
  * Returns the node pointed to by the given singly linked list node's next
  * pointer.
@@ -118,6 +127,7 @@ dllistnode *dllistnode_get_prev(dllistnode *curnode);
  * @return a pointer to the node after the current node
  */
 sllistnode *sllistnode_get_next(sllistnode *curnode);
+
 void dllistnode_set_next(dllistnode *curnode, dllistnode *next);
 void dllistnode_set_prev(dllistnode *curnode, dllistnode *prev);
 void sllistnode_set_next(sllistnode *curnode, sllistnode *next);
@@ -125,6 +135,7 @@ void *dllistnode_get_data(dllistnode *node);
 void dllistnode_set_data(dllistnode *node, void *data);
 void *sllistnode_get_data(sllistnode *node);
 void sllistnode_set_data(sllistnode *node, void *data);
+
 /**
  * Initializes the specified singly linked list node to be a header node. Makes
  * the data pointer NULL and makes the respective links of the node point to
@@ -132,6 +143,7 @@ void sllistnode_set_data(sllistnode *node, void *data);
  * @param head the node to initialize as a header node
  */
 void sllistnode_head_init(sllistnode *head);
+
 /**
  * Initializes the specified doubly linked list node to be a header node. Makes
  * the data pointer NULL and makes the respective links of the node point to
