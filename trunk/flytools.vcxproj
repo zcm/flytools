@@ -73,6 +73,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\common.c" />
     <ClCompile Include="src\generics.c" />
     <ClCompile Include="src\hash.c" />
     <ClCompile Include="src\list.c" />

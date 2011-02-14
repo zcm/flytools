@@ -22,6 +22,8 @@
 // FLYAPIBUILD macro -- it is for internal use only.
 #ifdef FLYAPIBUILD
 #define FLYAPI __declspec(dllexport)
+#define FLY_ERR(errcode) \
+  flytools_error(errcode, FLYERRMSG[errcode], __FUNCTION__, __FILE__, __LINE__)
 #else
 #define FLYAPI __declspec(dllimport)
 #endif
@@ -34,5 +36,25 @@
 
 #define FLYTOOLS_TYPE_NODE    0x10000000
 #define FLYTOOLS_TYPE_KIND    0x20000000
+
+enum FLYERRCODE {
+  EFLYNOMEM,
+  EFLYBADFN,
+  EFLYBADFNONLY1,
+  EFLYBADFNONLY2,
+  EFLYBADFNBOTH,
+  EFLYBADCAST,
+  EFLYEMPTY
+};
+
+extern const char * const FLYERRMSG[7];
+
+FLYAPI void
+flytools_onerror(void (*h)(int, const char * const, char *, char *, int));
+
+FLYAPI void flytools_onerror_detach();
+
+FLYAPI void
+flytools_error(int err, const char * const msg, char *fn, char *file, int line);
 
 #endif

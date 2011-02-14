@@ -27,6 +27,9 @@
     <ClCompile Include="src\generics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\common.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\dict.h">

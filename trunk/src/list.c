@@ -71,7 +71,7 @@ static inline listkind *listkind_shadowcast(flykind *kind) {
   if(kind->id & (FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND)) {
     ret = (listkind *)kind;
   } else {
-    // TODO: not a listkind, handle error
+    FLY_ERR(EFLYBADCAST);
   }
   return ret;
 }
@@ -97,10 +97,7 @@ FLYAPI list *list_create_kind_with(listkind *kind, void *(*allocproc)(size_t)) {
     ret->kind = (flykind *)kind;
     kind->init(ret);
   } else {
-    /* TODO: couldn't allocate, ret is null. handle error */
-    // this was the old list_alloc_with() way to deal with it
-    fprintf(stderr, "alloc failed: %s, line %d.\n", __FILE__, __LINE__);
-    abort();
+    FLY_ERR(EFLYNOMEM);
   }
   return ret;
 }
@@ -110,7 +107,7 @@ FLYAPI void list_destroy(list *l) {
   if(k) {
     k->destroy(l);
   } else {
-    /* TODO: l->kind was null. handle errors */
+    FLY_ERR(EFLYBADFN);
   }
   flyobj_destroy((flyobj *)l);
 }
@@ -123,7 +120,7 @@ FLYAPI size_t list_get_size(list *l) {
   if(k) {
     ret = k->get_size(l);
   } else {
-    /* TODO: l->kind was null. handle errors */
+    FLY_ERR(EFLYBADFN);
   }
   return ret;
 }
@@ -135,10 +132,10 @@ FLYAPI void *list_pop(list *l) {
     if(list_get_size(l) > 0) {
       ret = k->pop(l);
     } else {
-      /* TODO: list's size was 0 or less, handle errors */
+      FLY_ERR(EFLYEMPTY);
     }
   } else {
-    /* TODO: l->kind was null. handle errors */
+    FLY_ERR(EFLYBADFN);
   }
   return ret;
 }
@@ -148,7 +145,7 @@ FLYAPI void list_push(list *l, void *data) {
   if(k) {
     k->push(l, data);
   } else {
-    /* TODO: l->kind was null. handle errors */
+    FLY_ERR(EFLYBADFN);
   }
 }
 
@@ -159,10 +156,10 @@ FLYAPI void *list_shift(list *l) {
     if(list_get_size(l) > 0) {
       ret = k->shift(l);
     } else {
-      /* TODO: list's size was 0 or less, handle errors */
+      FLY_ERR(EFLYEMPTY);
     }
   } else {
-    /* TODO: l->kind was null. handle errors */
+    FLY_ERR(EFLYBADFN);
   }
   return ret;
 }
@@ -172,7 +169,7 @@ FLYAPI void list_unshift(list *l, void *data) {
   if(k) {
     k->unshift(l, data);
   } else {
-    /* TODO: l->kind was null. handle errors */
+    FLY_ERR(EFLYBADFN);
   }
 }
 
@@ -188,13 +185,12 @@ FLYAPI void list_concat(list *l1, list *l2) {
       list_concat_into(l1, l2); // TODO: change to conglomerate list
     }
   } else {
-    /* TODO: one of the two list kinds were null... handle errors */
     if(!k1 && k2) {
-      /* TODO: only k1 was null. */
+      FLY_ERR(EFLYBADFNONLY1);
     } else if (k1 && !k2) {
-      /* TODO: only k2 was null. */
+      FLY_ERR(EFLYBADFNONLY2);
     } else {
-      /* TODO: both were null, wtf */
+      FLY_ERR(EFLYBADFNBOTH);
     }
   }
 }
