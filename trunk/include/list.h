@@ -55,6 +55,7 @@ FLYAPI list *list_create_kind(listkind *kind);
 FLYAPI list *list_create_with(void *(*allocproc)(size_t));
 FLYAPI list *list_create_kind_with(listkind *kind, void *(*allocproc)(size_t));
 FLYAPI void list_destroy(list *l);
+FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *));
 FLYAPI size_t list_get_size(list *l);
 FLYAPI void *list_pop(list *l);
 FLYAPI void list_push(list *l, void *data);
