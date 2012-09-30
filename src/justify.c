@@ -24,12 +24,12 @@
 #include "justify.h"
 #include "scanner.h"
 
-#include "internal.h"
+//#include "internal.h"
 
 static const int longest_english_word = 28;
 
-dllist *__internal_parse_paragraph() {
-	dllist *ret = dllist_create();
+list *__internal_parse_paragraph() {
+	list *ret = list_create();
 	matchresult *match;
 	int stop = 0;
 	// keep scanning until we hit a paragraph (which we record in the list) or the end of the
@@ -39,13 +39,13 @@ dllist *__internal_parse_paragraph() {
 			free(match->text);
 			match->text = strdup("\n");
 		}
-		dllist_insert_right(ret, match);
+		list_insert_right(ret, match);
 		stop = match->type == MATCH_TYPE_PARAGRAPH;
 	}
 	return ret;
 }
 
-dllist *parse_paragraph(FILE *file) {
+list *parse_paragraph(FILE *file) {
 	// we don't have to provide a file if we're just scanning the next paragraph in the
 	// currently scanned file
 	if(file) {
@@ -54,29 +54,29 @@ dllist *parse_paragraph(FILE *file) {
 	return __internal_parse_paragraph();
 }
 
-dllist *__internal_parse_all_paragraphs() {
-	dllist *ret = dllist_create();
+list *__internal_parse_all_paragraphs() {
+	list *ret = list_create();
 	// keep scanning paragraphs until there is no more paragraphs to scan
 	// i.e., the last element of the last paragraph scanned is not of type MATCH_TYPE_PARAGRAPH
 	do {
-		dllist_insert_right(ret, parse_paragraph(NULL));
-	} while(((matchresult *)((dllist *)ret->head->prev->data)->head->prev->data)->type == MATCH_TYPE_PARAGRAPH);
+		list_insert_right(ret, parse_paragraph(NULL));
+	} while(((matchresult *)((list *)ret->head->prev->data)->head->prev->data)->type == MATCH_TYPE_PARAGRAPH);
 	return ret;
 }
 
-dllist *parse_all_paragraphs(FILE *file) {
+list *parse_all_paragraphs(FILE *file) {
 	scanner_scanfile(file);
 	return __internal_parse_all_paragraphs();
 }
 
-dllist *parse_paragraph_string(const char *str) {
+list *parse_paragraph_string(const char *str) {
 	if(str) {
 		scanner_scanstring(str);
 	}
 	return __internal_parse_paragraph();
 }
 
-dllist *parse_all_paragraphs_string(const char *str) {
+list *parse_all_paragraphs_string(const char *str) {
 	scanner_scanstring(str);
 	return __internal_parse_all_paragraphs();
 }
@@ -90,7 +90,7 @@ static inline int __min(int a, int b) {
 }
 #endif
 
-char *justify_next_line(dllist *paragraph, const int width) {
+char *justify_next_line(list *paragraph, const int width) {
 	register int len = 0;
 	register int nwords = 0;
 	int i = 0, j = 0, ranout = 0, extraspacesperword = 0, extraspaces = 0;
@@ -101,7 +101,7 @@ char *justify_next_line(dllist *paragraph, const int width) {
 	char *wordbuf = (char *)alloca(sizeof(char)*longest_english_word + 1);
 #endif
 	char *ret = (char *)calloc(width + 1, sizeof(char));
-	dllistnode *current = paragraph->head;
+	listnode *current = paragraph->head;
 	matchresult *match;
 	// calculate how many words will fit on one line
 	while(!(ranout = (current = current->next) == paragraph->head) &&
@@ -118,7 +118,7 @@ char *justify_next_line(dllist *paragraph, const int width) {
 	}
 	// concatenate the words and spaces to the return value
 	while(i < nwords - 1) {
-		matchresult *match = (matchresult *)dllist_remove_leftmost(paragraph);
+		matchresult *match = (matchresult *)list_remove_leftmost(paragraph);
 		// fill the buffer
 		strncpy(wordbuf, match->text, longest_english_word + 1);
 		wordbuf[longest_english_word] = '\0';
@@ -140,7 +140,7 @@ char *justify_next_line(dllist *paragraph, const int width) {
 		i++;
 	}
 	i = 0;
-	match = (matchresult *)dllist_remove_leftmost(paragraph);
+	match = (matchresult *)list_remove_leftmost(paragraph);
 	strcat(ret, match->text);
 	destroy_matchresult(match);
 #ifdef __JUSTIFY_FIX_ALLOCA__
@@ -151,9 +151,9 @@ char *justify_next_line(dllist *paragraph, const int width) {
 }
 
 void print_justified_text(const char *texttoprint, const int width) {
-	dllist *all_paragraphs = parse_all_paragraphs_string(texttoprint);
+	list *all_paragraphs = parse_all_paragraphs_string(texttoprint);
 	while(all_paragraphs->size > 0) {
-		dllist *current_paragraph = dllist_remove_leftmost(all_paragraphs);
+		list *current_paragraph = list_remove_leftmost(all_paragraphs);
 		// justify each line
 		while(current_paragraph->size > 0) {
 			char *curline = justify_next_line(current_paragraph, width);
@@ -161,9 +161,9 @@ void print_justified_text(const char *texttoprint, const int width) {
 			printf("%s\n", curline);
 			free(curline);
 		}
-		dllist_destroy(current_paragraph);
+		list_destroy(current_paragraph);
 	}
-	dllist_destroy(all_paragraphs);
+	list_destroy(all_paragraphs);
 }
 
 #ifdef __JUSTIFY_FIX_ALLOCA__

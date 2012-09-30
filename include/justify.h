@@ -1,6 +1,6 @@
 /** @file justify.h
  * This is the header file for the justification routines provided by the Flytools. This
- * file will implicitly include the dllist abstract data type. To use the functions provided
+ * file will implicitly include the list abstract data type. To use the functions provided
  * herein, simply include this header file in your source code.
  *
  * This source file is a part of the Flytools and is copyright (c) 2008-2009 Zachary Murray,
@@ -18,7 +18,7 @@
 // compilers.
 #include "common.h"
 #include "llnodes.h"
-#include "dllist.h"
+#include "list.h"
 
 #ifndef __ZCM_TTY_JUSTIFY_CS_350__
 #define __ZCM_TTY_JUSTIFY_CS_350__
@@ -29,28 +29,28 @@
  * @param file the open file to parse (may be NULL)
  * @return a doubly linked list of type (matchresult *) containing the words and end-of-paragraph marker
  */
-dllist *parse_paragraph(FILE *file);
+list *parse_paragraph(FILE *file);
 /**
  * Parses all paragraphs in the file. The file parameter may not be NULL.
  * Continues parsing until the scanner reaches an end-of-file character.
  * @param file the open file to parse (may not be NULL)
- * @return a doubly linked list of type (dllist *) containing each of the paragraphs parsed
+ * @return a doubly linked list of type (list *) containing each of the paragraphs parsed
  */
-dllist *parse_all_paragraphs(FILE *file);
+list *parse_all_paragraphs(FILE *file);
 /**
  * Parses the next paragraph in the string. If the string is NULL, the scanner
  * continues scanning the current buffer.
  * @param str the string to scan (may be NULL)
  * @return a doubly linked list of type (matchresult *) containing the words and end-of-paragraph marker
  */
-dllist *parse_paragraph_string(const char *str);
+list *parse_paragraph_string(const char *str);
 /**
  * Parses all paragraphs in the string. The str parameter may not be NULL.
  * Continues parsing until the scanner reaches a NUL character.
  * @param str the string to scan (which may not be NULL)
- * @return a doubly linked list of type (dllist *) containing each of the paragraphs parsed
+ * @return a doubly linked list of type (list *) containing each of the paragraphs parsed
  */
-dllist *parse_all_paragraphs_string(const char *str);
+list *parse_all_paragraphs_string(const char *str);
 /**
  * Justifies the next line in the provided paragraph for the given screen
  * width. This function will return an empty string when provided with an
@@ -61,7 +61,7 @@ dllist *parse_all_paragraphs_string(const char *str);
  * @param width the width of the screen to justify for
  * @return a dynamically allocated string containing the justified text
  */
-char *justify_next_line(dllist *paragraph, const int width);
+char *justify_next_line(list *paragraph, const int width);
 /**
  * Justifies the specified text using the functions defined in this file
  * and prints them to a string in a standard process.

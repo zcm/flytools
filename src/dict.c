@@ -39,7 +39,8 @@ void *__this_function_does_nothing(void *nothing) {
 FLYAPI dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t)) {
 	void *ret = (*alloc_callback)(sizeof(dictnode));
 	if(ret == NULL) {
-		fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
+		//fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
+    FLY_ERR(EFLYNOMEM);
 		exit(EXIT_FAILURE);
 	}
 	return (dictnode *)ret;
@@ -54,7 +55,8 @@ FLYAPI dictnode *dictnode_create_with(
     void *(*alloc_callback)(size_t)) {
 	dictnode *ret = dictnode_alloc_with(alloc_callback);
 	if(ret == NULL) {
-		fprintf(stderr, "alloc failed: in " __FUNCTION__ " with key=\"%s\"", key);
+		//fprintf(stderr, "alloc failed: in " __func__ " with key=\"%s\"", key);
+    FLY_ERR(EFLYNOMEM);
 		exit(EXIT_FAILURE);
 	}
 	ret->key = strdup(key);
@@ -103,8 +105,7 @@ FLYAPI void dict_init_with(
 	d->maxsize = size;
 	d->alloc_callback = alloc_callback;
 	while(i < size) {
-		d->buckets[i] = list_alloc_with(alloc_callback);
-		list_init_with(d->buckets[i], alloc_callback);
+		d->buckets[i] = list_create_with(alloc_callback);
 		i++;
 	}
 }
@@ -118,7 +119,8 @@ FLYAPI dict *dict_create_with(
     void *(*alloc_callback)(size_t)) {
 	dict *ret = dict_alloc_with(alloc_callback);
 	if(ret == NULL) {
-		fprintf(stderr, "alloc failed: in "__FUNCTION__ " with size=%u", size);
+		//fprintf(stderr, "alloc failed: in "__func__ " with size=%u", size);
+    FLY_ERR(EFLYNOMEM);
 		exit(EXIT_FAILURE);
 	}
 	dict_init_with(ret, size, alloc_callback);
@@ -129,17 +131,16 @@ FLYAPI dict *dict_create(const unsigned int size) {
 	return dict_create_with(size, &malloc);
 }
 
-void __callback_dictnode_destroy(/*@only@*/ void *data) {
-	dictnode_destroy((dictnode *)data);
-}
-
 FLYAPI void dict_destroy_with(
     dict *d,
     void (*free_callback)(void *)) /*@-compdestroy@*/ {
 	unsigned int i = 0;
 	while(i < d->maxsize) {
-		list_empty_callback(d->buckets[i], &__callback_dictnode_destroy);
-		assert(d->buckets[i]->size == 0);
+    while(list_get_size(d->buckets[i]) > 0) {
+      dictnode *this_node = list_pop(d->buckets[i]);
+      dictnode_destroy(this_node);
+    }
+		assert(list_get_size(d->buckets[i]) == 0);
 		list_destroy(d->buckets[i]);
 		i++;
 	}
@@ -155,7 +156,7 @@ FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *)) {
 	unsigned int i = 0;
 	d->free_callback = free_callback;
 	while(i < d->maxsize) {
-		list_set_destructor(d->buckets[i], free_callback);
+		list_set_freeproc(d->buckets[i], free_callback);
 		i++;
 	}
 }
@@ -179,38 +180,72 @@ FLYAPI void dict_insert(
 FLYAPI void *dict_remove(
     dict * restrict d,
     const char * restrict key) {
-	unsigned int index = dict_get_hash_index(d, key);
-	dllistnode *current = d->buckets[index]->head->next;
-	void *ret;
-	while(d->buckets[index]->head != current) {
-		if(strcmp(((dictnode *)current->data)->key, key) == 0) {
-			dictnode *dnode = ((dictnode *)current->data);
-			ret = dnode->data;
-			(void)list_remove_node(d->buckets[index], current);
-			dictnode_destroy(dnode);
-			return ret;
-		}
-		current = current->next;
-	}
-	return NULL;
+  unsigned int index;
+  //dllistnode *current = d->buckets[index]->head->next;
+  void *ret = NULL;
+  unsigned int checked = 0;
+  int found = 0;
+  /*while(d->buckets[index]->head != current) {
+    if(strcmp(((dictnode *)current->data)->key, key) == 0) {
+      dictnode *dnode = ((dictnode *)current->data);
+      ret = dnode->data;
+      (void)list_remove_node(d->buckets[index], current);
+      dictnode_destroy(dnode);
+      return ret;
+    }
+    current = current->next;
+  }*/
+  if (d != NULL && key != NULL) {
+    index = dict_get_hash_index(d, key);
+    while (!found && checked < list_get_size(d->buckets[index])) {
+      dictnode *dnode = (dictnode *)list_pop(d->buckets[index]);
+      if (strcmp(dnode->key, key) == 0) {
+        ret = dnode->data;
+        found = 1;
+        dictnode_destroy(dnode);
+      } else {
+        list_unshift(d->buckets[index], (void *)dnode);
+      }
+      checked++;
+    }
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
+  return ret;
 }
 
 FLYAPI void *dict_find(dict *d, const char * restrict key) {
-	unsigned int index = dict_get_hash_index(d, key);
-	dllistnode *current = d->buckets[index]->head->next;
-	void *ret;
-	while(d->buckets[index]->head != current) {
-		if(strcmp(((dictnode *)current->data)->key, key) == 0) {
-			dictnode *dnode = ((dictnode *)current->data);
-			ret = dnode->data;
-			return ret;
-		}
-		current = current->next;
-	}
-	return NULL;
+  unsigned int index;
+  //dllistnode *current = d->buckets[index]->head->next;
+  void *ret = NULL;
+  unsigned int checked = 0;
+  int found = 0;
+  /*while(d->buckets[index]->head != current) {
+    if(strcmp(((dictnode *)current->data)->key, key) == 0) {
+      dictnode *dnode = ((dictnode *)current->data);
+      ret = dnode->data;
+      return ret;
+    }
+    current = current->next;
+  }*/
+  if (d != NULL && key != NULL) {
+    index = dict_get_hash_index(d, key);
+    while (!found && checked < list_get_size(d->buckets[index])) {
+      dictnode *dnode = (dictnode *)list_pop(d->buckets[index]);
+      if (strcmp(dnode->key, key) == 0) {
+        ret = dnode->data;
+        found = 1;
+        list_unshift(d->buckets[index], (void *)dnode);
+      }
+      checked++;
+    }
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
+  return ret;
 }
 
-FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {
+/*FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {
 	unsigned int i = 0;
 	while(i < d->maxsize) {
 		dllistnode *current = d->buckets[i]->head->next;
@@ -220,7 +255,7 @@ FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {
 		}
 		i++;
 	}
-}
+}*/
 
 #if __STDC_VERSION__ < 199901L
 #undef restrict
