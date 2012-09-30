@@ -103,107 +103,164 @@ FLYAPI list *list_create_kind_with(listkind *kind, void *(*allocproc)(size_t)) {
 }
 
 FLYAPI void list_destroy(list *l) {
-  listkind *k = listkind_shadowcast(l->kind);
-  if(k) {
-    k->destroy(l);
+  listkind *k;
+  if (l != NULL) {
+    k = listkind_shadowcast(l->kind);
+    if(k) {
+      k->destroy(l);
+    } else {
+      FLY_ERR(EFLYBADFN);
+    }
+    flyobj_destroy((flyobj *)l);
   } else {
-    FLY_ERR(EFLYBADFN);
+    FLY_ERR(EFLYBADARG);
   }
-  flyobj_destroy((flyobj *)l);
+}
+
+FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
+  if (l != NULL) {
+    flyobj_set_freeproc((flyobj *)l, freeproc);
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
 }
 
 // struct member interaction
 
 FLYAPI size_t list_get_size(list *l) {
+  listkind *k;
   size_t ret = 0;
-  listkind *k = listkind_shadowcast(l->kind);
-  if(k) {
-    ret = k->get_size(l);
+  if (l != NULL) {
+    k = listkind_shadowcast(l->kind);
+    if(k) {
+      ret = k->get_size(l);
+    } else {
+      FLY_ERR(EFLYBADFN);
+    }
   } else {
-    FLY_ERR(EFLYBADFN);
+    FLY_ERR(EFLYBADARG);
   }
   return ret;
 }
 
 FLYAPI void *list_pop(list *l) {
   void *ret = NULL;
-  listkind *k = listkind_shadowcast(l->kind);
-  if(k) {
-    if(list_get_size(l) > 0) {
-      ret = k->pop(l);
+  listkind *k;
+  if (l != NULL) {
+    k = listkind_shadowcast(l->kind);
+    if(k) {
+      if(list_get_size(l) > 0) {
+        ret = k->pop(l);
+      } else {
+        FLY_ERR(EFLYEMPTY);
+      }
     } else {
-      FLY_ERR(EFLYEMPTY);
+      FLY_ERR(EFLYBADFN);
     }
   } else {
-    FLY_ERR(EFLYBADFN);
+    FLY_ERR(EFLYBADARG);
   }
   return ret;
 }
 
 FLYAPI void list_push(list *l, void *data) {
-  listkind *k = listkind_shadowcast(l->kind);
-  if(k) {
-    k->push(l, data);
+  listkind *k;
+  if (l != NULL) {
+    k = listkind_shadowcast(l->kind);
+    if(k) {
+      k->push(l, data);
+    } else {
+      FLY_ERR(EFLYBADFN);
+    }
   } else {
-    FLY_ERR(EFLYBADFN);
+    FLY_ERR(EFLYBADARG);
   }
 }
 
 FLYAPI void *list_shift(list *l) {
   void *ret = NULL;
-  listkind *k = listkind_shadowcast(l->kind);
-  if(k) {
-    if(list_get_size(l) > 0) {
-      ret = k->shift(l);
+  listkind *k;
+  if (l != NULL) {
+    k = listkind_shadowcast(l->kind);
+    if(k) {
+      if(list_get_size(l) > 0) {
+        ret = k->shift(l);
+      } else {
+        FLY_ERR(EFLYEMPTY);
+      }
     } else {
-      FLY_ERR(EFLYEMPTY);
+      FLY_ERR(EFLYBADFN);
     }
   } else {
-    FLY_ERR(EFLYBADFN);
+    FLY_ERR(EFLYBADARG);
   }
   return ret;
 }
 
 FLYAPI void list_unshift(list *l, void *data) {
-  listkind *k = listkind_shadowcast(l->kind);
-  if(k) {
-    k->unshift(l, data);
+  listkind *k;
+  if (l != NULL) {
+    k = listkind_shadowcast(l->kind);
+    if(k) {
+      k->unshift(l, data);
+    } else {
+      FLY_ERR(EFLYBADFN);
+    }
   } else {
-    FLY_ERR(EFLYBADFN);
+    FLY_ERR(EFLYBADARG);
   }
 }
 
 FLYAPI void list_concat(list *l1, list *l2) {
-  listkind *k1 = listkind_shadowcast(l1->kind);
-  listkind *k2 = listkind_shadowcast(l2->kind);
-  if(k1 && k2) {
-    if(k1 == k2) {
-      k1->concat(l1, l2);
+  listkind *k1;
+  listkind *k2;
+  int ptr_valid = 1;
+  if (l1 != NULL) {
+    k1 = listkind_shadowcast(l1->kind);
+  } else {
+    ptr_valid = 0;
+  }
+  if (l2 != NULL) {
+    k2 = listkind_shadowcast(l2->kind);
+  } else {
+    ptr_valid = 0;
+  }
+  if (ptr_valid) {
+    if(k1 && k2) {
+      if(k1 == k2) {
+        k1->concat(l1, l2);
+      } else {
+        /* TODO: different kinds. for now, concat into l1... */
+        /* but in the future... make a conglomerate list     */
+        list_concat_into(l1, l2); // TODO: change to conglomerate list
+      }
     } else {
-      /* TODO: different kinds. for now, concat into l1... */
-      /* but in the future... make a conglomerate list     */
-      list_concat_into(l1, l2); // TODO: change to conglomerate list
+      if(!k1 && k2) {
+        FLY_ERR(EFLYBADFNONLY1);
+      } else if (k1 && !k2) {
+        FLY_ERR(EFLYBADFNONLY2);
+      } else {
+        FLY_ERR(EFLYBADFNBOTH);
+      }
     }
   } else {
-    if(!k1 && k2) {
-      FLY_ERR(EFLYBADFNONLY1);
-    } else if (k1 && !k2) {
-      FLY_ERR(EFLYBADFNONLY2);
-    } else {
-      FLY_ERR(EFLYBADFNBOTH);
-    }
+    FLY_ERR(EFLYBADARG);
   }
 }
 
 FLYAPI void list_concat_into(list *l1, list *l2) {
-  if(l1->kind == l2->kind && l1->kind != NULL) {
-    // silly user, they're the same kind! use list_concat instead (it's faster)
-    list_concat(l1, l2);
+  if (l1 == NULL || l2 == NULL) {
+    FLY_ERR(EFLYBADARG);
   } else {
-    while(list_get_size(l2) > 0) {
-      list_unshift(l1, list_pop(l2));
+    if(l1->kind == l2->kind && l1->kind != NULL) {
+      // silly user, they're the same kind! use list_concat instead (it's faster)
+      list_concat(l1, l2);
+    } else {
+      while(list_get_size(l2) > 0) {
+        list_unshift(l1, list_pop(l2));
+      }
+      list_destroy(l2);
     }
-    list_destroy(l2);
   }
 }
 

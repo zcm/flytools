@@ -16,18 +16,28 @@
 #ifndef __FLYTOOLS_COMMON_H__
 #define __FLYTOOLS_COMMON_H__
 
+#ifdef WIN32
+#define __func__ __FUNCTION__
+#endif
+
 #if defined(_MSC_VER) && !defined(FLYAPI)
 // This will be defined by the build environment if compiling the API.
 // External projects linking against the Flytools should never define the
 // FLYAPIBUILD macro -- it is for internal use only.
 #ifdef FLYAPIBUILD
 #define FLYAPI __declspec(dllexport)
-#define FLY_ERR(errcode) \
-  flytools_error(errcode, FLYERRMSG[errcode], __FUNCTION__, __FILE__, __LINE__)
 #else
 #define FLYAPI __declspec(dllimport)
 #endif
-
+#endif
+// non-windows case
+#ifndef FLYAPI
+#define FLYAPI
+#endif
+ 
+#ifdef FLYAPIBUILD
+#define FLY_ERR(errcode) \
+  flytools_error(errcode, FLYERRMSG[errcode], __func__, __FILE__, __LINE__)
 #endif
 
 #define FLYTOOLS_TYPE_GENERIC 0x00000000
@@ -44,17 +54,18 @@ enum FLYERRCODE {
   EFLYBADFNONLY2,
   EFLYBADFNBOTH,
   EFLYBADCAST,
-  EFLYEMPTY
+  EFLYEMPTY,
+  EFLYBADARG
 };
 
-extern const char * const FLYERRMSG[7];
+extern const char * const FLYERRMSG[8];
 
 FLYAPI void
-flytools_onerror(void (*h)(int, const char * const, char *, char *, int));
+flytools_onerror(void (*h)(int, const char * const, const char * const, const char * const, int));
 
 FLYAPI void flytools_onerror_detach();
 
 FLYAPI void
-flytools_error(int err, const char * const msg, char *fn, char *file, int line);
+flytools_error(int err, const char * const msg, const char * const fn, const char * const file, int line);
 
 #endif
