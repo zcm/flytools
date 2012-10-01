@@ -38,10 +38,9 @@ void *__this_function_does_nothing(void *nothing) {
 
 FLYAPI dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t)) {
 	void *ret = (*alloc_callback)(sizeof(dictnode));
+  FLY_ERR_CLEAR;
 	if(ret == NULL) {
-		//fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
     FLY_ERR(EFLYNOMEM);
-		exit(EXIT_FAILURE);
 	}
 	return (dictnode *)ret;
 }
@@ -50,29 +49,30 @@ FLYAPI dictnode *dictnode_alloc() {
 	return dictnode_alloc_with(&malloc);
 }
 
-FLYAPI dictnode *dictnode_create_with(
-    const char * restrict key, void *data,
-    void *(*alloc_callback)(size_t)) {
-	dictnode *ret = dictnode_alloc_with(alloc_callback);
-	if(ret == NULL) {
-		//fprintf(stderr, "alloc failed: in " __func__ " with key=\"%s\"", key);
+FLYAPI dictnode *dictnode_create_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t)) {
+  dictnode *ret = dictnode_alloc_with(alloc_callback);
+  FLY_ERR_CLEAR;
+  if(ret == NULL) {
     FLY_ERR(EFLYNOMEM);
-		exit(EXIT_FAILURE);
-	}
-	ret->key = strdup(key);
-	ret->data = data;
-	return ret;
+  } else {
+    ret->key = strdup(key);
+    ret->data = data;
+  }
+  return ret;
 }
 
 FLYAPI dictnode *dictnode_create(const char * restrict key, void *data) {
 	return dictnode_create_with(key, data, &malloc);
 }
 
-FLYAPI void dictnode_destroy_with(
-    dictnode *dnode,
-    void (*free_callback)(void *)) {
-	(*free_callback)(dnode->key);
-	(*free_callback)(dnode);
+FLYAPI void dictnode_destroy_with(dictnode *dnode, void (*free_callback)(void *)) {
+  FLY_ERR_CLEAR;
+  if (dnode != NULL) {
+    (*free_callback)(dnode->key);
+    (*free_callback)(dnode);
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
 }
 
 FLYAPI void dictnode_destroy(dictnode *dnode) {
@@ -81,9 +81,9 @@ FLYAPI void dictnode_destroy(dictnode *dnode) {
 
 FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t)) {
 	void *ret = (*alloc_callback)(sizeof(dict));
+  FLY_ERR_CLEAR;
 	if(ret == NULL) {
-		fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
-		exit(EXIT_FAILURE);
+    FLY_ERR(EFLYNOMEM);
 	}
 	return (dict *)ret;
 }
@@ -92,38 +92,43 @@ FLYAPI dict *dict_alloc() {
 	return dict_alloc_with(&malloc);
 }
 
-FLYAPI void dict_init_with(
-    dict *d, const unsigned int size,
-    void *(*alloc_callback)(size_t)) {
+FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(size_t)) {
 	register unsigned int i = 0;
-	d->buckets = (list **)(*alloc_callback)(size * sizeof(list *));
-	if(d->buckets == NULL) {
-		fprintf(stderr, "Out of memory: %s, line %d.\n", __FILE__, __LINE__);
-		exit(EXIT_FAILURE);
-	}
-	d->size = 0;
-	d->maxsize = size;
-	d->alloc_callback = alloc_callback;
-	while(i < size) {
-		d->buckets[i] = list_create_with(alloc_callback);
-		i++;
-	}
+  FLY_ERR_CLEAR;
+  if (d != NULL) {
+    d->buckets = (list **)(*alloc_callback)(size * sizeof(list *));
+    if(d->buckets == NULL) {
+      FLY_ERR(EFLYNOMEM);
+    } else {
+      d->size = 0;
+      d->maxsize = size;
+      d->alloc_callback = alloc_callback;
+      while(i < size) {
+        d->buckets[i] = list_create_with(alloc_callback);
+        if (d->buckets[i] == NULL) {
+          FLY_ERR(EFLYNOMEM);
+          break;
+        }
+        i++;
+      }
+    }
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
 }
 
 FLYAPI void dict_init(dict *d, const unsigned int size) {
 	dict_init_with(d, size, &malloc);
 }
 
-FLYAPI dict *dict_create_with(
-    const unsigned int size,
-    void *(*alloc_callback)(size_t)) {
+FLYAPI dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(size_t)) {
 	dict *ret = dict_alloc_with(alloc_callback);
+  FLY_ERR_CLEAR;
 	if(ret == NULL) {
-		//fprintf(stderr, "alloc failed: in "__func__ " with size=%u", size);
     FLY_ERR(EFLYNOMEM);
-		exit(EXIT_FAILURE);
-	}
-	dict_init_with(ret, size, alloc_callback);
+	} else {
+    dict_init_with(ret, size, alloc_callback);
+  }
 	return ret;
 }
 
@@ -131,70 +136,74 @@ FLYAPI dict *dict_create(const unsigned int size) {
 	return dict_create_with(size, &malloc);
 }
 
-FLYAPI void dict_destroy_with(
-    dict *d,
-    void (*free_callback)(void *)) /*@-compdestroy@*/ {
-	unsigned int i = 0;
-	while(i < d->maxsize) {
-    while(list_get_size(d->buckets[i]) > 0) {
-      dictnode *this_node = list_pop(d->buckets[i]);
-      dictnode_destroy(this_node);
+FLYAPI void dict_destroy_with(dict *d, void (*free_callback)(void *)) /*@-compdestroy@*/ {
+  unsigned int i = 0;
+  FLY_ERR_CLEAR;
+  if (d != NULL) {
+    while(i < d->maxsize) {
+      while(list_get_size(d->buckets[i]) > 0) {
+        dictnode *this_node = list_pop(d->buckets[i]);
+        dictnode_destroy(this_node);
+      }
+      assert(list_get_size(d->buckets[i]) == 0);
+      list_destroy(d->buckets[i]);
+      i++;
     }
-		assert(list_get_size(d->buckets[i]) == 0);
-		list_destroy(d->buckets[i]);
-		i++;
-	}
-	(*free_callback)(d->buckets);
-	(*free_callback)(d);
+    (*free_callback)(d->buckets);
+    (*free_callback)(d);
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
 }
 
 FLYAPI void dict_destroy(dict *d) {
 	dict_destroy_with(d, !d->free_callback ? &free : d->free_callback);
 }
 
-FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *)) {
-	unsigned int i = 0;
-	d->free_callback = free_callback;
-	while(i < d->maxsize) {
-		list_set_freeproc(d->buckets[i], free_callback);
-		i++;
-	}
+FLYAPI void dict_set_freeproc(dict *d, void (*free_callback)(void *)) {
+  unsigned int i = 0;
+  FLY_ERR_CLEAR;
+  if (d != NULL) {
+    d->free_callback = free_callback;
+    while(i < d->maxsize) {
+      list_set_freeproc(d->buckets[i], free_callback);
+      i++;
+    }
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
 }
 
-FLYAPI unsigned int dict_get_hash_index(
-    dict * restrict d,
-    const char * restrict key) {
-	return compress_hash(hash_string(key), d->maxsize);
+FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key) {
+  unsigned int hash = 0;
+  FLY_ERR_CLEAR;
+  if (d != NULL && key != NULL) {
+    hash = compress_hash(hash_string(key), d->maxsize);
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
+	return hash;
 }
 
-FLYAPI void dict_insert(
-    dict * restrict d,
-    const char * restrict key,
-    void *value) {
-	unsigned int index = dict_get_hash_index(d, key);
-	dictnode *newnode = dictnode_create_with(key, value, d->alloc_callback);
-	list_push(d->buckets[index], newnode);
-	d->size++;
+FLYAPI void dict_insert(dict * restrict d, const char * restrict key, void *value) {
+	unsigned int index;
+  FLY_ERR_CLEAR;
+  if (d != NULL && key != NULL) {
+    index = dict_get_hash_index(d, key);
+    dictnode *newnode = dictnode_create_with(key, value, d->alloc_callback);
+    list_push(d->buckets[index], newnode);
+    d->size++;
+  } else {
+    FLY_ERR(EFLYBADARG);
+  }
 }
 
-FLYAPI void *dict_remove(
-    dict * restrict d,
-    const char * restrict key) {
+FLYAPI void *dict_remove(dict * restrict d, const char * restrict key) {
   unsigned int index;
-  //dllistnode *current = d->buckets[index]->head->next;
   void *ret = NULL;
   unsigned int checked = 0;
   int found = 0;
-  /*while(d->buckets[index]->head != current) {
-    if(strcmp(((dictnode *)current->data)->key, key) == 0) {
-      dictnode *dnode = ((dictnode *)current->data);
-      ret = dnode->data;
-      (void)list_remove_node(d->buckets[index], current);
-      dictnode_destroy(dnode);
-      return ret;
-    }
-    current = current->next;
-  }*/
+  FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
     index = dict_get_hash_index(d, key);
     while (!found && checked < list_get_size(d->buckets[index])) {
@@ -203,6 +212,7 @@ FLYAPI void *dict_remove(
         ret = dnode->data;
         found = 1;
         dictnode_destroy(dnode);
+        d->size--;
       } else {
         list_unshift(d->buckets[index], (void *)dnode);
       }
@@ -216,18 +226,10 @@ FLYAPI void *dict_remove(
 
 FLYAPI void *dict_find(dict *d, const char * restrict key) {
   unsigned int index;
-  //dllistnode *current = d->buckets[index]->head->next;
   void *ret = NULL;
   unsigned int checked = 0;
   int found = 0;
-  /*while(d->buckets[index]->head != current) {
-    if(strcmp(((dictnode *)current->data)->key, key) == 0) {
-      dictnode *dnode = ((dictnode *)current->data);
-      ret = dnode->data;
-      return ret;
-    }
-    current = current->next;
-  }*/
+  FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
     index = dict_get_hash_index(d, key);
     while (!found && checked < list_get_size(d->buckets[index])) {
