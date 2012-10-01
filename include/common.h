@@ -38,6 +38,8 @@
 #ifdef FLYAPIBUILD
 #define FLY_ERR(errcode) \
   flytools_error(errcode, FLYERRMSG[errcode], __func__, __FILE__, __LINE__)
+#define FLY_ERR_CLEAR \
+  flytools_error(EFLYOK, NULL, NULL, NULL, -1)
 #endif
 
 #define FLYTOOLS_TYPE_GENERIC 0x00000000
@@ -48,6 +50,7 @@
 #define FLYTOOLS_TYPE_KIND    0x20000000
 
 enum FLYERRCODE {
+  EFLYOK = 0,
   EFLYNOMEM,
   EFLYBADFN,
   EFLYBADFNONLY1,
@@ -55,17 +58,19 @@ enum FLYERRCODE {
   EFLYBADFNBOTH,
   EFLYBADCAST,
   EFLYEMPTY,
-  EFLYBADARG
+  EFLYBADARG,
+  EFLYINTERNAL,
+  FLYERRCODE_LENGTH /* not an errorcode -- do not use */
 };
 
-extern const char * const FLYERRMSG[8];
+extern const char * const FLYERRMSG[FLYERRCODE_LENGTH];
 
-FLYAPI void
-flytools_onerror(void (*h)(int, const char * const, const char * const, const char * const, int));
+FLYAPI void flytools_onerror(void (*h)(int, const char * const, const char * const, const char * const, int));
 
 FLYAPI void flytools_onerror_detach();
 
-FLYAPI void
-flytools_error(int err, const char * const msg, const char * const fn, const char * const file, int line);
+FLYAPI void flytools_error(int err, const char * const msg, const char * const fn, const char * const file, int line);
+
+FLYAPI int flytools_last_error();
 
 #endif
