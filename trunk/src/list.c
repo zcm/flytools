@@ -68,6 +68,7 @@ typedef struct list_slink_ds {
 #else
 static inline listkind *listkind_shadowcast(flykind *kind) {
   listkind *ret = NULL;
+  FLY_ERR_CLEAR;
   if(kind->id & (FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND)) {
     ret = (listkind *)kind;
   } else {
@@ -91,6 +92,7 @@ FLYAPI list *list_create_with(void *(*allocproc)(size_t)) {
 
 FLYAPI list *list_create_kind_with(listkind *kind, void *(*allocproc)(size_t)) {
   list *ret = (list *)(*allocproc)(sizeof(list));
+  FLY_ERR_CLEAR;
   if(ret != NULL) {
     flyobj_init((flyobj *)ret, allocproc);
     flyobj_set_id((flyobj *)ret, FLYTOOLS_TYPE_LIST);
@@ -104,6 +106,7 @@ FLYAPI list *list_create_kind_with(listkind *kind, void *(*allocproc)(size_t)) {
 
 FLYAPI void list_destroy(list *l) {
   listkind *k;
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
@@ -118,6 +121,7 @@ FLYAPI void list_destroy(list *l) {
 }
 
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     flyobj_set_freeproc((flyobj *)l, freeproc);
   } else {
@@ -130,6 +134,7 @@ FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
 FLYAPI size_t list_get_size(list *l) {
   listkind *k;
   size_t ret = 0;
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
@@ -146,6 +151,7 @@ FLYAPI size_t list_get_size(list *l) {
 FLYAPI void *list_pop(list *l) {
   void *ret = NULL;
   listkind *k;
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
@@ -165,6 +171,7 @@ FLYAPI void *list_pop(list *l) {
 
 FLYAPI void list_push(list *l, void *data) {
   listkind *k;
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
@@ -180,6 +187,7 @@ FLYAPI void list_push(list *l, void *data) {
 FLYAPI void *list_shift(list *l) {
   void *ret = NULL;
   listkind *k;
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
@@ -199,6 +207,7 @@ FLYAPI void *list_shift(list *l) {
 
 FLYAPI void list_unshift(list *l, void *data) {
   listkind *k;
+  FLY_ERR_CLEAR;
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
@@ -215,6 +224,7 @@ FLYAPI void list_concat(list *l1, list *l2) {
   listkind *k1;
   listkind *k2;
   int ptr_valid = 1;
+  FLY_ERR_CLEAR;
   if (l1 != NULL) {
     k1 = listkind_shadowcast(l1->kind);
   } else {
@@ -249,6 +259,7 @@ FLYAPI void list_concat(list *l1, list *l2) {
 }
 
 FLYAPI void list_concat_into(list *l1, list *l2) {
+  FLY_ERR_CLEAR;
   if (l1 == NULL || l2 == NULL) {
     FLY_ERR(EFLYBADARG);
   } else {
