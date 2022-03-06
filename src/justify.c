@@ -29,7 +29,7 @@
 static const int longest_english_word = 28;
 
 list *__internal_parse_paragraph() {
-	list *ret = list_create();
+	list *ret = list_new();
 	matchresult *match;
 	int stop = 0;
 	// keep scanning until we hit a paragraph (which we record in the list) or the end of the
@@ -55,7 +55,7 @@ list *parse_paragraph(FILE *file) {
 }
 
 list *__internal_parse_all_paragraphs() {
-	list *ret = list_create();
+	list *ret = list_new();
 	// keep scanning paragraphs until there is no more paragraphs to scan
 	// i.e., the last element of the last paragraph scanned is not of type MATCH_TYPE_PARAGRAPH
 	do {
@@ -161,9 +161,9 @@ void print_justified_text(const char *texttoprint, const int width) {
 			printf("%s\n", curline);
 			free(curline);
 		}
-		list_destroy(current_paragraph);
+		list_del(current_paragraph);
 	}
-	list_destroy(all_paragraphs);
+	list_del(all_paragraphs);
 }
 
 #ifdef __JUSTIFY_FIX_ALLOCA__

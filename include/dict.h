@@ -88,7 +88,7 @@ FLYAPI dictnode *dictnode_alloc();
  * @param alloc_callback the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary node
  */
-FLYAPI dictnode *dictnode_create_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t));
+FLYAPI dictnode *dictnode_new_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t));
 /**
  * Creates and initializes a new dictionary node with the specified key/value
  * pair. No hashing is done at this time.
@@ -96,7 +96,7 @@ FLYAPI dictnode *dictnode_create_with(const char * restrict key, void *data, voi
  * @param data the generic pointer to the element stored in this node
  * @return a pointer to the newly allocated dictionary node
  */
-FLYAPI dictnode *dictnode_create(const char * restrict key, void *data);
+FLYAPI dictnode *dictnode_new(const char * restrict key, void *data);
 /**
  * Frees the specified dictionary node with the given callback function. Since
  * the callback function cannot be set with a destructor, this function must be
@@ -104,13 +104,13 @@ FLYAPI dictnode *dictnode_create(const char * restrict key, void *data);
  * @param dnode the dictionary node to destroy
  * @param free_callback the callback function used to destroy the node
  */
-FLYAPI void dictnode_destroy_with(dictnode *dnode, void (*free_callback)(void *));
+FLYAPI void dictnode_del_with(dictnode *dnode, void (*free_callback)(void *));
 /**
  * Frees the specified dictionary node. Uses the default freeing routine,
  * free().
  * @param dnode the dictionary node to destroy
  */
-FLYAPI void dictnode_destroy(dictnode *dnode);
+FLYAPI void dictnode_del(dictnode *dnode);
 
 /**
  * Allocates a new dictionary using the specified callback function. Does no
@@ -133,7 +133,7 @@ FLYAPI dict *dict_alloc();
  * @param free_callback the callback function used to free the dictionary
  * @see dict_set_destructor()
  */
-FLYAPI void dict_destroy_with(dict *d, void (*free_callback)(void *));
+FLYAPI void dict_del_with(dict *d, void (*free_callback)(void *));
 /**
  * Frees the specified dictionary. Uses the default freeing routine, free(),
  * unless a destructor callback has been set for the given dictionary. In that
@@ -141,7 +141,7 @@ FLYAPI void dict_destroy_with(dict *d, void (*free_callback)(void *));
  * @param d the dictionary to destroy
  * @see dict_set_destructor()
  */
-FLYAPI void dict_destroy(dict *d);
+FLYAPI void dict_del(dict *d);
 /**
  * Initializes the specified dictionary with a bucket array of size, using the
  * given allocation callback. The bucket array is an array of doubly linked
@@ -175,7 +175,7 @@ FLYAPI void dict_init(dict *d, const unsigned int size);
  * @param alloc_callback the callback function for allocating this dictionary
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(size_t));
+FLYAPI dict *dict_new_with(const unsigned int size, void *(*alloc_callback)(size_t));
 /**
  * Allocates and initializes a new dictionary with the specified number of
  * buckets (size). The performance of this dictionary is much, much better when
@@ -184,7 +184,7 @@ FLYAPI dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(s
  * @param size the number of buckets for this dictionary
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_create(const unsigned int size);
+FLYAPI dict *dict_new(const unsigned int size);
 /**
  * Sets the freeing routine for the specified dictionary. This function should
  * be called at creation time or soon after so that the correct destructor is
@@ -194,7 +194,7 @@ FLYAPI dict *dict_create(const unsigned int size);
  * @param free_callback the freeing routine to be set as this dictionary's
  * destructor
  * @see dict_remove()
- * @see dict_destroy()
+ * @see dict_del()
  */
 FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *));
 /**

@@ -41,7 +41,7 @@ END_TEST_CONDS();
 
 free(dltemp);
 
-TEST_CONDS(dllist_create_with(&malloc));
+TEST_CONDS(dllist_new_with(&malloc));
 dltemp = (dllist *)temp;
 COND(dltemp->head != NULL);
 COND(dltemp->head->next == dltemp->head);
@@ -54,7 +54,7 @@ UNALLOC_TEMP();
 
 dltemp = NULL;
 
-TEST_CONDS(dllist_create());
+TEST_CONDS(dllist_new());
 dltemp = (dllist *)temp;
 COND(dltemp->head != NULL);
 COND(dltemp->head->next == dltemp->head);
@@ -67,7 +67,7 @@ UNALLOC_TEMP();
 
 dltemp = NULL;
 
-dltemp = dllist_create();
+dltemp = dllist_new();
 
 TEST_CONDS_VOID(dllist_set_destructor(dltemp, &free));
 COND(dltemp->free_callback == &free);
@@ -76,7 +76,7 @@ END_TEST_CONDS();
 free(dltemp);
 
 dlntemp = dllistnode_alloc();
-dltemp = dllist_create();
+dltemp = dllist_new();
 
 TEST_CONDS_VOID(dllist_insert_node_after_head(dltemp, dlntemp));
 COND(dltemp->head->next == dlntemp);
@@ -129,7 +129,7 @@ COND(dltemp->size == 0);
 END_TEST_CONDS();
 
 free(dltemp);
-dltemp = dllist_create();
+dltemp = dllist_new();
 
 TEST_CONDS_VOID(dllist_push(dltemp, (void *)0xDEAD));
 COND(dltemp->head->next->elem == (void *)0xDEAD);
@@ -166,7 +166,7 @@ COND(dltemp->size == 0);
 END_TEST_CONDS();
 
 free(dltemp);
-dltemp = dllist_create();
+dltemp = dllist_new();
 dllist_push(dltemp, (void *)1);
 dllist_push(dltemp, (void *)2);
 

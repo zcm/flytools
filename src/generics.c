@@ -19,7 +19,7 @@
 static void *(*_flyobj_default_allocproc)(size_t) = &malloc;
 static void (*_flyobj_default_freeproc)(void *) = &free;
 
-FLYAPI void flyobj_destroy(flyobj *obj) {
+FLYAPI void flyobj_del(flyobj *obj) {
   if (obj != NULL) {
     obj->freeproc(obj);
   } else {

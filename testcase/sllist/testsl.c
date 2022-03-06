@@ -38,7 +38,7 @@ END_TEST_CONDS();
 
 free(sltemp);
 
-TEST_CONDS(sllist_create_with(&malloc));
+TEST_CONDS(sllist_new_with(&malloc));
 sltemp = (sllist *)temp;
 COND(sltemp->head != NULL);
 COND(sltemp->head->next == sltemp->head);
@@ -50,7 +50,7 @@ UNALLOC_TEMP();
 
 sltemp = NULL;
 
-TEST_CONDS(sllist_create());
+TEST_CONDS(sllist_new());
 sltemp = (sllist *)temp;
 COND(sltemp->head != NULL);
 COND(sltemp->head->next == sltemp->head);
@@ -62,7 +62,7 @@ UNALLOC_TEMP();
 
 sltemp = NULL;
 
-sltemp = sllist_create();
+sltemp = sllist_new();
 
 TEST_CONDS_VOID(sllist_set_destructor(sltemp, &free));
 COND(sltemp->free_callback == &free);
@@ -71,7 +71,7 @@ END_TEST_CONDS();
 free(sltemp);
 
 slntemp = sllistnode_alloc();
-sltemp = sllist_create();
+sltemp = sllist_new();
 
 TEST_CONDS_VOID(sllist_insert_node_after_head(sltemp, slntemp));
 COND(sltemp->head->next == slntemp);
@@ -104,7 +104,7 @@ COND(sltemp->size == 0);
 END_TEST_CONDS();
 
 free(sltemp);
-sltemp = sllist_create();
+sltemp = sllist_new();
 
 TEST_CONDS_VOID(sllist_push(sltemp, (void *)0xDEAD));
 COND(sltemp->head->next->elem == (void *)0xDEAD);
@@ -119,7 +119,7 @@ COND(sltemp->size == 0);
 END_TEST_CONDS();
 
 free(sltemp);
-sltemp = sllist_create();
+sltemp = sllist_new();
 sllist_push(sltemp, (void *)1);
 sllist_push(sltemp, (void *)2);
 
