@@ -76,7 +76,7 @@ sllistnode *sllistnode_alloc();
  * @param free_callback a freeing routine, such as free(), that will be used to
  * return the memory for the node to the system
  */
-void dllistnode_destroy_with(dllistnode *node, void (*free_callback)(void *));
+void dllistnode_del_with(dllistnode *node, void (*free_callback)(void *));
 
 /**
  * Frees the memory associated with this doubly linked list node. Frees the
@@ -84,7 +84,7 @@ void dllistnode_destroy_with(dllistnode *node, void (*free_callback)(void *));
  * element pointed to by this element pointer.
  * @param node the node to destroy
  */
-void dllistnode_destroy(dllistnode *node);
+void dllistnode_del(dllistnode *node);
 
 /**
  * Frees the memory associated with this singly linked list node using the
@@ -93,7 +93,7 @@ void dllistnode_destroy(dllistnode *node);
  * @param free_callback a freeing routine, such as free(), that will be used to
  * return the memory for the node to the system
  */
-void sllistnode_destroy_with(sllistnode *node, void (*free_callback)(void *));
+void sllistnode_del_with(sllistnode *node, void (*free_callback)(void *));
 
 /**
  * Frees the memory associated with this singly linked list node. Frees the
@@ -101,7 +101,7 @@ void sllistnode_destroy_with(sllistnode *node, void (*free_callback)(void *));
  * element pointed to by this element pointer.
  * @param node the node to destroy
  */
-void sllistnode_destroy(sllistnode *node);
+void sllistnode_del(sllistnode *node);
 
 // linked list node operations
 /**

@@ -50,11 +50,11 @@ extern FLYAPI listkind LISTKIND_SLINK_DEFINITION;
 #define LISTKIND_DLINK &LISTKIND_DLINK_DEFINITION
 #define LISTKIND_SLINK &LISTKIND_SLINK_DEFINITION
 
-FLYAPI list *list_create();
-FLYAPI list *list_create_kind(listkind *kind);
-FLYAPI list *list_create_with(void *(*allocproc)(size_t));
-FLYAPI list *list_create_kind_with(listkind *kind, void *(*allocproc)(size_t));
-FLYAPI void list_destroy(list *l);
+FLYAPI list *list_new();
+FLYAPI list *list_new_kind(listkind *kind);
+FLYAPI list *list_new_with(void *(*allocproc)(size_t));
+FLYAPI list *list_new_kind_with(listkind *kind, void *(*allocproc)(size_t));
+FLYAPI void list_del(list *l);
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *));
 FLYAPI size_t list_get_size(list *l);
 FLYAPI void *list_pop(list *l);
@@ -66,7 +66,7 @@ FLYAPI void list_concat(list *l1, list *l2);
 FLYAPI void list_concat_into(list *l1, list *l2);
 
 FLYAPI void listkind_dlink_init(list *l);
-FLYAPI void listkind_dlink_destroy(list *l);
+FLYAPI void listkind_dlink_del(list *l);
 FLYAPI size_t listkind_dlink_get_size(list *l);
 FLYAPI void listkind_dlink_set_size(list *l, size_t size);
 FLYAPI void listkind_dlink_push(list *l, void *data);
@@ -76,7 +76,7 @@ FLYAPI void *listkind_dlink_shift(list *l);
 FLYAPI void listkind_dlink_concat(list *l1, list *l2);
 
 FLYAPI void listkind_slink_init(list *l);
-FLYAPI void listkind_slink_destroy(list *l);
+FLYAPI void listkind_slink_del(list *l);
 FLYAPI size_t listkind_slink_get_size(list *l);
 FLYAPI void listkind_slink_set_size(list *l, size_t size);
 FLYAPI void listkind_slink_push(list *l, void *data);

@@ -75,7 +75,7 @@ void test_remove(const char * const restrict key) {
 int main(void) {
   flytools_onerror(errhandler);
 
-  d = dict_create(15);
+  d = dict_new(15);
 
   test_insert("cats");
   test_insert("dogs");

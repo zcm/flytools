@@ -42,20 +42,20 @@ sllistnode *sllistnode_alloc() {
 	return sllistnode_alloc_with(&malloc);
 }
 
-void dllistnode_destroy_with(dllistnode *node, void (*free_callback)(void *)) {
+void dllistnode_del_with(dllistnode *node, void (*free_callback)(void *)) {
 	(*free_callback)(node);
 }
 
-void dllistnode_destroy(dllistnode *node) {
-	dllistnode_destroy_with(node, &free);
+void dllistnode_del(dllistnode *node) {
+	dllistnode_del_with(node, &free);
 }
 
-void sllistnode_destroy_with(sllistnode *node, void (*free_callback)(void *)) {
+void sllistnode_del_with(sllistnode *node, void (*free_callback)(void *)) {
 	(*free_callback)(node);
 }
 
-void sllistnode_destroy(sllistnode *node) {
-	sllistnode_destroy_with(node, &free);
+void sllistnode_del(sllistnode *node) {
+	sllistnode_del_with(node, &free);
 }
 
 // linked list node operations

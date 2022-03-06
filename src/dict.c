@@ -49,7 +49,7 @@ FLYAPI dictnode *dictnode_alloc() {
 	return dictnode_alloc_with(&malloc);
 }
 
-FLYAPI dictnode *dictnode_create_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t)) {
+FLYAPI dictnode *dictnode_new_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t)) {
   dictnode *ret = dictnode_alloc_with(alloc_callback);
   FLY_ERR_CLEAR;
   if(ret == NULL) {
@@ -61,11 +61,11 @@ FLYAPI dictnode *dictnode_create_with(const char * restrict key, void *data, voi
   return ret;
 }
 
-FLYAPI dictnode *dictnode_create(const char * restrict key, void *data) {
-	return dictnode_create_with(key, data, &malloc);
+FLYAPI dictnode *dictnode_new(const char * restrict key, void *data) {
+	return dictnode_new_with(key, data, &malloc);
 }
 
-FLYAPI void dictnode_destroy_with(dictnode *dnode, void (*free_callback)(void *)) {
+FLYAPI void dictnode_del_with(dictnode *dnode, void (*free_callback)(void *)) {
   FLY_ERR_CLEAR;
   if (dnode != NULL) {
     (*free_callback)(dnode->key);
@@ -75,8 +75,8 @@ FLYAPI void dictnode_destroy_with(dictnode *dnode, void (*free_callback)(void *)
   }
 }
 
-FLYAPI void dictnode_destroy(dictnode *dnode) {
-	dictnode_destroy_with(dnode, &free);
+FLYAPI void dictnode_del(dictnode *dnode) {
+	dictnode_del_with(dnode, &free);
 }
 
 FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t)) {
@@ -104,7 +104,7 @@ FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callb
       d->maxsize = size;
       d->alloc_callback = alloc_callback;
       while(i < size) {
-        d->buckets[i] = list_create_with(alloc_callback);
+        d->buckets[i] = list_new_with(alloc_callback);
         if (d->buckets[i] == NULL) {
           FLY_ERR(EFLYNOMEM);
           break;
@@ -121,7 +121,7 @@ FLYAPI void dict_init(dict *d, const unsigned int size) {
 	dict_init_with(d, size, &malloc);
 }
 
-FLYAPI dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(size_t)) {
+FLYAPI dict *dict_new_with(const unsigned int size, void *(*alloc_callback)(size_t)) {
 	dict *ret = dict_alloc_with(alloc_callback);
   FLY_ERR_CLEAR;
 	if(ret == NULL) {
@@ -132,21 +132,21 @@ FLYAPI dict *dict_create_with(const unsigned int size, void *(*alloc_callback)(s
 	return ret;
 }
 
-FLYAPI dict *dict_create(const unsigned int size) {
-	return dict_create_with(size, &malloc);
+FLYAPI dict *dict_new(const unsigned int size) {
+	return dict_new_with(size, &malloc);
 }
 
-FLYAPI void dict_destroy_with(dict *d, void (*free_callback)(void *)) /*@-compdestroy@*/ {
+FLYAPI void dict_del_with(dict *d, void (*free_callback)(void *)) /*@-compdestroy@*/ {
   unsigned int i = 0;
   FLY_ERR_CLEAR;
   if (d != NULL) {
     while(i < d->maxsize) {
       while(list_get_size(d->buckets[i]) > 0) {
         dictnode *this_node = list_pop(d->buckets[i]);
-        dictnode_destroy(this_node);
+        dictnode_del(this_node);
       }
       assert(list_get_size(d->buckets[i]) == 0);
-      list_destroy(d->buckets[i]);
+      list_del(d->buckets[i]);
       i++;
     }
     (*free_callback)(d->buckets);
@@ -156,8 +156,8 @@ FLYAPI void dict_destroy_with(dict *d, void (*free_callback)(void *)) /*@-compde
   }
 }
 
-FLYAPI void dict_destroy(dict *d) {
-	dict_destroy_with(d, !d->free_callback ? &free : d->free_callback);
+FLYAPI void dict_del(dict *d) {
+	dict_del_with(d, !d->free_callback ? &free : d->free_callback);
 }
 
 FLYAPI void dict_set_freeproc(dict *d, void (*free_callback)(void *)) {
@@ -190,7 +190,7 @@ FLYAPI void dict_insert(dict * restrict d, const char * restrict key, void *valu
   FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
     index = dict_get_hash_index(d, key);
-    dictnode *newnode = dictnode_create_with(key, value, d->alloc_callback);
+    dictnode *newnode = dictnode_new_with(key, value, d->alloc_callback);
     list_push(d->buckets[index], newnode);
     d->size++;
   } else {
@@ -211,7 +211,7 @@ FLYAPI void *dict_remove(dict * restrict d, const char * restrict key) {
       if (strcmp(dnode->key, key) == 0) {
         ret = dnode->data;
         found = 1;
-        dictnode_destroy(dnode);
+        dictnode_del(dnode);
         d->size--;
       } else {
         list_unshift(d->buckets[index], (void *)dnode);
