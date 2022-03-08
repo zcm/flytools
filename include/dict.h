@@ -238,7 +238,7 @@ FLYAPI void *dict_remove(dict * restrict d, const char * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
-FLYAPI void *dict_find(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_get(dict * restrict d, const char * restrict key);
 /**
  * Iterates through the dictionary, applying the specified callback function to
  * each node in the dictionary.

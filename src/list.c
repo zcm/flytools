@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "list.h"
 
-FLYAPI listkind LISTKIND_DLINK_DEFINITION = {
+FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
   { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
   &listkind_dlink_init,
   &listkind_dlink_del,
@@ -32,7 +32,7 @@ FLYAPI listkind LISTKIND_DLINK_DEFINITION = {
   &listkind_dlink_concat
 };
 
-FLYAPI listkind LISTKIND_SLINK_DEFINITION = {
+FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
   { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
   &listkind_slink_init,
   &listkind_slink_del,
@@ -131,7 +131,7 @@ FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
 
 // struct member interaction
 
-FLYAPI size_t list_get_size(list *l) {
+FLYAPI size_t list_size(list *l) {
   listkind *k;
   size_t ret = 0;
   FLY_ERR_CLEAR;
@@ -155,7 +155,7 @@ FLYAPI void *list_pop(list *l) {
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
-      if(list_get_size(l) > 0) {
+      if(list_size(l) > 0) {
         ret = k->pop(l);
       } else {
         FLY_ERR(EFLYEMPTY);
@@ -191,7 +191,7 @@ FLYAPI void *list_shift(list *l) {
   if (l != NULL) {
     k = listkind_shadowcast(l->kind);
     if(k) {
-      if(list_get_size(l) > 0) {
+      if(list_size(l) > 0) {
         ret = k->shift(l);
       } else {
         FLY_ERR(EFLYEMPTY);
@@ -267,7 +267,7 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
       // silly user, they're the same kind! use list_concat instead (it's faster)
       list_concat(l1, l2);
     } else {
-      while(list_get_size(l2) > 0) {
+      while(list_size(l2) > 0) {
         list_unshift(l1, list_pop(l2));
       }
       list_del(l2);

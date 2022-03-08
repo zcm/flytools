@@ -44,11 +44,8 @@ typedef struct listkind {
   void (*concat)(list *l1, list *l2);
 } listkind;
 
-extern FLYAPI listkind LISTKIND_DLINK_DEFINITION;
-extern FLYAPI listkind LISTKIND_SLINK_DEFINITION;
-
-#define LISTKIND_DLINK &LISTKIND_DLINK_DEFINITION
-#define LISTKIND_SLINK &LISTKIND_SLINK_DEFINITION
+extern FLYAPI listkind *LISTKIND_DLINK;
+extern FLYAPI listkind *LISTKIND_SLINK;
 
 FLYAPI list *list_new();
 FLYAPI list *list_new_kind(listkind *kind);
@@ -56,7 +53,7 @@ FLYAPI list *list_new_with(void *(*allocproc)(size_t));
 FLYAPI list *list_new_kind_with(listkind *kind, void *(*allocproc)(size_t));
 FLYAPI void list_del(list *l);
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *));
-FLYAPI size_t list_get_size(list *l);
+FLYAPI size_t list_size(list *l);
 FLYAPI void *list_pop(list *l);
 FLYAPI void list_push(list *l, void *data);
 FLYAPI void *list_shift(list *l);
