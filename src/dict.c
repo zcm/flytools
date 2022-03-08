@@ -103,6 +103,7 @@ FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callb
       d->size = 0;
       d->maxsize = size;
       d->alloc_callback = alloc_callback;
+      d->free_callback = NULL;
       while(i < size) {
         d->buckets[i] = list_new_with(alloc_callback);
         if (d->buckets[i] == NULL) {
@@ -141,11 +142,11 @@ FLYAPI void dict_del_with(dict *d, void (*free_callback)(void *)) /*@-compdestro
   FLY_ERR_CLEAR;
   if (d != NULL) {
     while(i < d->maxsize) {
-      while(list_get_size(d->buckets[i]) > 0) {
+      while(list_size(d->buckets[i]) > 0) {
         dictnode *this_node = list_pop(d->buckets[i]);
         dictnode_del(this_node);
       }
-      assert(list_get_size(d->buckets[i]) == 0);
+      assert(list_size(d->buckets[i]) == 0);
       list_del(d->buckets[i]);
       i++;
     }
@@ -206,7 +207,7 @@ FLYAPI void *dict_remove(dict * restrict d, const char * restrict key) {
   FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
     index = dict_get_hash_index(d, key);
-    while (!found && checked < list_get_size(d->buckets[index])) {
+    while (!found && checked < list_size(d->buckets[index])) {
       dictnode *dnode = (dictnode *)list_pop(d->buckets[index]);
       if (strcmp(dnode->key, key) == 0) {
         ret = dnode->data;
@@ -224,7 +225,7 @@ FLYAPI void *dict_remove(dict * restrict d, const char * restrict key) {
   return ret;
 }
 
-FLYAPI void *dict_find(dict *d, const char * restrict key) {
+FLYAPI void *dict_get(dict *d, const char * restrict key) {
   unsigned int index;
   void *ret = NULL;
   unsigned int checked = 0;
@@ -232,7 +233,7 @@ FLYAPI void *dict_find(dict *d, const char * restrict key) {
   FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
     index = dict_get_hash_index(d, key);
-    while (!found && checked < list_get_size(d->buckets[index])) {
+    while (!found && checked < list_size(d->buckets[index])) {
       dictnode *dnode = (dictnode *)list_pop(d->buckets[index]);
       if (strcmp(dnode->key, key) == 0) {
         ret = dnode->data;
