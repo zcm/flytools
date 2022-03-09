@@ -31,7 +31,9 @@
  */
 typedef struct dictnode {
 	void *data; //!< The data pointer for this node.
-	char *key; //!< The key string for this node.
+	void *key; //!< The key string/object for this node.
+  int (*matches)(
+      const struct dictnode *, const void *, const void *); //!< Key matcher for this node.
 } dictnode;
 
 /**
@@ -46,12 +48,12 @@ typedef struct dict {
 	 * @see maxsize
 	 */
 	list **buckets;
-	unsigned int size; //!< The number of elements stored in this dictionary.
+	size_t size; //!< The number of elements stored in this dictionary.
 	/**
 	 * The number of buckets in this dictionary. Named because it is the maximum
 	 * size for hash compression (and for array indices).
 	 */
-	unsigned int maxsize;
+	size_t maxsize;
 	/**
 	 * The stored allocation routine for allocating new nodes. This member is
 	 * also stored in the buckets for this dictionary.
@@ -85,18 +87,14 @@ FLYAPI dictnode *dictnode_alloc();
  * pair and the allocation callback. No hashing is done at this time.
  * @param key the key string used for this element in the dictionary
  * @param data the generic pointer to the element stored in this node
+ * @param matches the matcher used to compare keys
  * @param alloc_callback the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary node
  */
-FLYAPI dictnode *dictnode_new_with(const char * restrict key, void *data, void *(*alloc_callback)(size_t));
-/**
- * Creates and initializes a new dictionary node with the specified key/value
- * pair. No hashing is done at this time.
- * @param key the key string used for this element in the dictionary
- * @param data the generic pointer to the element stored in this node
- * @return a pointer to the newly allocated dictionary node
- */
-FLYAPI dictnode *dictnode_new(const char * restrict key, void *data);
+FLYAPI dictnode *dictnode_new(
+    void * restrict key, void *data,
+    int (*matches)(const struct dictnode *, const void *, const void *),
+    void *(*alloc_callback)(size_t));
 /**
  * Frees the specified dictionary node with the given callback function. Since
  * the callback function cannot be set with a destructor, this function must be
@@ -175,7 +173,7 @@ FLYAPI void dict_init(dict *d, const unsigned int size);
  * @param alloc_callback the callback function for allocating this dictionary
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_new_with(const unsigned int size, void *(*alloc_callback)(size_t));
+FLYAPI dict *dict_new_with(const size_t size, void *(*alloc_callback)(size_t));
 /**
  * Allocates and initializes a new dictionary with the specified number of
  * buckets (size). The performance of this dictionary is much, much better when
@@ -184,7 +182,7 @@ FLYAPI dict *dict_new_with(const unsigned int size, void *(*alloc_callback)(size
  * @param size the number of buckets for this dictionary
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_new(const unsigned int size);
+FLYAPI dict *dict_new(const size_t size);
 /**
  * Sets the freeing routine for the specified dictionary. This function should
  * be called at creation time or soon after so that the correct destructor is
@@ -206,39 +204,73 @@ FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *));
  */
 FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key);
 /**
- * Inserts a value into the specified dictionary with they given key. That is,
- * the value argument is associated with the given key in the dictionary.
+ * Inserts a value into the specified dictionary with the given object key. That
+ * is, the value argument is associated with the pointer in the dictionary.
+ * @param d the dictionary in which to associate the value with the key
+ * @param key the object key pointer to associate with the value
+ * @param value the value that is being inserted into the dictionary
+ */
+FLYAPI void dict_put(dict * restrict d, void * restrict key, void *value);
+/**
+ * Inserts a value into the specified dictionary with the given string key. That
+ * is, the value argument is associated with the given key in the dictionary.
  * @param d the dictionary in which to associate the value with the key
  * @param key the key string to associate with the value
  * @param value the value that is being inserted into the dictionary
  */
-FLYAPI void dict_insert(dict * restrict d, const char * restrict key, void *value);
+FLYAPI void dict_puts(dict * restrict d, char * restrict key, void *value);
 /**
- * Finds and removes a value for the given key from the specified dictionary.
- * The value found is the value returned. In the event that there are multiple
- * values with the same key in the dictionary, only one of them is returned.
- * Specifically, the first one found is returned, which should be the first one
- * inserted, but technically this behavior is undefined and can change in a
- * later version. If the value is not found, no value is removed from the list
- * and this function returns NULL.
+ * Finds and removes a value for the given object key from the specified
+ * dictionary.  The value found is the value returned. In the event that there
+ * are multiple values with the same key in the dictionary, only one of them is
+ * returned.  Specifically, the first one found is returned, which should be the
+ * first one inserted, but technically this behavior is undefined and can change
+ * in a later version. If the value is not found, no value is removed from the
+ * list and this function returns NULL.
  * @param d the dictionary from which to remove the value with the given key
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise, a pointer to that value
  */
-FLYAPI void *dict_remove(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_remove(dict * restrict d, const void * restrict key);
 /**
- * Finds a value for the given key from the specified dictionary. The value
- * found is the value returned. In the event that there are multple values with
- * the smae key in the dictioanry, only one of them is returned. Specifically,
- * the first one found is returned, which should be the first one inserted, but
- * technically this behavior is undefined and can change in a later version.
- * This also means that one can only ever find the first value returned until
- * the multiple values are removed from the dictionary.
+ * Finds and removes a value for the given string key from the specified
+ * dictionary.  The value found is the value returned. In the event that there
+ * are multiple values with the same key in the dictionary, only one of them is
+ * returned.  Specifically, the first one found is returned, which should be the
+ * first one inserted, but technically this behavior is undefined and can change
+ * in a later version. If the value is not found, no value is removed from the
+ * list and this function returns NULL.
+ * @param d the dictionary from which to remove the value with the given key
+ * @param key the key string for the value desired
+ * @return NULL if the value is not found; otherwise, a pointer to that value
+ */
+FLYAPI void *dict_removes(dict * restrict d, const char * restrict key);
+/**
+ * Finds a value for the given object key from the specified dictionary. The
+ * value found is the value returned. In the event that there are multple values
+ * with the smae key in the dictioanry, only one of them is returned.
+ * Specifically, the first one found is returned, which should be the first one
+ * inserted, but technically this behavior is undefined and can change in a
+ * later version.  This also means that one can only ever find the first value
+ * returned until the multiple values are removed from the dictionary.
  * @param d the dictionary to search for the value with the given key
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
-FLYAPI void *dict_get(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_get(dict * restrict d, void * restrict key);
+/**
+ * Finds a value for the given string key from the specified dictionary. The
+ * value found is the value returned. In the event that there are multple values
+ * with the smae key in the dictioanry, only one of them is returned.
+ * Specifically, the first one found is returned, which should be the first one
+ * inserted, but technically this behavior is undefined and can change in a
+ * later version.  This also means that one can only ever find the first value
+ * returned until the multiple values are removed from the dictionary.
+ * @param d the dictionary to search for the value with the given key
+ * @param key the key string for the value desired
+ * @return NULL if the value is not found; otherwise a pointer to that value
+ */
+FLYAPI void *dict_gets(dict * restrict d, const char * restrict key);
 /**
  * Iterates through the dictionary, applying the specified callback function to
  * each node in the dictionary.
