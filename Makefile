@@ -26,7 +26,7 @@ src/llnodes.o: llnodes.h common.h
 
 libflytools.a($(OBJ)): $(OBJ)
 
-test:
+test: all
 	$(MAKE) -C test run
 
 test_clean:

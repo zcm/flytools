@@ -1,6 +1,6 @@
 TESTS = $(patsubst %.c,%,$(wildcard test_*.c))
 
-CFLAGS += -I../include -lcmocka -Wall -O3 -DFLYAPIBUILD -std=gnu99
+CFLAGS += -I../include -lcmocka -Wall -O3 -std=gnu99
 
 all: $(TESTS)
 

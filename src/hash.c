@@ -41,10 +41,10 @@ static inline unsigned int _rotr1(unsigned int value) {
 #endif
 
 #define hash_macro_v(constant, itr, itr_body, terminal_case, body) \
-    register unsigned int itr = 0; \
-    register unsigned int ret = constant; \
+    register size_t itr = 0; \
+    register size_t ret = constant; \
     while( terminal_case ) { \
-        ret ^= (unsigned int)s[itr]+itr; \
+        ret ^= (size_t) s[itr] + itr; \
         ret = _rotr1(ret); \
         itr_body \
         i++; \
@@ -62,17 +62,17 @@ static inline unsigned int _rotr1(unsigned int value) {
 #undef _rotr1
 #endif
 
-FLYAPI unsigned int blind_bounded_hash_string(
+FLYAPI size_t blind_bounded_hash_string(
     const char *s,
     const size_t limit) {
   hash_macro(i, i < limit);
 }
 
-unsigned int hash_nstring(const char *s, const size_t limit) {
+FLYAPI size_t hash_nstring(const char *s, const size_t limit) {
   hash_macro(i, s[i] && i < limit);
 }
 
-unsigned int hash_string(const char *s) {
+FLYAPI size_t hash_string(const char *s) {
   hash_macro(i, s[i]);
 }
 
@@ -80,17 +80,13 @@ unsigned int hash_string(const char *s) {
 #undef hash_macro_c
 #undef hash_macro_v
 
-FLYAPI unsigned int hash_pointer_using(
+FLYAPI size_t hash_pointer_using(
     const void *ptr,
-    unsigned int (*hashfn)(const char *, const size_t)) {
+    size_t (*hashfn)(const char *, const size_t)) {
   return (*hashfn)((char *)&ptr, sizeof(void *)/sizeof(char));
 }
 
 FLYAPI unsigned int hash_pointer(const void *ptr) {
   return hash_pointer_using(ptr, &blind_bounded_hash_string);
-}
-
-FLYAPI unsigned int compress_hash(const unsigned int k, const unsigned int n) {
-  return k % n;
 }
 
