@@ -36,7 +36,8 @@ typedef struct flykind {
 } flykind;
 
 FLYAPI void flyobj_del(flyobj *obj);
-FLYAPI void flyobj_init(flyobj *obj, void *(*allocproc)(size_t));
+FLYAPI void flyobj_init(
+    flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *));
 FLYAPI void flyobj_set_freeproc(flyobj *obj, void (*proc)(void *));
 FLYAPI void *(*flyobj_get_default_allocproc())(size_t);
 FLYAPI void flyobj_set_default_allocproc(void *(*proc)(size_t));

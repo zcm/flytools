@@ -7,13 +7,13 @@
 
 #include "dict.h"
 
-int dict_setup(void **state) {
+int dict_test_setup(void **state) {
   (void) state;
 
   return 0;
 }
 
-int dict_teardown(void **state) {
+int dict_test_teardown(void **state) {
   (void) state;
 
   return 0;
@@ -389,21 +389,24 @@ void test_dict_null_as_key(void **state) {
   dict_del(d);
 }
 
+#define dict_unit_test(f) \
+  cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_dict_new),
-      cmocka_unit_test(test_dict_put_then_get),
-      cmocka_unit_test(test_dict_puts_then_gets),
-      cmocka_unit_test(test_dict_put_then_remove),
-      cmocka_unit_test(test_dict_puts_then_removes),
-      cmocka_unit_test(test_dict_put_puts_get_gets_remove_removes_combo),
-      cmocka_unit_test(test_dict_get_from_empty),
-      cmocka_unit_test(test_dict_remove_from_empty),
-      cmocka_unit_test(test_dict_gets_from_empty),
-      cmocka_unit_test(test_dict_removes_from_empty),
-      cmocka_unit_test(test_dict_null_as_key),
+      dict_unit_test(test_dict_put_then_get),
+      dict_unit_test(test_dict_puts_then_gets),
+      dict_unit_test(test_dict_put_then_remove),
+      dict_unit_test(test_dict_puts_then_removes),
+      dict_unit_test(test_dict_put_puts_get_gets_remove_removes_combo),
+      dict_unit_test(test_dict_get_from_empty),
+      dict_unit_test(test_dict_remove_from_empty),
+      dict_unit_test(test_dict_gets_from_empty),
+      dict_unit_test(test_dict_removes_from_empty),
+      dict_unit_test(test_dict_null_as_key),
   };
 
   return cmocka_run_group_tests_name(
-      "flytools dict", tests, dict_setup, dict_teardown);
+      "flytools dict", tests, NULL, NULL);
 }

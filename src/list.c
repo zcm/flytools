@@ -81,24 +81,29 @@ static inline listkind *listkind_shadowcast(flykind *kind) {
 #endif
 
 FLYAPI list *list_new() {
-  return list_new_kind_with(LISTKIND_DLINK, flyobj_get_default_allocproc());
+  return list_new_kind_with(
+      LISTKIND_DLINK,
+      flyobj_get_default_allocproc(), flyobj_get_default_freeproc());
 }
 
 FLYAPI list *list_new_kind(listkind *kind) {
-  return list_new_kind_with(kind, flyobj_get_default_allocproc());
+  return list_new_kind_with(
+      kind, flyobj_get_default_allocproc(), flyobj_get_default_freeproc());
 }
 
-FLYAPI list *list_new_with(void *(*allocproc)(size_t)) {
-  return list_new_kind_with(LISTKIND_DLINK, allocproc);
+FLYAPI list *list_new_with(
+    void *(*allocproc)(size_t), void (*freeproc)(void *)) {
+  return list_new_kind_with(LISTKIND_DLINK, allocproc, freeproc);
 }
 
-FLYAPI list *list_new_kind_with(listkind *kind, void *(*allocproc)(size_t)) {
+FLYAPI list *list_new_kind_with(
+    listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *)) {
   list *ret = (list *)(*allocproc)(sizeof(list));
   FLY_ERR_CLEAR;
   if(ret != NULL) {
-    flyobj_init((flyobj *)ret, allocproc);
-    flyobj_set_id((flyobj *)ret, FLYTOOLS_TYPE_LIST);
-    ret->kind = (flykind *)kind;
+    flyobj_init((flyobj *) ret, allocproc, freeproc);
+    flyobj_set_id((flyobj *) ret, FLYTOOLS_TYPE_LIST);
+    ret->kind = (flykind *) kind;
     kind->init(ret);
   } else {
     FLY_ERR(EFLYNOMEM);
