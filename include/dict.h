@@ -33,7 +33,7 @@ typedef struct dictnode {
 	void *data; //!< The data pointer for this node.
 	void *key; //!< The key string/object for this node.
   int (*matches)(
-      const struct dictnode *, const void *, const void *); //!< Key matcher for this node.
+      const struct dictnode *, const void *); //!< Key matcher for this node.
 } dictnode;
 
 /**
@@ -93,7 +93,7 @@ FLYAPI dictnode *dictnode_alloc();
  */
 FLYAPI dictnode *dictnode_new(
     void * restrict key, void *data,
-    int (*matches)(const struct dictnode *, const void *, const void *),
+    int (*matches)(const struct dictnode *, const void *),
     void *(*alloc_callback)(size_t));
 /**
  * Frees the specified dictionary node with the given callback function. Since
@@ -219,7 +219,7 @@ FLYAPI void dict_puts(dict * restrict d, char * restrict key, void *value);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise, a pointer to that value
  */
-FLYAPI void *dict_remove(dict * restrict d, const void * restrict key);
+FLYAPI void *dict_remove(dict * restrict d, void * restrict key);
 /**
  * Finds and removes a value for the given string key from the specified
  * dictionary.  The value found is the value returned. In the event that there
@@ -232,7 +232,7 @@ FLYAPI void *dict_remove(dict * restrict d, const void * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise, a pointer to that value
  */
-FLYAPI void *dict_removes(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_removes(dict * restrict d, char * restrict key);
 /**
  * Finds a value for the given object key from the specified dictionary. The
  * value found is the value returned. In the event that there are multple values
@@ -258,7 +258,7 @@ FLYAPI void *dict_get(dict * restrict d, void * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
-FLYAPI void *dict_gets(dict * restrict d, const char * restrict key);
+FLYAPI void *dict_gets(dict * restrict d, char * restrict key);
 /**
  * Iterates through the dictionary, applying the specified callback function to
  * each node in the dictionary.
