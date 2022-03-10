@@ -342,6 +342,53 @@ void test_dict_removes_from_empty(void **state) {
   dict_del(d);
 }
 
+void test_dict_null_as_key(void **state) {
+  (void) state;
+
+  dict *d;
+  assert_non_null(d = dict_new(32));
+
+  char *one = "first", *two = "second";
+
+  dict_put(d, one, "uno");
+  assert_int_equal(d->size, 1);
+  dict_put(d, NULL, "cero");
+  assert_int_equal(d->size, 2);
+  assert_true(verify_dict_size(d));
+  dict_put(d, two, "dos");
+  assert_int_equal(d->size, 3);
+  assert_true(verify_dict_size(d));
+
+  char *value;
+
+  assert_non_null(value = dict_get(d, one));
+  assert_string_equal(value, "uno");
+  assert_int_equal(d->size, 3);
+  assert_true(verify_dict_size(d));
+  assert_non_null(value = dict_get(d, NULL));
+  assert_string_equal(value, "cero");
+  assert_int_equal(d->size, 3);
+  assert_true(verify_dict_size(d));
+  assert_non_null(value = dict_get(d, two));
+  assert_string_equal(value, "dos");
+  assert_int_equal(d->size, 3);
+  assert_true(verify_dict_size(d));
+
+  assert_non_null(value = dict_remove(d, NULL));
+  assert_string_equal(value, "cero");
+  assert_int_equal(d->size, 2);
+  assert_true(verify_dict_size(d));
+
+  assert_null(value = dict_get(d, NULL));
+  assert_int_equal(d->size, 2);
+  assert_true(verify_dict_size(d));
+  assert_null(value = dict_remove(d, NULL));
+  assert_int_equal(d->size, 2);
+  assert_true(verify_dict_size(d));
+
+  dict_del(d);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_dict_new),
@@ -354,6 +401,7 @@ int main(void) {
       cmocka_unit_test(test_dict_remove_from_empty),
       cmocka_unit_test(test_dict_gets_from_empty),
       cmocka_unit_test(test_dict_removes_from_empty),
+      cmocka_unit_test(test_dict_null_as_key),
   };
 
   return cmocka_run_group_tests_name(
