@@ -27,10 +27,11 @@ FLYAPI void flyobj_del(flyobj *obj) {
   }
 }
 
-FLYAPI void flyobj_init(flyobj *obj, void *(*allocproc)(size_t)) {
+FLYAPI void flyobj_init(
+    flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *)) {
   if (obj != NULL) {
     obj->allocproc = allocproc;
-    obj->freeproc = flyobj_get_default_freeproc();
+    obj->freeproc = freeproc;
   } else {
     FLY_ERR(EFLYBADARG);
   }

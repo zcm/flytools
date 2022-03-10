@@ -49,8 +49,10 @@ extern FLYAPI listkind *LISTKIND_SLINK;
 
 FLYAPI list *list_new();
 FLYAPI list *list_new_kind(listkind *kind);
-FLYAPI list *list_new_with(void *(*allocproc)(size_t));
-FLYAPI list *list_new_kind_with(listkind *kind, void *(*allocproc)(size_t));
+FLYAPI list *list_new_with(
+    void *(*allocproc)(size_t), void (*freeproc)(void *));
+FLYAPI list *list_new_kind_with(
+    listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *));
 FLYAPI void list_del(list *l);
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *));
 FLYAPI size_t list_size(list *l);

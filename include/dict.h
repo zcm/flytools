@@ -102,13 +102,7 @@ FLYAPI dictnode *dictnode_new(
  * @param dnode the dictionary node to destroy
  * @param free_callback the callback function used to destroy the node
  */
-FLYAPI void dictnode_del_with(dictnode *dnode, void (*free_callback)(void *));
-/**
- * Frees the specified dictionary node. Uses the default freeing routine,
- * free().
- * @param dnode the dictionary node to destroy
- */
-FLYAPI void dictnode_del(dictnode *dnode);
+FLYAPI void dictnode_del(dictnode *dnode, void (*free_callback)(void *));
 
 /**
  * Allocates a new dictionary using the specified callback function. Does no
@@ -122,16 +116,6 @@ FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t));
  * @return a pointer to the newly allocated dictionary
  */
 FLYAPI dict *dict_alloc();
-/**
- * Frees the specified dictionary using the given callback function. Normally,
- * one does not need to call this function since the destructor should be set at
- * the time the dictionary is created. This function is typically called
- * internally when the dictionary is destroyed.
- * @param d the dictionary to destroy
- * @param free_callback the callback function used to free the dictionary
- * @see dict_set_destructor()
- */
-FLYAPI void dict_del_with(dict *d, void (*free_callback)(void *));
 /**
  * Frees the specified dictionary. Uses the default freeing routine, free(),
  * unless a destructor callback has been set for the given dictionary. In that
@@ -151,7 +135,9 @@ FLYAPI void dict_del(dict *d);
  * @param alloc_callback the callback function for allocating this dictionary
  * @see list
  */
-FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(size_t));
+FLYAPI void dict_init_with(
+    dict *d, const unsigned int size,
+    void *(*alloc_callback)(size_t), void (*free_callback)(void *));
 /**
  * Initializes the specified dictionary with a bucket array of size. The bucket
  * array is an array of doubly linked lists (list *). The performance of this
@@ -173,7 +159,9 @@ FLYAPI void dict_init(dict *d, const unsigned int size);
  * @param alloc_callback the callback function for allocating this dictionary
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_new_with(const size_t size, void *(*alloc_callback)(size_t));
+FLYAPI dict *dict_new_with(
+    const size_t size,
+    void *(*alloc_callback)(size_t), void (*free_callback)(void *));
 /**
  * Allocates and initializes a new dictionary with the specified number of
  * buckets (size). The performance of this dictionary is much, much better when

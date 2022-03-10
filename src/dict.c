@@ -80,7 +80,7 @@ FLYAPI dictnode *dictnode_new(
   return ret;
 }
 
-FLYAPI void dictnode_del_with(dictnode *dnode, void (*free_callback)(void *)) {
+FLYAPI void dictnode_del(dictnode *dnode, void (*free_callback)(void *)) {
   FLY_ERR_CLEAR;
   if (dnode != NULL) {
     if (dnode->matches == &dictnode_key_str_matches) {
@@ -90,10 +90,6 @@ FLYAPI void dictnode_del_with(dictnode *dnode, void (*free_callback)(void *)) {
   } else {
     FLY_ERR(EFLYBADARG);
   }
-}
-
-FLYAPI void dictnode_del(dictnode *dnode) {
-	dictnode_del_with(dnode, &free);
 }
 
 FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t)) {
@@ -109,7 +105,9 @@ FLYAPI dict *dict_alloc() {
 	return dict_alloc_with(&malloc);
 }
 
-FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callback)(size_t)) {
+FLYAPI void dict_init_with(
+    dict *d, const unsigned int size,
+    void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
 	register unsigned int i = 0;
   FLY_ERR_CLEAR;
   if (d != NULL) {
@@ -120,9 +118,9 @@ FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callb
       d->size = 0;
       d->maxsize = size;
       d->alloc_callback = alloc_callback;
-      d->free_callback = NULL;
+      d->free_callback = free_callback;
       while(i < size) {
-        d->buckets[i] = list_new_with(alloc_callback);
+        d->buckets[i] = list_new_with(alloc_callback, free_callback);
         if (d->buckets[i] == NULL) {
           FLY_ERR(EFLYNOMEM);
           break;
@@ -136,46 +134,44 @@ FLYAPI void dict_init_with(dict *d, const unsigned int size, void *(*alloc_callb
 }
 
 FLYAPI void dict_init(dict *d, const unsigned int size) {
-	dict_init_with(d, size, &malloc);
+	dict_init_with(d, size, &malloc, &free);
 }
 
-FLYAPI dict *dict_new_with(const size_t size, void *(*alloc_callback)(size_t)) {
+FLYAPI dict *dict_new_with(
+    const size_t size,
+    void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
 	dict *ret = dict_alloc_with(alloc_callback);
   FLY_ERR_CLEAR;
 	if(ret == NULL) {
     FLY_ERR(EFLYNOMEM);
 	} else {
-    dict_init_with(ret, size, alloc_callback);
+    dict_init_with(ret, size, alloc_callback, free_callback);
   }
 	return ret;
 }
 
 FLYAPI dict *dict_new(const size_t size) {
-	return dict_new_with(size, &malloc);
+	return dict_new_with(size, &malloc, &free);
 }
 
-FLYAPI void dict_del_with(dict *d, void (*free_callback)(void *)) /*@-compdestroy@*/ {
+FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
   unsigned int i = 0;
   FLY_ERR_CLEAR;
   if (d != NULL) {
     while(i < d->maxsize) {
       while(list_size(d->buckets[i]) > 0) {
         dictnode *this_node = list_pop(d->buckets[i]);
-        dictnode_del(this_node);
+        dictnode_del(this_node, d->free_callback);
       }
       assert(list_size(d->buckets[i]) == 0);
       list_del(d->buckets[i]);
       i++;
     }
-    (*free_callback)(d->buckets);
-    (*free_callback)(d);
+    d->free_callback(d->buckets);
+    d->free_callback(d);
   } else {
     FLY_ERR(EFLYBADARG);
   }
-}
-
-FLYAPI void dict_del(dict *d) {
-	dict_del_with(d, !d->free_callback ? &free : d->free_callback);
 }
 
 FLYAPI void dict_set_freeproc(dict *d, void (*free_callback)(void *)) {
