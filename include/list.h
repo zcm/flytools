@@ -62,6 +62,9 @@ FLYAPI void list_unshift(list *l, void *data);
 FLYAPI void list_concat(list *l1, list *l2);
 FLYAPI void list_concat_into(list *l1, list *l2);
 
+FLYAPI void *list_find_first(list *l, int (*matcher)(void *));
+FLYAPI void *list_remove_first(list *l, int (*matcher)(void *));
+
 FLYAPI void listkind_dlink_init(list *l);
 FLYAPI void listkind_dlink_del(list *l);
 FLYAPI size_t listkind_dlink_get_size(list *l);

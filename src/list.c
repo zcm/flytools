@@ -17,6 +17,8 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
+
 #include "list.h"
 
 FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
@@ -273,6 +275,119 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
       list_del(l2);
     }
   }
+}
+
+FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
+  FLY_ERR_CLEAR;
+
+  if (!(l && matcher)) {
+    FLY_ERR(EFLYBADARG);
+    return NULL;
+  }
+
+  if (!list_size(l)) {
+    return NULL;
+  }
+
+  if (l->kind == (flykind *) LISTKIND_DLINK
+      || l->kind == (flykind *) LISTKIND_SLINK) {
+    sllistnode *head = ((list_slink_ds *) l->datastore)->head,
+               *current = head->next;
+
+    while (current != head) {
+      if (matcher(current->data)) {
+        return current->data;
+      }
+      current = current->next;
+    }
+
+    return NULL;
+  }
+
+  FLY_ERR(EFLYINTERNAL);
+  return NULL;
+}
+
+static inline uintptr_t __dllist_remove_first(list *l, int (*matcher)(void *)) {
+  dllistnode *head = ((list_dlink_ds *) l->datastore)->head,
+             *current = head->next;
+
+  while (current != head) {
+    if (matcher(current->data)) {
+      void *data = current->data;
+
+      current->prev->next = current->next;
+      current->next->prev = current->prev;
+
+      ((flyobj *) l)->freeproc(current);
+
+      return (uintptr_t) data ^ (uintptr_t) 0x1;
+    }
+
+    current = current->next;
+  }
+
+  return 0x0;
+}
+
+static inline uintptr_t __sllist_remove_first(list *l, int (*matcher)(void *)) {
+  sllistnode *head = ((list_slink_ds *) l->datastore)->head,
+             *prev = head,
+             *current = head->next;
+
+  while (current != head) {
+    if (matcher(current->data)) {
+      void *data = current->data;
+      list_slink_ds *ds = (list_slink_ds *) l->datastore;
+
+      if (current == ds->last) {
+        ds->last = prev;
+      }
+
+      prev->next = current->next;
+
+      ((flyobj *) l)->freeproc(current);
+
+      return (uintptr_t) data ^ (uintptr_t) 0x1;
+    }
+
+    current = (prev = current)->next;
+  }
+
+  return 0x0;
+}
+
+static inline uintptr_t __list_remove_first(list *l, int (*matcher)(void *)) {
+  FLY_ERR_CLEAR;
+
+  if (!(l && matcher)) {
+    FLY_ERR(EFLYBADARG);
+    return 0x0;
+  }
+
+  if (!list_size(l)) {
+    return 0x0;
+  }
+
+  if (l->kind == (flykind *) LISTKIND_DLINK) {
+    return __dllist_remove_first(l, matcher);
+  } else if (l->kind == (flykind *) LISTKIND_SLINK) {
+    return __sllist_remove_first(l, matcher);
+  }
+
+  FLY_ERR(EFLYINTERNAL);
+  return 0x0;
+}
+
+FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
+  uintptr_t data = __list_remove_first(l, matcher);
+
+  if (data) {
+    --((list_slink_ds *) l->datastore)->size;
+    return (void *) (data ^ 0x1);
+  }
+
+  return NULL;
 }
 
 static inline dllistnode *listkind_dlink_get_head(list * restrict l) {
