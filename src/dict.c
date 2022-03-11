@@ -245,6 +245,22 @@ int __key_str_matches(void *node) {
       (dictnode *) node, &dictnode_key_str_matches);
 }
 
+static inline dictnode *__dict_lookup_using(
+    dict * restrict d, void * restrict key,
+    dictnode *(*lookup_proc)(dict * restrict, void * restrict)) {
+  FLY_ERR_CLEAR;
+
+  if (!d) {
+    FLY_ERR(EFLYBADARG);
+    return NULL;
+  }
+
+  match_key = key;
+  dictnode *found = lookup_proc(d, key);
+  match_key = NULL;
+  return found;
+}
+
 static dictnode *__dict_remove_keyed_ptr(
     dict * restrict d, void * restrict key) {
   return (dictnode *) list_remove_first(
@@ -257,84 +273,46 @@ static dictnode *__dict_remove_keyed_str(
       d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
 }
 
-static inline void *__dict_remove_by_key(
-    dict * restrict d, void * restrict key,
-    dictnode *(*remove_key_proc)(dict * restrict, void * restrict)) {
-  FLY_ERR_CLEAR;
-
-  if (!d) {
-    FLY_ERR(EFLYBADARG);
-    return NULL;
-  }
-
-  match_key = key;
-
-  dictnode *found = remove_key_proc(d, key);
-
-  match_key = NULL;
-
-  if (found) {
-    void *data = found->data;
-    dictnode_del(found, d->free_callback);
-    d->size--;
-    return data;
-  }
-
+#define __dict_remove_using(proc) \
+  dictnode *node = __dict_lookup_using(d, key, proc); \
+  if (node) { \
+    void *data = node->data; \
+    d->size--; \
+    dictnode_del(node, d->free_callback); \
+    return data; \
+  } \
   return NULL;
-}
 
 FLYAPI void *dict_remove(dict * restrict d, void * restrict key) {
-  return __dict_remove_by_key(d, key, &__dict_remove_keyed_ptr);
+  __dict_remove_using(&__dict_remove_keyed_ptr);
 }
 
 FLYAPI void *dict_removes(dict * restrict d, char * restrict key) {
-  return __dict_remove_by_key(d, key, &__dict_remove_keyed_str);
+  __dict_remove_using(&__dict_remove_keyed_str);
+}
+
+#undef __dict_remove_using
+
+static dictnode *__dict_find_keyed_ptr(
+    dict * restrict d, void * restrict key) {
+  return (dictnode *) list_find_first(
+      d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
+}
+
+static dictnode *__dict_find_keyed_str(
+    dict * restrict d, void * restrict key) {
+  return (dictnode *) list_find_first(
+      d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
 }
 
 FLYAPI void *dict_get(dict * restrict d, void * restrict key) {
-  FLY_ERR_CLEAR;
-
-  if (!d) {
-    FLY_ERR(EFLYBADARG);
-    return NULL;
-  }
-
-  match_key = key;
-
-  dictnode *found =
-    (dictnode *) list_find_first(
-        d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
-
-  match_key = NULL;
-
-  if (found) {
-    return found->data;
-  }
-
-  return NULL;
+  dictnode *node = __dict_lookup_using(d, key, &__dict_find_keyed_ptr);
+  return node ? node->data : NULL;
 }
 
 FLYAPI void *dict_gets(dict * restrict d, char * restrict key) {
-  FLY_ERR_CLEAR;
-
-  if (!d) {
-    FLY_ERR(EFLYBADARG);
-    return NULL;
-  }
-
-  match_key = key;
-
-  dictnode *found =
-    (dictnode *) list_find_first(
-        d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
-
-  match_key = NULL;
-
-  if (found) {
-    return found->data;
-  }
-
-  return NULL;
+  dictnode *node = __dict_lookup_using(d, key, &__dict_find_keyed_str);
+  return node ? node->data : NULL;
 }
 
 /*FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {
