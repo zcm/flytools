@@ -1,5 +1,7 @@
+CC := clang
+#OBJ = $(patsubst %.c,%.o,$(wildcard src/*.c))
 OBJ = src/common.o src/generics.o src/dict.o src/hash.o src/list.o src/llnodes.o
-CFLAGS += -Iinclude -Wall -O3 -DFLYAPIBUILD -std=gnu99
+CFLAGS += -Iinclude -Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
 VPATH = src:include:.
 
 # uncomment to enable compilation of scanner code
@@ -7,6 +9,8 @@ VPATH = src:include:.
 
 # uncomment to enable compilation of justification code
 #OBJ += src/justify.o
+
+CTEST = -g -fsanitize=address -fno-omit-frame-pointer -fno-common
 
 all: $(OBJ) build/libflytools.a($(OBJ))
 
@@ -26,14 +30,12 @@ src/llnodes.o: llnodes.h common.h
 
 libflytools.a($(OBJ)): $(OBJ)
 
-test: all
+test: clean
+	CFLAGS="$(CFLAGS) $(CTEST)" $(MAKE) -eC .
 	$(MAKE) -C test run
 
 test_clean:
 	$(MAKE) -C test clean
 
 clean: test_clean
-	rm -f build/*.a
-	rm -f build/*.o
-	rm -f src/*.o
-	rm -f src/scanner.c
+	rm -f build/*.a build/*.o */*.tmp src/*.o src/scanner.c

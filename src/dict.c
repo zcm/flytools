@@ -86,7 +86,7 @@ FLYAPI void dictnode_del(dictnode *dnode, void (*free_callback)(void *)) {
   FLY_ERR_CLEAR;
   if (dnode != NULL) {
     if (dnode->matches == &dictnode_key_str_matches) {
-      (*free_callback)(dnode->key);
+      free(dnode->key);
     }
     (*free_callback)(dnode);
   } else {
@@ -239,7 +239,26 @@ int __key_ptr_matches(void *node) {
       (dictnode *) node, &dictnode_key_ptr_matches);
 }
 
-FLYAPI void *dict_remove(dict * restrict d, void * restrict key) {
+int __key_str_matches(void *node) {
+  return ((dictnode *) node)->matches(
+      (dictnode *) node, &dictnode_key_str_matches);
+}
+
+static dictnode *__dict_remove_keyed_ptr(
+    dict * restrict d, void * restrict key) {
+  return (dictnode *) list_remove_first(
+      d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
+}
+
+static dictnode *__dict_remove_keyed_str(
+    dict * restrict d, void * restrict key) {
+  return (dictnode *) list_remove_first(
+      d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
+}
+
+static inline void *__dict_remove_by_key(
+    dict * restrict d, void * restrict key,
+    dictnode *(*remove_key_proc)(dict * restrict, void * restrict)) {
   FLY_ERR_CLEAR;
 
   if (!d) {
@@ -249,46 +268,26 @@ FLYAPI void *dict_remove(dict * restrict d, void * restrict key) {
 
   match_key = key;
 
-  dictnode *found =
-    (dictnode *) list_remove_first(
-        d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
+  dictnode *found = remove_key_proc(d, key);
 
   match_key = NULL;
 
   if (found) {
+    void *data = found->data;
+    dictnode_del(found, d->free_callback);
     d->size--;
-    return found->data;
+    return data;
   }
 
   return NULL;
 }
 
-int __key_str_matches(void *node) {
-  return ((dictnode *) node)->matches(
-      (dictnode *) node, &dictnode_key_str_matches);
+FLYAPI void *dict_remove(dict * restrict d, void * restrict key) {
+  return __dict_remove_by_key(d, key, &__dict_remove_keyed_ptr);
 }
 
 FLYAPI void *dict_removes(dict * restrict d, char * restrict key) {
-  FLY_ERR_CLEAR;
-
-  if (!(d && key)) {
-    FLY_ERR(EFLYBADARG);
-  }
-
-  match_key = key;
-
-  dictnode *found =
-    (dictnode *) list_remove_first(
-        d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
-
-  match_key = NULL;
-
-  if (found) {
-    d->size--;
-    return found->data;
-  }
-
-  return NULL;
+  return __dict_remove_by_key(d, key, &__dict_remove_keyed_str);
 }
 
 FLYAPI void *dict_get(dict * restrict d, void * restrict key) {
