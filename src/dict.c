@@ -122,7 +122,8 @@ FLYAPI void dict_init_with(
       d->alloc_callback = alloc_callback;
       d->free_callback = free_callback;
       while(i < size) {
-        d->buckets[i] = list_new_with(alloc_callback, free_callback);
+        d->buckets[i] =
+            list_new_kind_with(LISTKIND_SLINK, alloc_callback, free_callback);
         if (d->buckets[i] == NULL) {
           FLY_ERR(EFLYNOMEM);
           break;
