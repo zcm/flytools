@@ -1,19 +1,21 @@
-TESTS = $(patsubst %.c,%,$(wildcard test_*.c))
+CC := clang
+TESTS = $(patsubst %.c,bin/%,$(wildcard test_*.c))
 
-CFLAGS += -I../include -lcmocka -Wall -O3 -std=gnu99
+CFLAGS += -g -I../include -lcmocka -Wall \
+					-fsanitize=address -fno-omit-frame-pointer -fno-common
 
 all: $(TESTS)
 
 .PHONY: clean run
 
-% : %.c ../build/libflytools.a
+bin/% : %.c ../build/libflytools.a
 	$(CC) $(CFLAGS) -o $@ $^
 
 ../build/flytools.a:
 	$(MAKE) -C ..
 
 run: all
-	$(foreach test,$(TESTS),./$(test);)
+	$(foreach test,$(TESTS),$(test) && ) true
 
 clean:
 	rm -f *.o $(TESTS)

@@ -1,4 +1,7 @@
 build/*
 !build/.gitkeep
+test/bin/*
+!test/bin/.gitkeep
 *.[oa]
 .*.un~
+*.tmp
