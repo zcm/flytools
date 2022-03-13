@@ -67,7 +67,7 @@ FLYAPI dictnode *dictnode_alloc() {
 }
 
 FLYAPI dictnode *dictnode_new(
-    void * restrict key, void *data,
+    void *key, void *data,
     int (*matches)(const struct dictnode *, const void *),
     void *(*alloc_callback)(size_t)) {
   dictnode *ret = dictnode_alloc_with(alloc_callback);
@@ -191,7 +191,7 @@ FLYAPI void dict_set_freeproc(dict *d, void (*free_callback)(void *)) {
   }
 }
 
-FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key) {
+FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
   FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
     return hash_string(key) % d->maxsize;
@@ -207,7 +207,7 @@ static inline void __dict_put_to_bucket_atomic(
   ++*size;
 }
 
-FLYAPI void dict_put(dict * restrict d, void * restrict key, void *value) {
+FLYAPI void dict_put(dict * restrict d, void *key, void *value) {
   FLY_ERR_CLEAR;
 
   if (d) {
@@ -221,7 +221,7 @@ FLYAPI void dict_put(dict * restrict d, void * restrict key, void *value) {
   }
 }
 
-FLYAPI void dict_puts(dict * restrict d, char * restrict key, void *value) {
+FLYAPI void dict_puts(dict * restrict d, char *key, void *value) {
   FLY_ERR_CLEAR;
 
   if (d != NULL && key != NULL) {
@@ -246,8 +246,8 @@ int __key_str_matches(void *node) {
 }
 
 static inline dictnode *__dict_lookup_using(
-    dict * restrict d, void * restrict key,
-    dictnode *(*lookup_proc)(dict * restrict, void * restrict)) {
+    dict * restrict d, void *key,
+    dictnode *(*lookup_proc)(dict * restrict, void *)) {
   FLY_ERR_CLEAR;
 
   if (!d) {
@@ -261,14 +261,12 @@ static inline dictnode *__dict_lookup_using(
   return found;
 }
 
-static dictnode *__dict_remove_keyed_ptr(
-    dict * restrict d, void * restrict key) {
+static dictnode *__dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return (dictnode *) list_remove_first(
       d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
 }
 
-static dictnode *__dict_remove_keyed_str(
-    dict * restrict d, void * restrict key) {
+static dictnode *__dict_remove_keyed_str(dict * restrict d, void *key) {
   return (dictnode *) list_remove_first(
       d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
 }
@@ -283,34 +281,32 @@ static dictnode *__dict_remove_keyed_str(
   } \
   return NULL;
 
-FLYAPI void *dict_remove(dict * restrict d, void * restrict key) {
+FLYAPI void *dict_remove(dict * restrict d, void *key) {
   __dict_remove_using(&__dict_remove_keyed_ptr);
 }
 
-FLYAPI void *dict_removes(dict * restrict d, char * restrict key) {
+FLYAPI void *dict_removes(dict * restrict d, char *key) {
   __dict_remove_using(&__dict_remove_keyed_str);
 }
 
 #undef __dict_remove_using
 
-static dictnode *__dict_find_keyed_ptr(
-    dict * restrict d, void * restrict key) {
+static dictnode *__dict_find_keyed_ptr(dict * restrict d, void *key) {
   return (dictnode *) list_find_first(
       d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
 }
 
-static dictnode *__dict_find_keyed_str(
-    dict * restrict d, void * restrict key) {
+static dictnode *__dict_find_keyed_str(dict * restrict d, void *key) {
   return (dictnode *) list_find_first(
       d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
 }
 
-FLYAPI void *dict_get(dict * restrict d, void * restrict key) {
+FLYAPI void *dict_get(dict * restrict d, void *key) {
   dictnode *node = __dict_lookup_using(d, key, &__dict_find_keyed_ptr);
   return node ? node->data : NULL;
 }
 
-FLYAPI void *dict_gets(dict * restrict d, char * restrict key) {
+FLYAPI void *dict_gets(dict * restrict d, char *key) {
   dictnode *node = __dict_lookup_using(d, key, &__dict_find_keyed_str);
   return node ? node->data : NULL;
 }

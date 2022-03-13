@@ -92,7 +92,7 @@ FLYAPI dictnode *dictnode_alloc();
  * @return a pointer to the newly allocated dictionary node
  */
 FLYAPI dictnode *dictnode_new(
-    void * restrict key, void *data,
+    void *key, void *data,
     int (*matches)(const struct dictnode *, const void *),
     void *(*alloc_callback)(size_t));
 /**
@@ -190,7 +190,7 @@ FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *));
  * @param key the key for which to calculate the index
  * @return the calculated hash index for the specified key
  */
-FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char * restrict key);
+FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key);
 /**
  * Inserts a value into the specified dictionary with the given object key. That
  * is, the value argument is associated with the pointer in the dictionary.
@@ -198,7 +198,7 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char * restrict
  * @param key the object key pointer to associate with the value
  * @param value the value that is being inserted into the dictionary
  */
-FLYAPI void dict_put(dict * restrict d, void * restrict key, void *value);
+FLYAPI void dict_put(dict * restrict d, void *key, void *value);
 /**
  * Inserts a value into the specified dictionary with the given string key. That
  * is, the value argument is associated with the given key in the dictionary.
@@ -206,7 +206,7 @@ FLYAPI void dict_put(dict * restrict d, void * restrict key, void *value);
  * @param key the key string to associate with the value
  * @param value the value that is being inserted into the dictionary
  */
-FLYAPI void dict_puts(dict * restrict d, char * restrict key, void *value);
+FLYAPI void dict_puts(dict * restrict d, char *key, void *value);
 /**
  * Finds and removes a value for the given object key from the specified
  * dictionary.  The value found is the value returned. In the event that there
@@ -219,7 +219,7 @@ FLYAPI void dict_puts(dict * restrict d, char * restrict key, void *value);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise, a pointer to that value
  */
-FLYAPI void *dict_remove(dict * restrict d, void * restrict key);
+FLYAPI void *dict_remove(dict * restrict d, void *key);
 /**
  * Finds and removes a value for the given string key from the specified
  * dictionary.  The value found is the value returned. In the event that there
@@ -232,7 +232,7 @@ FLYAPI void *dict_remove(dict * restrict d, void * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise, a pointer to that value
  */
-FLYAPI void *dict_removes(dict * restrict d, char * restrict key);
+FLYAPI void *dict_removes(dict * restrict d, char *key);
 /**
  * Finds a value for the given object key from the specified dictionary. The
  * value found is the value returned. In the event that there are multple values
@@ -245,7 +245,7 @@ FLYAPI void *dict_removes(dict * restrict d, char * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
-FLYAPI void *dict_get(dict * restrict d, void * restrict key);
+FLYAPI void *dict_get(dict * restrict d, void *key);
 /**
  * Finds a value for the given string key from the specified dictionary. The
  * value found is the value returned. In the event that there are multple values
@@ -258,7 +258,7 @@ FLYAPI void *dict_get(dict * restrict d, void * restrict key);
  * @param key the key string for the value desired
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
-FLYAPI void *dict_gets(dict * restrict d, char * restrict key);
+FLYAPI void *dict_gets(dict * restrict d, char *key);
 /**
  * Iterates through the dictionary, applying the specified callback function to
  * each node in the dictionary.
