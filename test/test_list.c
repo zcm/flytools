@@ -3,6 +3,9 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+#include <stdio.h>
+#include <string.h>
+
 #include "list.h"
 
 
@@ -660,6 +663,75 @@ void test_list_remove_first_null_entry_sl(void **state) {
   __test_list_remove_first_null_entry(LISTKIND_SLINK);
 }
 
+static uintptr_t prime = 1;
+static size_t index_sum = 0;
+static char order[6] = { 0 }, indices[6] = { 0 };
+
+int multiply_prime(void *data, size_t index) {
+  prime *= (uintptr_t) data;
+  index_sum += index;
+  return 0;
+}
+
+int record_order(void *data, size_t index) {
+  order[index] = (uintptr_t) data + '0';
+  indices[index] = index + '0';
+  return 0;
+}
+
+int record_order_r_stop(void *data, size_t index) {
+  record_order(data, 2 - index + 1);
+  return index == 2;
+}
+
+void test_list_foreach(void **state) {
+  (void) state;
+
+  list *l;
+  assert_non_null(l = list_new());
+
+  list_foreach(l, &multiply_prime);
+
+  assert_int_equal(prime, 1);
+  assert_int_equal(index_sum, 0);
+  assert_int_equal(list_size(l), 0);
+
+  list_unshift(l, (void *) 1);
+  list_unshift(l, (void *) 2);
+  list_unshift(l, (void *) 3);
+  list_unshift(l, (void *) 5);
+  list_unshift(l, (void *) 7);
+
+  list_foreach(l, &multiply_prime);
+
+  assert_int_equal(prime, 210);
+  assert_int_equal(index_sum, 10);
+  assert_int_equal(list_size(l), 5);
+
+  list_foreach(l, &record_order);
+
+  assert_string_equal("12357", order);
+  assert_string_equal("01234", indices);
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  list_foreach(l, &record_order_r_stop);
+
+  assert_int_equal(order[0], 0);
+  assert_int_equal(indices[0], 0);
+
+  order[0] = indices[0] = 'x';
+
+  assert_string_equal("x321", order);
+  assert_string_equal("x123", indices);
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  list_del(l);
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_list_new),
@@ -682,6 +754,7 @@ int main(void) {
       cmocka_unit_test(test_list_remove_first_sl),
       cmocka_unit_test(test_list_remove_first_null_entry_dl),
       cmocka_unit_test(test_list_remove_first_null_entry_sl),
+      cmocka_unit_test(test_list_foreach),
   };
 
   return cmocka_run_group_tests_name(

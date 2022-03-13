@@ -395,6 +395,21 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
   return NULL;
 }
 
+FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
+  FLY_ERR_CLEAR;
+
+  if (!(l && fn)) {
+    FLY_ERR(EFLYBADARG);
+    return;
+  }
+
+  size_t i = 0;
+  sllistnode *current, *head;
+  current = head = ((list_slink_ds *) l->datastore)->head;
+
+  while (head != (current = current->next) && !fn(current->data, i++));
+}
+
 static inline dllistnode *listkind_dlink_get_head(list * restrict l) {
   return ((list_dlink_ds *)l->datastore)->head;
 }
@@ -402,22 +417,6 @@ static inline dllistnode *listkind_dlink_get_head(list * restrict l) {
 static inline void listkind_dlink_set_head(list * restrict l, dllistnode *n) {
   ((list_dlink_ds *)l->datastore)->head = n;
 }
-
-/* This is very old code, back in the dark ages of callback iterators. I'm going
- * to comment it out and leave it this way because it's not even part of the API
- * any more. However, if we need it again, two things need to be done:
- *   1. The dlink and slink iterate callbacks are actually the same function, as
- *      dllistnode can be treated as an sllistnode for the purposes of this
- *      function.
- *   2. A way to stop iteration (e.g. for searches). Probably return a non-zero
- *      integer to terminate.
-void listkind_dlink_iterate_callback(list *l, void (*proc)(dllistnode *)) {
-  dllistnode *current = listkind_dlink_get_head(l);
-  while(dllistnode_get_next(current) != listkind_dlink_get_head(l)) {
-    (*proc)(current = dllistnode_get_next(current));
-  }
-}
- */
 
 FLYAPI void listkind_dlink_init(list *l) {
   void *(*allocproc)(size_t) = ((flyobj *)l)->allocproc;
