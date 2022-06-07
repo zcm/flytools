@@ -17,8 +17,18 @@
 #define __ZCM_HASH_CS_410_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "common.h"
+
+/**
+ * Computes a hash using xorshift64*. The implementation uses the variant
+ * A_1(12,25,27), multiplier M32.
+ *
+ * @param x the integer to hash
+ * @return the hash of the integer
+ */
+FLYAPI uint64_t hash_xorshift64s(uint64_t x);
 
 /**
  * Computes the uncompressed hash of the given string, ignoring null characters,

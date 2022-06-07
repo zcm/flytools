@@ -16,6 +16,13 @@
 
 #include "hash.h"
 
+FLYAPI uint64_t hash_xorshift64s(uint64_t x) {
+  /* Variant A_1(12,25,27), multiplier M32 */
+  x ^= x >> 12;
+  x ^= x << 25;
+  return (x ^ x << 27) * 0x2545F4914F6CDD1DULL;
+}
+
 // Turbo C doesn't like "static inline."
 // In light of this, if we're using Turbo C, we change this to a macro.
 // It should give us the same runtime efficiency.
