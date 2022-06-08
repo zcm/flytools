@@ -108,12 +108,18 @@ FLYAPI dict *dict_alloc() {
 }
 
 FLYAPI void dict_init_with(
-    dict *d, const unsigned int size,
+    dict *d, const size_t size,
     void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
-	register unsigned int i = 0;
   FLY_ERR_CLEAR;
   if (d != NULL) {
-    d->buckets = (list **)(*alloc_callback)(size * sizeof(list *));
+    if (alloc_callback == &malloc) {
+      d->buckets = (struct dictbucket *)
+        calloc(size, sizeof (struct dictbucket));
+    } else {
+      d->buckets = (struct dictbucket *)
+        memset((*alloc_callback)(size * sizeof(struct dictbucket)), 0, size);
+    }
+
     if(d->buckets == NULL) {
       FLY_ERR(EFLYNOMEM);
     } else {
@@ -121,22 +127,13 @@ FLYAPI void dict_init_with(
       d->maxsize = size;
       d->alloc_callback = alloc_callback;
       d->free_callback = free_callback;
-      while(i < size) {
-        d->buckets[i] =
-            list_new_kind_with(LISTKIND_SLINK, alloc_callback, free_callback);
-        if (d->buckets[i] == NULL) {
-          FLY_ERR(EFLYNOMEM);
-          break;
-        }
-        i++;
-      }
     }
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
-FLYAPI void dict_init(dict *d, const unsigned int size) {
+FLYAPI void dict_init(dict *d, const size_t size) {
 	dict_init_with(d, size, &malloc, &free);
 }
 
@@ -158,16 +155,23 @@ FLYAPI dict *dict_new(const size_t size) {
 }
 
 FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
-  unsigned int i = 0;
+  size_t i = 0;
+
   FLY_ERR_CLEAR;
+
   if (d != NULL) {
     while(i < d->maxsize) {
-      while(list_size(d->buckets[i]) > 0) {
-        dictnode *this_node = list_pop(d->buckets[i]);
-        dictnode_del(this_node, d->free_callback);
+      if (d->buckets[i].flags & 0x1) {
+        while (list_size(d->buckets[i].data) > 0) {
+          dictnode_del(list_pop(d->buckets[i].data), d->free_callback);
+        }
+
+        assert(list_size(d->buckets[i].data) == 0);
+        list_del(d->buckets[i].data);
+      } else if (d->buckets[i].data) {
+        dictnode_del(d->buckets[i].data, d->free_callback);
       }
-      assert(list_size(d->buckets[i]) == 0);
-      list_del(d->buckets[i]);
+
       i++;
     }
     d->free_callback(d->buckets);
@@ -178,12 +182,16 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
 }
 
 FLYAPI void dict_set_freeproc(dict *d, void (*free_callback)(void *)) {
-  unsigned int i = 0;
+  size_t i = 0;
+
   FLY_ERR_CLEAR;
+
   if (d != NULL) {
     d->free_callback = free_callback;
     while(i < d->maxsize) {
-      list_set_freeproc(d->buckets[i], free_callback);
+      if (d->buckets[i].flags & 0x1) {
+        list_set_freeproc(d->buckets[i].data, free_callback);
+      }
       i++;
     }
   } else {
@@ -201,10 +209,25 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
 	return 0;
 }
 
-static inline void __dict_put_to_bucket_atomic(
-    list *bucket, dictnode *node, size_t *size) {
-  list_push(bucket, node);
-  ++*size;
+static void __dict_put_to_bucket_atomic(
+    dict *d, struct dictbucket *bucket, dictnode *node) {
+  if (bucket->data) {
+    if (!(bucket->flags & 0x1)) {
+      void *existing = bucket->data;
+
+      bucket->data =
+        list_new_kind_with(LISTKIND_SLINK, d->alloc_callback, d->free_callback);
+
+      bucket->flags |= 0x1;
+      list_push((list *) bucket->data, existing);
+    }
+
+    list_push((list *) bucket->data, node);
+  } else {
+    bucket->data = node;
+  }
+
+  d->size++;
 }
 
 FLYAPI void dict_put(dict * restrict d, void *key, void *value) {
@@ -212,10 +235,9 @@ FLYAPI void dict_put(dict * restrict d, void *key, void *value) {
 
   if (d) {
     __dict_put_to_bucket_atomic(
-        d->buckets[(size_t) key % d->maxsize],
+        d, d->buckets + hash_xorshift64s((uint64_t) key) % d->maxsize,
         dictnode_new(
-            key, value, &dictnode_key_ptr_matches, d->alloc_callback),
-        &d->size);
+            key, value, &dictnode_key_ptr_matches, d->alloc_callback));
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -226,10 +248,9 @@ FLYAPI void dict_puts(dict * restrict d, char *key, void *value) {
 
   if (d != NULL && key != NULL) {
     __dict_put_to_bucket_atomic(
-        d->buckets[hash_string(key) % d->maxsize],
+        d, d->buckets + hash_string(key) % d->maxsize,
         dictnode_new(
-            strdup(key), value, &dictnode_key_str_matches, d->alloc_callback),
-        &d->size);
+            strdup(key), value, &dictnode_key_str_matches, d->alloc_callback));
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -261,14 +282,37 @@ static inline dictnode *__dict_lookup_using(
   return found;
 }
 
+static dictnode *__dict_remove_from_bucket(
+    struct dictbucket * restrict bucket, void *key, int (*matcher)(void *)) {
+  dictnode *node;
+
+  if (bucket->flags & 0x1) {
+    if (list_size((list *) bucket->data) > 1) {
+      return (dictnode *)
+        list_remove_first((list *) bucket->data, matcher);
+    }
+
+    node = list_pop((list *) bucket->data);
+    list_del((list *) bucket->data);
+    bucket->flags = 0x0;
+  } else {
+    node = (dictnode *) bucket->data;
+  }
+
+  bucket->data = 0x0;
+  return node;
+}
+
 static dictnode *__dict_remove_keyed_ptr(dict * restrict d, void *key) {
-  return (dictnode *) list_remove_first(
-      d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
+  return __dict_remove_from_bucket(
+      d->buckets + hash_xorshift64s((uint64_t) key) % d->maxsize,
+      key, &__key_ptr_matches);
 }
 
 static dictnode *__dict_remove_keyed_str(dict * restrict d, void *key) {
-  return (dictnode *) list_remove_first(
-      d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
+  return __dict_remove_from_bucket(
+      d->buckets + dict_get_hash_index(d, key),
+      key, &__key_str_matches);
 }
 
 #define __dict_remove_using(proc) \
@@ -291,14 +335,26 @@ FLYAPI void *dict_removes(dict * restrict d, char *key) {
 
 #undef __dict_remove_using
 
+static inline dictnode *__dict_find_in_bucket(
+    struct dictbucket * restrict bucket, void *key, int (*matcher)(void *)) {
+  if (bucket->flags & 0x1) {
+    return (dictnode *)
+      list_find_first((list *) bucket->data, matcher);
+  }
+
+  return (dictnode *) bucket->data;
+}
+
 static dictnode *__dict_find_keyed_ptr(dict * restrict d, void *key) {
-  return (dictnode *) list_find_first(
-      d->buckets[(size_t) key % d->maxsize], &__key_ptr_matches);
+  return __dict_find_in_bucket(
+      d->buckets + hash_xorshift64s((uint64_t) key) % d->maxsize,
+      key, &__key_ptr_matches);
 }
 
 static dictnode *__dict_find_keyed_str(dict * restrict d, void *key) {
-  return (dictnode *) list_find_first(
-      d->buckets[dict_get_hash_index(d, key)], &__key_str_matches);
+  return __dict_find_in_bucket(
+      d->buckets + dict_get_hash_index(d, key),
+      key, &__key_str_matches);
 }
 
 FLYAPI void *dict_get(dict * restrict d, void *key) {

@@ -36,6 +36,11 @@ typedef struct dictnode {
       const struct dictnode *, const void *); //!< Key matcher for this node.
 } dictnode;
 
+struct dictbucket {
+  uint_fast8_t flags;
+  void *data;
+};
+
 /**
  * A structure that represents a dictionary abstract data type (ADT). This
  * structure should be used explicitly with the provided dictionary-specific
@@ -47,7 +52,7 @@ typedef struct dict {
 	 * dictionary. The size of this array is stored in the maxsize member.
 	 * @see maxsize
 	 */
-	list **buckets;
+	struct dictbucket *buckets;
 	size_t size; //!< The number of elements stored in this dictionary.
 	/**
 	 * The number of buckets in this dictionary. Named because it is the maximum
@@ -136,7 +141,7 @@ FLYAPI void dict_del(dict *d);
  * @see list
  */
 FLYAPI void dict_init_with(
-    dict *d, const unsigned int size,
+    dict *d, const size_t size,
     void *(*alloc_callback)(size_t), void (*free_callback)(void *));
 /**
  * Initializes the specified dictionary with a bucket array of size. The bucket
@@ -148,7 +153,7 @@ FLYAPI void dict_init_with(
  * @param size the number of buckets for this dictionary
  * @see list
  */
-FLYAPI void dict_init(dict *d, const unsigned int size);
+FLYAPI void dict_init(dict *d, const size_t size);
 /**
  * Allocates and initializes a new dictionary with the specified number of
  * buckets (size) and the given allocation callback. The performance of this
