@@ -20,10 +20,15 @@ int dict_test_teardown(void **state) {
 }
 
 int verify_dict_size(dict * restrict d) {
-  unsigned int bucket_sum = 0, i = 0;
+  size_t bucket_sum = 0, i = 0;
 
   while (i < d->maxsize) {
-    bucket_sum += list_size(d->buckets[i]);
+    if (d->buckets[i].flags & 0x1) {
+      bucket_sum += list_size(d->buckets[i].data);
+    } else if (d->buckets[i].data) {
+      bucket_sum += 1;
+    }
+
     i++;
   }
 
