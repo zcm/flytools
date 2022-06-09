@@ -35,13 +35,56 @@ int verify_dict_size(dict * restrict d) {
   return d->size == bucket_sum;
 }
 
+#define assert_fly_error(err) \
+  assert_int_equal(flytools_last_error(), err)
+
 void test_dict_new(void **state) {
   (void) state;
 
-  dict *d = dict_new(20);
+  dict *d = dict_new();
   assert_non_null(d);
   assert_int_equal(d->size, 0);
   dict_del(d);
+}
+
+void test_dict_new_of_size(void **state) {
+  (void) state;
+
+  dict *d;
+
+  d = dict_new_of_size(16);
+  assert_non_null(d);
+  assert_int_equal(d->size, 0);
+  assert_fly_error(EFLYOK);
+  dict_del(d);
+
+  d = dict_new_of_size(0);
+  assert_null(d);
+  assert_fly_error(EFLYBADARG);
+
+  d = dict_new_of_size(2);
+  assert_non_null(d);
+  assert_int_equal(d->size, 0);
+  assert_fly_error(EFLYOK);
+  dict_del(d);
+
+  d = dict_new_of_size(1);
+  assert_null(d);
+  assert_fly_error(EFLYBADARG);
+
+  d = dict_new_of_size(32);
+  assert_non_null(d);
+  assert_int_equal(d->size, 0);
+  assert_fly_error(EFLYOK);
+  dict_del(d);
+
+  d = dict_new_of_size(3);
+  assert_null(d);
+  assert_fly_error(EFLYBADARG);
+
+  d = dict_new_of_size(10);
+  assert_null(d);
+  assert_fly_error(EFLYBADARG);
 }
 
 void test_dict_put_then_get(void **state) {
@@ -55,8 +98,9 @@ void test_dict_put_then_get(void **state) {
              cat_donna = {"donna", "cat" },
              dog_wahwa = {"wahwa", "dog" };
 
-  dict *d = dict_new(64);
+  dict *d = dict_new();
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   dict_put(d, &cat_cj, "purr");
   assert_int_equal(d->size, 1);
@@ -93,8 +137,9 @@ void test_dict_put_then_get(void **state) {
 void test_dict_puts_then_gets(void **state) {
   (void) state;
 
-  dict *d = dict_new(20);
+  dict *d = dict_new();
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   dict_puts(d, "cats", "meow");
   assert_int_equal(d->size, 1);
@@ -139,8 +184,9 @@ void test_dict_put_then_remove(void **state) {
              energy = { "monster", "legal stimulant" },
              fruit = { "fanta", "juice substitute" };
 
-  dict *d = dict_new(20);
+  dict *d = dict_new();
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   dict_put(d, &coke, "$2");
   assert_int_equal(d->size, 1);
@@ -181,8 +227,9 @@ void test_dict_put_then_remove(void **state) {
 void test_dict_puts_then_removes(void **state) {
   (void) state;
 
-  dict *d = dict_new(20);
+  dict *d = dict_new();
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   dict_puts(d, "apple", "red");
   assert_int_equal(d->size, 1);
@@ -224,8 +271,9 @@ void test_dict_puts_then_removes(void **state) {
 void test_dict_put_puts_get_gets_remove_removes_combo(void **state) {
   (void) state;
 
-  dict *d = dict_new(20);
+  dict *d = dict_new();
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   dict_put(d, &test_dict_new, "it's new");
   assert_int_equal(d->size, 1);
@@ -298,8 +346,9 @@ void test_dict_put_puts_get_gets_remove_removes_combo(void **state) {
 void test_dict_get_from_empty(void **state) {
   (void) state;
 
-  dict *d = dict_new(2);
+  dict *d = dict_new_of_size(2);
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   assert_null(dict_get(d, &test_dict_new));
   assert_int_equal(d->size, 0);
@@ -311,8 +360,9 @@ void test_dict_get_from_empty(void **state) {
 void test_dict_remove_from_empty(void **state) {
   (void) state;
 
-  dict *d = dict_new(2);
+  dict *d = dict_new_of_size(2);
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   assert_null(dict_remove(d, &test_dict_new));
   assert_int_equal(d->size, 0);
@@ -324,8 +374,9 @@ void test_dict_remove_from_empty(void **state) {
 void test_dict_gets_from_empty(void **state) {
   (void) state;
 
-  dict *d = dict_new(2);
+  dict *d = dict_new_of_size(2);
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   assert_null(dict_get(d, "nothing"));
   assert_int_equal(d->size, 0);
@@ -337,8 +388,9 @@ void test_dict_gets_from_empty(void **state) {
 void test_dict_removes_from_empty(void **state) {
   (void) state;
 
-  dict *d = dict_new(2);
+  dict *d = dict_new_of_size(2);
   assert_non_null(d);
+  assert_fly_error(EFLYOK);
 
   assert_null(dict_remove(d, "nothing"));
   assert_int_equal(d->size, 0);
@@ -351,7 +403,7 @@ void test_dict_null_as_key(void **state) {
   (void) state;
 
   dict *d;
-  assert_non_null(d = dict_new(32));
+  assert_non_null(d = dict_new_of_size(32));
 
   char *one = "first", *two = "second";
 
@@ -400,6 +452,7 @@ void test_dict_null_as_key(void **state) {
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_dict_new),
+      cmocka_unit_test(test_dict_new_of_size),
       dict_unit_test(test_dict_put_then_get),
       dict_unit_test(test_dict_puts_then_gets),
       dict_unit_test(test_dict_put_then_remove),
