@@ -129,12 +129,12 @@ FLYAPI dict *dict_alloc();
  * @see dict_set_destructor()
  */
 FLYAPI void dict_del(dict *d);
+
 /**
- * Initializes the specified dictionary with a bucket array of size, using the
- * given allocation callback. The bucket array is an array of doubly linked
- * lists (list *). The performance of this dictionary is much, much better
- * when the number of buckets chosen is a prime number. This is due to the
- * inherent inefficiencies in non-prime hash compression.
+ * Initializes a dictionary with a bucket array of size `size` and the given
+ * allocator. `size` must be a power of 2 greater than 1; otherwise this
+ * method sets the `EFLYBADARG` error and returns null.
+ *
  * @param d the dictionary to initialize
  * @param size the number of buckets for this dictionary
  * @param alloc_callback the callback function for allocating this dictionary
@@ -143,39 +143,48 @@ FLYAPI void dict_del(dict *d);
 FLYAPI void dict_init_with(
     dict *d, const size_t size,
     void *(*alloc_callback)(size_t), void (*free_callback)(void *));
+
 /**
- * Initializes the specified dictionary with a bucket array of size. The bucket
- * array is an array of doubly linked lists (list *). The performance of this
- * dictionary is much, much better when the number of buckets chosen is a prime
- * number. This is due to the inherent inefficiencies in non-prime hash
- * compression.
+ * Initializes a dictionary with a bucket array of size `size`. `size` must be a
+ * power of 2 greater than 1; otherwise this method sets the `EFLYBADARG` error
+ * and returns null.
+ *
  * @param d the dictionary to initialize
  * @param size the number of buckets for this dictionary
  * @see list
  */
 FLYAPI void dict_init(dict *d, const size_t size);
+
 /**
  * Allocates and initializes a new dictionary with the specified number of
- * buckets (size) and the given allocation callback. The performance of this
- * dictionary is much, much better when the number of buckets chosen is a prime
- * number. This is due to the inherent inefficiencies in non-prime hash
- * compression.
- * @param size the number of buckets for this dictionary 
+ * buckets and the given allocator. `size` must be a power of 2 greater than 1;
+ * otherwise this method sets the `EFLYBADARG` error and returns null.
+ *
+ * @param size the number of buckets for this dictionary
  * @param alloc_callback the callback function for allocating this dictionary
  * @return a pointer to the newly created dictionary
  */
 FLYAPI dict *dict_new_with(
     const size_t size,
     void *(*alloc_callback)(size_t), void (*free_callback)(void *));
+
 /**
  * Allocates and initializes a new dictionary with the specified number of
- * buckets (size). The performance of this dictionary is much, much better when
- * the number of buckets chosen is a prime number. This is due to the inherent
- * inefficiencies in non-prime hash compression.
+ * buckets. `size` must be a power of 2 greater than 1; otherwise this method
+ * sets the `EFLYBADARG` error and returns null.
+ *
  * @param size the number of buckets for this dictionary
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_new(const size_t size);
+FLYAPI dict *dict_new_of_size(const size_t size);
+
+/**
+ * Creates a new dictionary using all defaults.
+ *
+ * @return a pointer to the newly created dictionary
+ */
+FLYAPI dict *dict_new();
+
 /**
  * Sets the freeing routine for the specified dictionary. This function should
  * be called at creation time or soon after so that the correct destructor is

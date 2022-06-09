@@ -36,6 +36,8 @@ void *__this_function_does_nothing(void *nothing) {
 }
 #endif
 
+#define DEFAULT_SIZE 16
+
 static void * match_key = NULL;
 
 int dictnode_key_str_matches(
@@ -107,10 +109,9 @@ FLYAPI dict *dict_alloc() {
 	return dict_alloc_with(&malloc);
 }
 
-FLYAPI void dict_init_with(
+static void __dict_init_with(
     dict *d, const size_t size,
     void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
-  FLY_ERR_CLEAR;
   if (d != NULL) {
     if (alloc_callback == &malloc) {
       d->buckets = (struct dictbucket *)
@@ -133,6 +134,24 @@ FLYAPI void dict_init_with(
   }
 }
 
+static inline int __check_power_of_two(const size_t size) {
+  if (size <= 1 || (size & size - 1)) {
+    FLY_ERR(EFLYBADARG);
+    return 0;
+  }
+
+  FLY_ERR_CLEAR;
+  return 1;
+}
+
+FLYAPI void dict_init_with(
+    dict *d, const size_t size,
+    void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
+  if (__check_power_of_two(size)) {
+    __dict_init_with(d, size, alloc_callback, free_callback);
+  }
+}
+
 FLYAPI void dict_init(dict *d, const size_t size) {
 	dict_init_with(d, size, &malloc, &free);
 }
@@ -140,18 +159,29 @@ FLYAPI void dict_init(dict *d, const size_t size) {
 FLYAPI dict *dict_new_with(
     const size_t size,
     void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
-	dict *ret = dict_alloc_with(alloc_callback);
-  FLY_ERR_CLEAR;
-	if(ret == NULL) {
-    FLY_ERR(EFLYNOMEM);
-	} else {
-    dict_init_with(ret, size, alloc_callback, free_callback);
+	dict *d = NULL;
+
+  if (__check_power_of_two(size)) {
+    if ((d = dict_alloc_with(alloc_callback))) {
+      __dict_init_with(d, size, alloc_callback, free_callback);
+    }
   }
-	return ret;
+
+	return d;
 }
 
-FLYAPI dict *dict_new(const size_t size) {
+FLYAPI dict *dict_new_of_size(const size_t size) {
 	return dict_new_with(size, &malloc, &free);
+}
+
+FLYAPI dict *dict_new() {
+  dict *d = dict_alloc_with(&malloc);
+
+  if (d) {
+    __dict_init_with(d, DEFAULT_SIZE, &malloc, &free);
+  }
+
+  return d;
 }
 
 FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
