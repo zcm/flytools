@@ -32,8 +32,8 @@
 typedef struct dictnode {
 	void *data; //!< The data pointer for this node.
 	void *key; //!< The key string/object for this node.
-  int (*matches)(
-      const struct dictnode *, const void *); //!< Key matcher for this node.
+  int (*key_matcher)(
+      const void *, const void *, const void *); //!< Key matcher for this node.
 } dictnode;
 
 struct dictbucket {
@@ -98,7 +98,7 @@ FLYAPI dictnode *dictnode_alloc();
  */
 FLYAPI dictnode *dictnode_new(
     void *key, void *data,
-    int (*matches)(const struct dictnode *, const void *),
+    int (*matches)(const void *, const void *, const void *),
     void *(*alloc_callback)(size_t));
 /**
  * Frees the specified dictionary node with the given callback function. Since
@@ -212,7 +212,7 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key);
  * @param key the object key pointer to associate with the value
  * @param value the value that is being inserted into the dictionary
  */
-FLYAPI void dict_put(dict * restrict d, void *key, void *value);
+FLYAPI void dict_set(dict * restrict d, void *key, void *value);
 /**
  * Inserts a value into the specified dictionary with the given string key. That
  * is, the value argument is associated with the given key in the dictionary.
@@ -220,7 +220,7 @@ FLYAPI void dict_put(dict * restrict d, void *key, void *value);
  * @param key the key string to associate with the value
  * @param value the value that is being inserted into the dictionary
  */
-FLYAPI void dict_puts(dict * restrict d, char *key, void *value);
+FLYAPI void dict_sets(dict * restrict d, char *key, void *value);
 /**
  * Finds and removes a value for the given object key from the specified
  * dictionary.  The value found is the value returned. In the event that there
