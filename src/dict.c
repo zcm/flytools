@@ -17,6 +17,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <threads.h>
+
 #include "dict.h"
 
 #if __STDC_VERSION__ < 199901L
@@ -38,21 +40,17 @@ void *__this_function_does_nothing(void *nothing) {
 
 #define DEFAULT_SIZE 16
 
-static void * match_key = NULL;
+static thread_local void *match_key = NULL;
 
-int dictnode_key_str_matches(
-    const struct dictnode * restrict node,
-    const void * restrict expected_func) {
-
-  return expected_func == (void *) &dictnode_key_str_matches
-    && strcmp((char *) node->key, (char *) match_key) == 0;
+static int __ptr_key_matcher(
+    const void *key1, const void *key2, const void * restrict expected_func) {
+  return key1 == key2 && expected_func == &__ptr_key_matcher;
 }
 
-int dictnode_key_ptr_matches(
-    const struct dictnode * restrict node,
-    const void * restrict expected_func) {
-  return expected_func == (void *) &dictnode_key_ptr_matches
-    && node->key == match_key;
+static int __str_key_matcher(
+    const void *key1, const void *key2, const void * restrict expected_func) {
+  return (key1 == key2 || !strcmp(key1, key2))
+    && expected_func == &__str_key_matcher;
 }
 
 FLYAPI dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t)) {
@@ -70,7 +68,7 @@ FLYAPI dictnode *dictnode_alloc() {
 
 FLYAPI dictnode *dictnode_new(
     void *key, void *data,
-    int (*matches)(const struct dictnode *, const void *),
+    int (*key_matcher)(const void *, const void *, const void *),
     void *(*alloc_callback)(size_t)) {
   dictnode *ret = dictnode_alloc_with(alloc_callback);
   FLY_ERR_CLEAR;
@@ -79,7 +77,7 @@ FLYAPI dictnode *dictnode_new(
   } else {
     ret->key = key;
     ret->data = data;
-    ret->matches = matches;
+    ret->key_matcher = key_matcher;
   }
   return ret;
 }
@@ -87,7 +85,7 @@ FLYAPI dictnode *dictnode_new(
 FLYAPI void dictnode_del(dictnode *dnode, void (*free_callback)(void *)) {
   FLY_ERR_CLEAR;
   if (dnode != NULL) {
-    if (dnode->matches == &dictnode_key_str_matches) {
+    if (dnode->key_matcher == &__str_key_matcher) {
       free(dnode->key);
     }
     (*free_callback)(dnode);
@@ -239,61 +237,83 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
 	return 0;
 }
 
-static void __dict_put_to_bucket_atomic(
-    dict *d, struct dictbucket *bucket, dictnode *node) {
+#define WITH_NEW_NODE_OR_DIE(operation) \
+  if (!(node = dictnode_new( \
+          key_matcher == &__str_key_matcher ? strdup(key) : key, \
+          value, key_matcher, d->alloc_callback))) { \
+    return; \
+  } \
+  operation
+
+static void __dict_set_bucket_atomic(
+    dict *d, struct dictbucket *bucket, void *key, void *value,
+    int (*key_matcher)(const void *, const void *, const void *)) {
+  dictnode *node;  /* Used in macro expansion */
+
   if (bucket->data) {
     if (!(bucket->flags & 0x1)) {
-      void *existing = bucket->data;
+      dictnode *existing = bucket->data;
 
-      bucket->data =
-        list_new_kind_with(LISTKIND_SLINK, d->alloc_callback, d->free_callback);
+      if (existing->key_matcher(existing->key, key, key_matcher)) {
+        existing->data = value;
+        return;
+      }
 
+      list *bucket_list;
+
+      if (!(bucket_list = list_new_kind_with(
+              LISTKIND_SLINK, d->alloc_callback, d->free_callback))) {
+        return;
+      }
+
+      list_push(bucket_list, existing);
+      bucket->data = bucket_list;
       bucket->flags |= 0x1;
-      list_push((list *) bucket->data, existing);
     }
 
-    list_push((list *) bucket->data, node);
+    WITH_NEW_NODE_OR_DIE(list_push(bucket->data, node));
   } else {
-    bucket->data = node;
+    WITH_NEW_NODE_OR_DIE(bucket->data = node);
   }
 
+  /* Will be skipped if there's an error inside WITH_NEW_NODE_OR_DIE */
   d->size++;
 }
 
-FLYAPI void dict_put(dict * restrict d, void *key, void *value) {
-  FLY_ERR_CLEAR;
+#undef WITH_NEW_NODE_OR_DIE
 
+FLYAPI void dict_set(dict * restrict d, void *key, void *value) {
   if (d) {
-    __dict_put_to_bucket_atomic(
+    FLY_ERR_CLEAR;
+
+    __dict_set_bucket_atomic(
         d, d->buckets + hash_xorshift64s((uint64_t) key) % d->maxsize,
-        dictnode_new(
-            key, value, &dictnode_key_ptr_matches, d->alloc_callback));
+        key, value, &__ptr_key_matcher);
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
-FLYAPI void dict_puts(dict * restrict d, char *key, void *value) {
-  FLY_ERR_CLEAR;
+FLYAPI void dict_sets(dict * restrict d, char *key, void *value) {
+  if (d && key) {
+    FLY_ERR_CLEAR;
 
-  if (d != NULL && key != NULL) {
-    __dict_put_to_bucket_atomic(
+    __dict_set_bucket_atomic(
         d, d->buckets + hash_string(key) % d->maxsize,
-        dictnode_new(
-            strdup(key), value, &dictnode_key_str_matches, d->alloc_callback));
+        key, value, &__str_key_matcher);
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
-int __key_ptr_matches(void *node) {
-  return ((dictnode *) node)->matches(
-      (dictnode *) node, &dictnode_key_ptr_matches);
+int __list_ptr_key_matcher(void *node) {
+  return ((dictnode *) node)->key_matcher(
+      ((dictnode *) node)->key, match_key, &__ptr_key_matcher);
 }
 
-int __key_str_matches(void *node) {
-  return ((dictnode *) node)->matches(
-      (dictnode *) node, &dictnode_key_str_matches);
+int __list_str_key_matcher(void *node) {
+  return ((dictnode *) node)->key_matcher(
+      ((dictnode *) node)->key, match_key, &__str_key_matcher);
 }
 
 static inline dictnode *__dict_lookup_using(
@@ -318,6 +338,7 @@ static dictnode *__dict_remove_from_bucket(
 
   if (bucket->flags & 0x1) {
     if (list_size((list *) bucket->data) > 1) {
+      match_key = key;
       return (dictnode *)
         list_remove_first((list *) bucket->data, matcher);
     }
@@ -336,13 +357,13 @@ static dictnode *__dict_remove_from_bucket(
 static dictnode *__dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return __dict_remove_from_bucket(
       d->buckets + hash_xorshift64s((uint64_t) key) % d->maxsize,
-      key, &__key_ptr_matches);
+      key, &__list_ptr_key_matcher);
 }
 
 static dictnode *__dict_remove_keyed_str(dict * restrict d, void *key) {
   return __dict_remove_from_bucket(
       d->buckets + dict_get_hash_index(d, key),
-      key, &__key_str_matches);
+      key, &__list_str_key_matcher);
 }
 
 #define __dict_remove_using(proc) \
@@ -368,6 +389,7 @@ FLYAPI void *dict_removes(dict * restrict d, char *key) {
 static inline dictnode *__dict_find_in_bucket(
     struct dictbucket * restrict bucket, void *key, int (*matcher)(void *)) {
   if (bucket->flags & 0x1) {
+    match_key = key;
     return (dictnode *)
       list_find_first((list *) bucket->data, matcher);
   }
@@ -378,13 +400,13 @@ static inline dictnode *__dict_find_in_bucket(
 static dictnode *__dict_find_keyed_ptr(dict * restrict d, void *key) {
   return __dict_find_in_bucket(
       d->buckets + hash_xorshift64s((uint64_t) key) % d->maxsize,
-      key, &__key_ptr_matches);
+      key, &__list_ptr_key_matcher);
 }
 
 static dictnode *__dict_find_keyed_str(dict * restrict d, void *key) {
   return __dict_find_in_bucket(
       d->buckets + dict_get_hash_index(d, key),
-      key, &__key_str_matches);
+      key, &__list_str_key_matcher);
 }
 
 FLYAPI void *dict_get(dict * restrict d, void *key) {

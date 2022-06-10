@@ -87,7 +87,7 @@ void test_dict_new_of_size(void **state) {
   assert_fly_error(EFLYBADARG);
 }
 
-void test_dict_put_then_get(void **state) {
+void test_dict_set_then_get(void **state) {
   (void) state;
 
   struct pet {
@@ -102,15 +102,15 @@ void test_dict_put_then_get(void **state) {
   assert_non_null(d);
   assert_fly_error(EFLYOK);
 
-  dict_put(d, &cat_cj, "purr");
+  dict_set(d, &cat_cj, "purr");
   assert_int_equal(d->size, 1);
   assert_true(verify_dict_size(d));
 
-  dict_put(d, &cat_donna, "chirp");
+  dict_set(d, &cat_donna, "chirp");
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
 
-  dict_put(d, &dog_wahwa, "yip");
+  dict_set(d, &dog_wahwa, "yip");
   assert_int_equal(d->size, 3);
   assert_true(verify_dict_size(d));
 
@@ -134,22 +134,22 @@ void test_dict_put_then_get(void **state) {
   dict_del(d);
 }
 
-void test_dict_puts_then_gets(void **state) {
+void test_dict_sets_then_gets(void **state) {
   (void) state;
 
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_error(EFLYOK);
 
-  dict_puts(d, "cats", "meow");
+  dict_sets(d, "cats", "meow");
   assert_int_equal(d->size, 1);
   assert_true(verify_dict_size(d));
 
-  dict_puts(d, "dogs", "bark");
+  dict_sets(d, "dogs", "bark");
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
 
-  dict_puts(d, "birds", "chirp");
+  dict_sets(d, "birds", "chirp");
   assert_int_equal(d->size, 3);
   assert_true(verify_dict_size(d));
 
@@ -173,7 +173,7 @@ void test_dict_puts_then_gets(void **state) {
   dict_del(d);
 }
 
-void test_dict_put_then_remove(void **state) {
+void test_dict_set_then_remove(void **state) {
   (void) state;
 
   struct bev {
@@ -188,15 +188,15 @@ void test_dict_put_then_remove(void **state) {
   assert_non_null(d);
   assert_fly_error(EFLYOK);
 
-  dict_put(d, &coke, "$2");
+  dict_set(d, &coke, "$2");
   assert_int_equal(d->size, 1);
   assert_true(verify_dict_size(d));
 
-  dict_put(d, &energy, "$3");
+  dict_set(d, &energy, "$3");
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
 
-  dict_put(d, &fruit, "$1");
+  dict_set(d, &fruit, "$1");
   assert_int_equal(d->size, 3);
   assert_true(verify_dict_size(d));
 
@@ -224,22 +224,22 @@ void test_dict_put_then_remove(void **state) {
   dict_del(d);
 }
 
-void test_dict_puts_then_removes(void **state) {
+void test_dict_sets_then_removes(void **state) {
   (void) state;
 
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_error(EFLYOK);
 
-  dict_puts(d, "apple", "red");
+  dict_sets(d, "apple", "red");
   assert_int_equal(d->size, 1);
   assert_true(verify_dict_size(d));
 
-  dict_puts(d, "banana", "yellow");
+  dict_sets(d, "banana", "yellow");
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
 
-  dict_puts(d, "lime", "green");
+  dict_sets(d, "lime", "green");
   assert_int_equal(d->size, 3);
   assert_true(verify_dict_size(d));
 
@@ -268,26 +268,26 @@ void test_dict_puts_then_removes(void **state) {
 }
 
 
-void test_dict_put_puts_get_gets_remove_removes_combo(void **state) {
+void test_dict_set_sets_get_gets_remove_removes_combo(void **state) {
   (void) state;
 
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_error(EFLYOK);
 
-  dict_put(d, &test_dict_new, "it's new");
+  dict_set(d, &test_dict_new, "it's new");
   assert_int_equal(d->size, 1);
   assert_true(verify_dict_size(d));
 
-  dict_puts(d, "banana", "it's yellow");
+  dict_sets(d, "banana", "it's yellow");
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
 
-  dict_put(d, &printf, "it's printing");
+  dict_set(d, &printf, "it's printing");
   assert_int_equal(d->size, 3);
   assert_true(verify_dict_size(d));
 
-  dict_puts(d, "dreamcast", "it's thinking");
+  dict_sets(d, "dreamcast", "it's thinking");
   assert_int_equal(d->size, 4);
   assert_true(verify_dict_size(d));
 
@@ -407,12 +407,12 @@ void test_dict_null_as_key(void **state) {
 
   char *one = "first", *two = "second";
 
-  dict_put(d, one, "uno");
+  dict_set(d, one, "uno");
   assert_int_equal(d->size, 1);
-  dict_put(d, NULL, "cero");
+  dict_set(d, NULL, "cero");
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
-  dict_put(d, two, "dos");
+  dict_set(d, two, "dos");
   assert_int_equal(d->size, 3);
   assert_true(verify_dict_size(d));
 
@@ -446,6 +446,42 @@ void test_dict_null_as_key(void **state) {
   dict_del(d);
 }
 
+void test_dict_set_overwrites(void **state) {
+  (void) state;
+
+  dict *d = dict_new();
+  assert_non_null(d);
+  assert_fly_error(EFLYOK);
+
+  dict_set(d, (void *) 1, "one");
+  assert_int_equal(d->size, 1);
+  assert_string_equal(dict_get(d, (void *) 1), "one");
+
+  dict_set(d, (void *) 1, "uno");
+  assert_int_equal(d->size, 1);
+  assert_string_equal(dict_get(d, (void *) 1), "uno");
+
+  dict_set(d, (void *) 10, "ten");
+  assert_int_equal(d->size, 2);
+  assert_string_equal(dict_get(d, (void *) 10), "ten");
+
+  dict_set(d, (void *) 10, "cien");
+  assert_int_equal(d->size, 2);
+  assert_string_equal(dict_get(d, (void *) 10), "cien");
+
+  assert_string_equal(dict_remove(d, (void *) 1), "uno");
+  assert_int_equal(d->size, 1);
+  assert_null(dict_get(d, (void *) 1));
+  assert_int_equal(d->size, 1);
+
+  assert_string_equal(dict_remove(d, (void *) 10), "cien");
+  assert_int_equal(d->size, 0);
+  assert_null(dict_get(d, (void *) 10));
+  assert_int_equal(d->size, 0);
+
+  dict_del(d);
+}
+
 #define dict_unit_test(f) \
   cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
 
@@ -453,16 +489,17 @@ int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_dict_new),
       cmocka_unit_test(test_dict_new_of_size),
-      dict_unit_test(test_dict_put_then_get),
-      dict_unit_test(test_dict_puts_then_gets),
-      dict_unit_test(test_dict_put_then_remove),
-      dict_unit_test(test_dict_puts_then_removes),
-      dict_unit_test(test_dict_put_puts_get_gets_remove_removes_combo),
+      dict_unit_test(test_dict_set_then_get),
+      dict_unit_test(test_dict_sets_then_gets),
+      dict_unit_test(test_dict_set_then_remove),
+      dict_unit_test(test_dict_sets_then_removes),
+      dict_unit_test(test_dict_set_sets_get_gets_remove_removes_combo),
       dict_unit_test(test_dict_get_from_empty),
       dict_unit_test(test_dict_remove_from_empty),
       dict_unit_test(test_dict_gets_from_empty),
       dict_unit_test(test_dict_removes_from_empty),
       dict_unit_test(test_dict_null_as_key),
+      dict_unit_test(test_dict_set_overwrites),
   };
 
   return cmocka_run_group_tests_name(
