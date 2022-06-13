@@ -49,8 +49,8 @@ struct dictbucket {
 typedef struct dict {
 	/**
 	 * An array of list instances that represent the buckets in this
-	 * dictionary. The size of this array is stored in the maxsize member.
-	 * @see maxsize
+	 * dictionary. The size of this array is stored in the capacity member.
+	 * @see capacity
 	 */
 	struct dictbucket *buckets;
 	size_t size; //!< The number of elements stored in this dictionary.
@@ -58,7 +58,7 @@ typedef struct dict {
 	 * The number of buckets in this dictionary. Named because it is the maximum
 	 * size for hash compression (and for array indices).
 	 */
-	size_t maxsize;
+	size_t capacity;
 	/**
 	 * The stored allocation routine for allocating new nodes. This member is
 	 * also stored in the buckets for this dictionary.
