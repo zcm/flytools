@@ -22,7 +22,7 @@ int dict_test_teardown(void **state) {
 int verify_dict_size(dict * restrict d) {
   size_t bucket_sum = 0, i = 0;
 
-  while (i < d->maxsize) {
+  while (i < d->capacity) {
     if (d->buckets[i].flags & 0x1) {
       bucket_sum += list_size(d->buckets[i].data);
     } else if (d->buckets[i].data) {
