@@ -20,6 +20,7 @@
 #include <threads.h>
 
 #include "dict.h"
+#include "internal/dict.h"
 
 #if __STDC_VERSION__ < 199901L
 #define restrict
@@ -53,8 +54,8 @@ static int __str_key_matcher(
     && expected_func == &__str_key_matcher;
 }
 
-FLYAPI dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t)) {
-	void *ret = (*alloc_callback)(sizeof(dictnode));
+FLYAPI dictnode *dictnode_alloc_with(void *(*alloc)(size_t)) {
+	void *ret = (*alloc)(sizeof(dictnode));
   FLY_ERR_CLEAR;
 	if(ret == NULL) {
     FLY_ERR(EFLYNOMEM);
@@ -67,35 +68,35 @@ FLYAPI dictnode *dictnode_alloc() {
 }
 
 FLYAPI dictnode *dictnode_new(
-    void *key, void *data,
+    void *key, void *value,
     int (*key_matcher)(const void *, const void *, const void *),
-    void *(*alloc_callback)(size_t)) {
-  dictnode *ret = dictnode_alloc_with(alloc_callback);
+    void *(*alloc)(size_t)) {
+  dictnode *ret = dictnode_alloc_with(alloc);
   FLY_ERR_CLEAR;
   if(ret == NULL) {
     FLY_ERR(EFLYNOMEM);
   } else {
     ret->key = key;
-    ret->data = data;
+    ret->value = value;
     ret->key_matcher = key_matcher;
   }
   return ret;
 }
 
-FLYAPI void dictnode_del(dictnode *dnode, void (*free_callback)(void *)) {
+FLYAPI void dictnode_del(dictnode *dnode, void (*del)(void *)) {
   FLY_ERR_CLEAR;
   if (dnode != NULL) {
     if (dnode->key_matcher == &__str_key_matcher) {
       free(dnode->key);
     }
-    (*free_callback)(dnode);
+    (*del)(dnode);
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
-FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t)) {
-	void *ret = (*alloc_callback)(sizeof(dict));
+FLYAPI dict *dict_alloc_with(void *(*alloc)(size_t)) {
+	void *ret = (*alloc)(sizeof(dict));
   FLY_ERR_CLEAR;
 	if(ret == NULL) {
     FLY_ERR(EFLYNOMEM);
@@ -109,14 +110,14 @@ FLYAPI dict *dict_alloc() {
 
 static void __dict_init_with(
     dict *d, const size_t size,
-    void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
+    void *(*alloc)(size_t), void (*del)(void *)) {
   if (d != NULL) {
-    if (alloc_callback == &malloc) {
+    if (alloc == &malloc) {
       d->buckets = (struct dictbucket *)
         calloc(size, sizeof (struct dictbucket));
     } else {
       d->buckets = (struct dictbucket *)
-        memset((*alloc_callback)(size * sizeof(struct dictbucket)), 0, size);
+        memset((*alloc)(size * sizeof(struct dictbucket)), 0, size);
     }
 
     if(d->buckets == NULL) {
@@ -124,8 +125,8 @@ static void __dict_init_with(
     } else {
       d->size = 0;
       d->capacity = size;
-      d->alloc_callback = alloc_callback;
-      d->free_callback = free_callback;
+      d->alloc = alloc;
+      d->del = del;
     }
   } else {
     FLY_ERR(EFLYBADARG);
@@ -144,9 +145,9 @@ static inline int __check_power_of_two(const size_t size) {
 
 FLYAPI void dict_init_with(
     dict *d, const size_t size,
-    void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
+    void *(*alloc)(size_t), void (*del)(void *)) {
   if (__check_power_of_two(size)) {
-    __dict_init_with(d, size, alloc_callback, free_callback);
+    __dict_init_with(d, size, alloc, del);
   }
 }
 
@@ -156,12 +157,12 @@ FLYAPI void dict_init(dict *d, const size_t size) {
 
 FLYAPI dict *dict_new_with(
     const size_t size,
-    void *(*alloc_callback)(size_t), void (*free_callback)(void *)) {
+    void *(*alloc)(size_t), void (*del)(void *)) {
 	dict *d = NULL;
 
   if (__check_power_of_two(size)) {
-    if ((d = dict_alloc_with(alloc_callback))) {
-      __dict_init_with(d, size, alloc_callback, free_callback);
+    if ((d = dict_alloc_with(alloc))) {
+      __dict_init_with(d, size, alloc, del);
     }
   }
 
@@ -191,34 +192,34 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
     while(i < d->capacity) {
       if (d->buckets[i].flags & 0x1) {
         while (list_size(d->buckets[i].data) > 0) {
-          dictnode_del(list_pop(d->buckets[i].data), d->free_callback);
+          dictnode_del(list_pop(d->buckets[i].data), d->del);
         }
 
         assert(list_size(d->buckets[i].data) == 0);
         list_del(d->buckets[i].data);
       } else if (d->buckets[i].data) {
-        dictnode_del(d->buckets[i].data, d->free_callback);
+        dictnode_del(d->buckets[i].data, d->del);
       }
 
       i++;
     }
-    d->free_callback(d->buckets);
-    d->free_callback(d);
+    d->del(d->buckets);
+    d->del(d);
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
-FLYAPI void dict_set_freeproc(dict *d, void (*free_callback)(void *)) {
+FLYAPI void dict_set_freeproc(dict *d, void (*del)(void *)) {
   size_t i = 0;
 
   FLY_ERR_CLEAR;
 
   if (d != NULL) {
-    d->free_callback = free_callback;
+    d->del = del;
     while(i < d->capacity) {
       if (d->buckets[i].flags & 0x1) {
-        list_set_freeproc(d->buckets[i].data, free_callback);
+        list_set_freeproc(d->buckets[i].data, del);
       }
       i++;
     }
@@ -240,7 +241,7 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
 #define WITH_NEW_NODE_OR_DIE(operation) \
   if (!(node = dictnode_new( \
           key_matcher == &__str_key_matcher ? strdup(key) : key, \
-          value, key_matcher, d->alloc_callback))) { \
+          value, key_matcher, d->alloc))) { \
     return; \
   } \
   operation
@@ -255,14 +256,14 @@ static void __dict_set_bucket_atomic(
       dictnode *existing = bucket->data;
 
       if (existing->key_matcher(existing->key, key, key_matcher)) {
-        existing->data = value;
+        existing->value = value;
         return;
       }
 
       list *bucket_list;
 
       if (!(bucket_list = list_new_kind_with(
-              LISTKIND_SLINK, d->alloc_callback, d->free_callback))) {
+              LISTKIND_SLINK, d->alloc, d->del))) {
         return;
       }
 
@@ -369,10 +370,10 @@ static dictnode *__dict_remove_keyed_str(dict * restrict d, void *key) {
 #define __dict_remove_using(proc) \
   dictnode *node = __dict_lookup_using(d, key, proc); \
   if (node) { \
-    void *data = node->data; \
+    void *value = node->value; \
     d->size--; \
-    dictnode_del(node, d->free_callback); \
-    return data; \
+    dictnode_del(node, d->del); \
+    return value; \
   } \
   return NULL;
 
@@ -411,12 +412,12 @@ static dictnode *__dict_find_keyed_str(dict * restrict d, void *key) {
 
 FLYAPI void *dict_get(dict * restrict d, void *key) {
   dictnode *node = __dict_lookup_using(d, key, &__dict_find_keyed_ptr);
-  return node ? node->data : NULL;
+  return node ? node->value : NULL;
 }
 
 FLYAPI void *dict_gets(dict * restrict d, char *key) {
   dictnode *node = __dict_lookup_using(d, key, &__dict_find_keyed_str);
-  return node ? node->data : NULL;
+  return node ? node->value : NULL;
 }
 
 /*FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {

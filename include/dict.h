@@ -24,22 +24,13 @@
 #define restrict
 #endif
 
-/**
- * A structure that contains the information necessary for a single element in
- * a dictionary. This node represents a key/value pair for the dictionary.
- * @see dict
+/** \defgroup Dictionaries
+ * The \ref dict type defines dictionaries in the Flytools API.
+ * @{
  */
-typedef struct dictnode {
-	void *data; //!< The data pointer for this node.
-	void *key; //!< The key string/object for this node.
-  int (*key_matcher)(
-      const void *, const void *, const void *); //!< Key matcher for this node.
-} dictnode;
 
-struct dictbucket {
-  uint_fast8_t flags;
-  void *data;
-};
+//! Single bucket for a \ref dict.
+struct dictbucket;
 
 /**
  * A structure that represents a dictionary abstract data type (ADT). This
@@ -47,75 +38,20 @@ struct dictbucket {
  * API functions.
  */
 typedef struct dict {
-	/**
-	 * An array of list instances that represent the buckets in this
-	 * dictionary. The size of this array is stored in the capacity member.
-	 * @see capacity
-	 */
-	struct dictbucket *buckets;
-	size_t size; //!< The number of elements stored in this dictionary.
-	/**
-	 * The number of buckets in this dictionary. Named because it is the maximum
-	 * size for hash compression (and for array indices).
-	 */
-	size_t capacity;
-	/**
-	 * The stored allocation routine for allocating new nodes. This member is
-	 * also stored in the buckets for this dictionary.
-	 * @see list
-	 */
-	void *(*alloc_callback)(size_t);
-	/**
-	 * The stored freeing routine for destroying the structure and nodes. If
-	 * null, the standard free() will be used. This member should not be
-	 * directly referenced -- it should be used only with the
-	 * dict_set_destructor() function.
-	 * @see dict_set_destructor()
-	 */
-	void (*free_callback)(void *);
+	size_t size;                //!< Number of elements stored in this \ref dict.
+	size_t capacity;            //!< Number of buckets in this \ref dict.
+	struct dictbucket *buckets; //!< Array of containers for \ref dict elements.
+	void *(*alloc)(size_t);     //!< Allocator for internal structures.
+	void (*del)(void *);        //!< Deallocator for internal structures.
 } dict;
-
-/**
- * Allocates a new dictionary node with the specified allocation callback. Does
- * no initialization.
- * @param alloc_callback the callback with which to allocate the new node
- * @return a pointer to the newly allocated dictionary node
- */
-FLYAPI dictnode *dictnode_alloc_with(void *(*alloc_callback)(size_t));
-/**
- * Allocates a new node for a dictionary. Does no initialization.
- * @return a pointer to the newly allocated dictionary node
- */
-FLYAPI dictnode *dictnode_alloc();
-/**
- * Creates and initializes a new dictionary node with the specified key/value
- * pair and the allocation callback. No hashing is done at this time.
- * @param key the key string used for this element in the dictionary
- * @param data the generic pointer to the element stored in this node
- * @param matches the matcher used to compare keys
- * @param alloc_callback the callback with which to allocate the new node
- * @return a pointer to the newly allocated dictionary node
- */
-FLYAPI dictnode *dictnode_new(
-    void *key, void *data,
-    int (*matches)(const void *, const void *, const void *),
-    void *(*alloc_callback)(size_t));
-/**
- * Frees the specified dictionary node with the given callback function. Since
- * the callback function cannot be set with a destructor, this function must be
- * called when freeing with a non-standard freeing routine.
- * @param dnode the dictionary node to destroy
- * @param free_callback the callback function used to destroy the node
- */
-FLYAPI void dictnode_del(dictnode *dnode, void (*free_callback)(void *));
 
 /**
  * Allocates a new dictionary using the specified callback function. Does no
  * initialization.
- * @param alloc_callback the callback with which to allocate the new node
+ * @param alloc the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary
  */
-FLYAPI dict *dict_alloc_with(void *(*alloc_callback)(size_t));
+FLYAPI dict *dict_alloc_with(void *(*alloc)(size_t));
 /**
  * Allocates a new dictionary. Does no initialization.
  * @return a pointer to the newly allocated dictionary
@@ -137,12 +73,12 @@ FLYAPI void dict_del(dict *d);
  *
  * @param d the dictionary to initialize
  * @param size the number of buckets for this dictionary
- * @param alloc_callback the callback function for allocating this dictionary
+ * @param alloc the callback function for allocating this dictionary
  * @see list
  */
 FLYAPI void dict_init_with(
     dict *d, const size_t size,
-    void *(*alloc_callback)(size_t), void (*free_callback)(void *));
+    void *(*alloc)(size_t), void (*del)(void *));
 
 /**
  * Initializes a dictionary with a bucket array of size `size`. `size` must be a
@@ -161,12 +97,12 @@ FLYAPI void dict_init(dict *d, const size_t size);
  * otherwise this method sets the `EFLYBADARG` error and returns null.
  *
  * @param size the number of buckets for this dictionary
- * @param alloc_callback the callback function for allocating this dictionary
+ * @param alloc the callback function for allocating this dictionary
  * @return a pointer to the newly created dictionary
  */
 FLYAPI dict *dict_new_with(
     const size_t size,
-    void *(*alloc_callback)(size_t), void (*free_callback)(void *));
+    void *(*alloc)(size_t), void (*del)(void *));
 
 /**
  * Allocates and initializes a new dictionary with the specified number of
@@ -191,12 +127,12 @@ FLYAPI dict *dict_new();
  * used to free any memory that may be destroyed. If the destructor is not
  * properly set, segmentation faults may occur.
  * @param d the dictionary for which we are setting the destructor
- * @param free_callback the freeing routine to be set as this dictionary's
+ * @param del the freeing routine to be set as this dictionary's
  * destructor
  * @see dict_remove()
  * @see dict_del()
  */
-FLYAPI void dict_set_destructor(dict *d, void (*free_callback)(void *));
+FLYAPI void dict_set_destructor(dict *d, void (*del)(void *));
 /**
  * Gets the index in a dictionary d for the specified key. That is, the key is
  * hashed and then compressed based on the parameters for the given dictionary.
@@ -275,11 +211,13 @@ FLYAPI void *dict_get(dict * restrict d, void *key);
 FLYAPI void *dict_gets(dict * restrict d, char *key);
 /**
  * Iterates through the dictionary, applying the specified callback function to
- * each node in the dictionary.
+ * each item in the dictionary.
  * @param d the dictionary through which to iterate
  * @param callback the callback function to apply to all of the nodes
  */
-FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *));
+FLYAPI void dict_iterate_callback(dict *d, void (*callback)(void *));
+
+/** @} */
 
 #if __STDC_VERSION__ < 199901L
 #undef restrict
