@@ -1,7 +1,7 @@
 CC := clang
 TESTS = $(patsubst %.c,bin/%,$(wildcard test_*.c))
 
-CFLAGS += -g -I../include -lcmocka -Wall \
+CFLAGS += -g -I../include -I../src -lcmocka -Wall \
 					-fsanitize=address -fno-omit-frame-pointer -fno-common
 
 all: $(TESTS)

@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "dict.h"
+#include "internal/dict.h"
 
 int dict_test_setup(void **state) {
   (void) state;
