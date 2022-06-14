@@ -211,24 +211,6 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
   }
 }
 
-FLYAPI void dict_set_freeproc(dict *d, void (*del)(void *)) {
-  size_t i = 0;
-
-  FLY_ERR_CLEAR;
-
-  if (d != NULL) {
-    d->del = del;
-    while(i < d->capacity) {
-      if (d->buckets[i].flags & 0x1) {
-        list_set_freeproc(d->buckets[i].data, del);
-      }
-      i++;
-    }
-  } else {
-    FLY_ERR(EFLYBADARG);
-  }
-}
-
 FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
   FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {

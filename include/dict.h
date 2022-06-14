@@ -122,18 +122,6 @@ FLYAPI dict *dict_new_of_size(const size_t size);
 FLYAPI dict *dict_new();
 
 /**
- * Sets the freeing routine for the specified dictionary. This function should
- * be called at creation time or soon after so that the correct destructor is
- * used to free any memory that may be destroyed. If the destructor is not
- * properly set, segmentation faults may occur.
- * @param d the dictionary for which we are setting the destructor
- * @param del the freeing routine to be set as this dictionary's
- * destructor
- * @see dict_remove()
- * @see dict_del()
- */
-FLYAPI void dict_set_destructor(dict *d, void (*del)(void *));
-/**
  * Gets the index in a dictionary d for the specified key. That is, the key is
  * hashed and then compressed based on the parameters for the given dictionary.
  * @param d the dictionary for which to calculate this hash index
