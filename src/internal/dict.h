@@ -8,8 +8,9 @@ struct dictbucket {
 
 //! Record container for a single `\ref dict` key-value pair.
 typedef struct dictnode {
-	void *key;   //!< Key pointer. Can be `char *` or generic `void *`.
-	void *value; //!< Data pointer.
+	void *key;     //!< Key pointer. Can be `char *` or generic `void *`.
+	void *value;   //!< Data pointer.
+  uint64_t hash; //!< Full uncompressed hash of `key`.
 
   //! Callback that compares keys for equality in lookup operations.
   int (*key_matcher)(const void *, const void *, const void *);
@@ -34,12 +35,13 @@ dictnode *dictnode_alloc();
  * pair and the allocation callback. No hashing is done at this time.
  * @param key the key string used for this element in the dictionary
  * @param data the generic pointer to the element stored in this node
+ * @param hash the precomputed uncompressed hash of the key
  * @param matches the matcher used to compare keys
  * @param alloc the callback with which to allocate the new node
  * @return a pointer to the newly allocated dictionary node
  */
 dictnode *dictnode_new(
-    void *key, void *data,
+    void *key, void *data, uint64_t hash,
     int (*matches)(const void *, const void *, const void *),
     void *(*alloc)(size_t));
 

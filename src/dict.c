@@ -68,7 +68,7 @@ FLYAPI dictnode *dictnode_alloc() {
 }
 
 FLYAPI dictnode *dictnode_new(
-    void *key, void *value,
+    void *key, void *value, uint64_t hash,
     int (*key_matcher)(const void *, const void *, const void *),
     void *(*alloc)(size_t)) {
   dictnode *ret = dictnode_alloc_with(alloc);
@@ -78,6 +78,7 @@ FLYAPI dictnode *dictnode_new(
   } else {
     ret->key = key;
     ret->value = value;
+    ret->hash = hash;
     ret->key_matcher = key_matcher;
   }
   return ret;
@@ -241,14 +242,16 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
 #define WITH_NEW_NODE_OR_DIE(operation) \
   if (!(node = dictnode_new( \
           key_matcher == &__str_key_matcher ? strdup(key) : key, \
-          value, key_matcher, d->alloc))) { \
+          value, hash, key_matcher, d->alloc))) { \
     return; \
   } \
   operation
 
 static void __dict_set_bucket_atomic(
-    dict *d, struct dictbucket *bucket, void *key, void *value,
+    dict * restrict d, void *key, void *value, uint64_t hash,
     int (*key_matcher)(const void *, const void *, const void *)) {
+  struct dictbucket * restrict bucket = d->buckets + (hash & d->capacity - 1);
+
   dictnode *node;  /* Used in macro expansion */
 
   if (bucket->data) {
@@ -288,8 +291,7 @@ FLYAPI void dict_set(dict * restrict d, void *key, void *value) {
     FLY_ERR_CLEAR;
 
     __dict_set_bucket_atomic(
-        d, d->buckets + (hash_xorshift64s((uint64_t) key) & (d->capacity - 1)),
-        key, value, &__ptr_key_matcher);
+        d, key, value, hash_xorshift64s((uint64_t) key), &__ptr_key_matcher);
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -300,8 +302,7 @@ FLYAPI void dict_sets(dict * restrict d, char *key, void *value) {
     FLY_ERR_CLEAR;
 
     __dict_set_bucket_atomic(
-        d, d->buckets + (hash_string(key) & (d->capacity - 1)),
-        key, value, &__str_key_matcher);
+        d, key, value, hash_string(key), &__str_key_matcher);
   } else {
     FLY_ERR(EFLYBADARG);
   }
