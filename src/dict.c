@@ -231,7 +231,7 @@ FLYAPI void dict_set_freeproc(dict *d, void (*del)(void *)) {
 FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
   FLY_ERR_CLEAR;
   if (d != NULL && key != NULL) {
-    return hash_string(key) % d->capacity;
+    return hash_string(key) & (d->capacity - 1);
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -288,7 +288,7 @@ FLYAPI void dict_set(dict * restrict d, void *key, void *value) {
     FLY_ERR_CLEAR;
 
     __dict_set_bucket_atomic(
-        d, d->buckets + hash_xorshift64s((uint64_t) key) % d->capacity,
+        d, d->buckets + (hash_xorshift64s((uint64_t) key) & (d->capacity - 1)),
         key, value, &__ptr_key_matcher);
   } else {
     FLY_ERR(EFLYBADARG);
@@ -300,7 +300,7 @@ FLYAPI void dict_sets(dict * restrict d, char *key, void *value) {
     FLY_ERR_CLEAR;
 
     __dict_set_bucket_atomic(
-        d, d->buckets + hash_string(key) % d->capacity,
+        d, d->buckets + (hash_string(key) & (d->capacity - 1)),
         key, value, &__str_key_matcher);
   } else {
     FLY_ERR(EFLYBADARG);
@@ -357,7 +357,7 @@ static dictnode *__dict_remove_from_bucket(
 
 static dictnode *__dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return __dict_remove_from_bucket(
-      d->buckets + hash_xorshift64s((uint64_t) key) % d->capacity,
+      d->buckets + (hash_xorshift64s((uint64_t) key) & (d->capacity - 1)),
       key, &__list_ptr_key_matcher);
 }
 
@@ -400,7 +400,7 @@ static inline dictnode *__dict_find_in_bucket(
 
 static dictnode *__dict_find_keyed_ptr(dict * restrict d, void *key) {
   return __dict_find_in_bucket(
-      d->buckets + hash_xorshift64s((uint64_t) key) % d->capacity,
+      d->buckets + (hash_xorshift64s((uint64_t) key) & (d->capacity - 1)),
       key, &__list_ptr_key_matcher);
 }
 
