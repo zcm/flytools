@@ -29,8 +29,7 @@
  * @{
  */
 
-//! Single bucket for a \ref dict.
-struct dictbucket;
+struct dbucket;  //!< Single bucket for a \ref dict.
 
 /**
  * A structure that represents a dictionary abstract data type (ADT). This
@@ -38,11 +37,11 @@ struct dictbucket;
  * API functions.
  */
 typedef struct dict {
-	size_t size;                //!< Number of elements stored in this \ref dict.
-	size_t capacity;            //!< Number of buckets in this \ref dict.
-	struct dictbucket *buckets; //!< Array of containers for \ref dict elements.
-	void *(*alloc)(size_t);     //!< Allocator for internal structures.
-	void (*del)(void *);        //!< Deallocator for internal structures.
+  size_t size;             //!< Number of elements stored in this \ref dict.
+  size_t exponent;         //!< Capacity in log<sub>2</sub>(# of buckets) terms.
+  struct dbucket *buckets; //!< Array of containers for \ref dict elements.
+  void *(*alloc)(size_t);  //!< Allocator for internal structures.
+  void (*del)(void *);     //!< Deallocator for internal structures.
 } dict;
 
 /**
@@ -121,14 +120,6 @@ FLYAPI dict *dict_new_of_size(const size_t size);
  */
 FLYAPI dict *dict_new();
 
-/**
- * Gets the index in a dictionary d for the specified key. That is, the key is
- * hashed and then compressed based on the parameters for the given dictionary.
- * @param d the dictionary for which to calculate this hash index
- * @param key the key for which to calculate the index
- * @return the calculated hash index for the specified key
- */
-FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key);
 /**
  * Inserts a value into the specified dictionary with the given object key. That
  * is, the value argument is associated with the pointer in the dictionary.

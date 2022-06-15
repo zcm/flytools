@@ -14,6 +14,7 @@
  */
 
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -109,29 +110,33 @@ FLYAPI dict *dict_alloc() {
 	return dict_alloc_with(&malloc);
 }
 
-static void __dict_init_with(
+static dict *__dict_init_with(
     dict *d, const size_t size,
     void *(*alloc)(size_t), void (*del)(void *)) {
   if (d != NULL) {
     if (alloc == &malloc) {
-      d->buckets = (struct dictbucket *)
-        calloc(size, sizeof (struct dictbucket));
+      d->buckets = (struct dbucket *)
+        calloc(size, sizeof (struct dbucket));
     } else {
-      d->buckets = (struct dictbucket *)
-        memset((*alloc)(size * sizeof(struct dictbucket)), 0, size);
+      d->buckets = (struct dbucket *)
+        memset((*alloc)(size * sizeof(struct dbucket)), 0, size);
     }
 
     if(d->buckets == NULL) {
       FLY_ERR(EFLYNOMEM);
     } else {
       d->size = 0;
-      d->capacity = size;
+      d->exponent = llogb((double) size);
       d->alloc = alloc;
       d->del = del;
+
+      FLY_ERR_CLEAR;
     }
   } else {
     FLY_ERR(EFLYBADARG);
   }
+
+  return d;
 }
 
 static inline int __check_power_of_two(const size_t size) {
@@ -140,7 +145,6 @@ static inline int __check_power_of_two(const size_t size) {
     return 0;
   }
 
-  FLY_ERR_CLEAR;
   return 1;
 }
 
@@ -159,15 +163,17 @@ FLYAPI void dict_init(dict *d, const size_t size) {
 FLYAPI dict *dict_new_with(
     const size_t size,
     void *(*alloc)(size_t), void (*del)(void *)) {
-	dict *d = NULL;
+	dict *d;
 
   if (__check_power_of_two(size)) {
     if ((d = dict_alloc_with(alloc))) {
-      __dict_init_with(d, size, alloc, del);
+      return __dict_init_with(d, size, alloc, del);
     }
+
+    FLY_ERR(EFLYNOMEM);
   }
 
-	return d;
+	return NULL;
 }
 
 FLYAPI dict *dict_new_of_size(const size_t size) {
@@ -178,19 +184,21 @@ FLYAPI dict *dict_new() {
   dict *d = dict_alloc_with(&malloc);
 
   if (d) {
-    __dict_init_with(d, DEFAULT_SIZE, &malloc, &free);
+    return __dict_init_with(d, DEFAULT_SIZE, &malloc, &free);
   }
 
+  FLY_ERR(EFLYNOMEM);
   return d;
 }
 
 FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
-  size_t i = 0;
-
-  FLY_ERR_CLEAR;
-
   if (d != NULL) {
-    while(i < d->capacity) {
+    register size_t i = 0;
+    const size_t capacity = 1 << d->exponent;
+
+    FLY_ERR_CLEAR;
+
+    while (i < capacity) {
       if (d->buckets[i].flags & 0x1) {
         while (list_size(d->buckets[i].data) > 0) {
           dictnode_del(list_pop(d->buckets[i].data), d->del);
@@ -211,16 +219,6 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
   }
 }
 
-FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
-  FLY_ERR_CLEAR;
-  if (d != NULL && key != NULL) {
-    return hash_string(key) & (d->capacity - 1);
-  } else {
-    FLY_ERR(EFLYBADARG);
-  }
-	return 0;
-}
-
 #define WITH_NEW_NODE_OR_DIE(operation) \
   if (!(node = dictnode_new( \
           key_matcher == &__str_key_matcher ? strdup(key) : key, \
@@ -232,7 +230,8 @@ FLYAPI unsigned int dict_get_hash_index(dict * restrict d, const char *key) {
 static void __dict_set_bucket_atomic(
     dict * restrict d, void *key, void *value, uint64_t hash,
     int (*key_matcher)(const void *, const void *, const void *)) {
-  struct dictbucket * restrict bucket = d->buckets + (hash & d->capacity - 1);
+  struct dbucket * restrict bucket =
+    d->buckets + (hash & (1 << d->exponent) - 1);
 
   dictnode *node;  /* Used in macro expansion */
 
@@ -317,7 +316,7 @@ static inline dictnode *__dict_lookup_using(
 }
 
 static dictnode *__dict_remove_from_bucket(
-    struct dictbucket * restrict bucket, void *key, int (*matcher)(void *)) {
+    struct dbucket * restrict bucket, void *key, int (*matcher)(void *)) {
   dictnode *node;
 
   if (bucket->flags & 0x1) {
@@ -338,16 +337,19 @@ static dictnode *__dict_remove_from_bucket(
   return node;
 }
 
+#define BUCKET_PTR_INDEX(d, key) \
+  (hash_xorshift64s((uint64_t) key) & (1 << d->exponent) - 1)
+#define BUCKET_STR_INDEX(d, key) \
+  (hash_string(key) & (1 << d->exponent) - 1)
+
 static dictnode *__dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return __dict_remove_from_bucket(
-      d->buckets + (hash_xorshift64s((uint64_t) key) & (d->capacity - 1)),
-      key, &__list_ptr_key_matcher);
+      d->buckets + BUCKET_PTR_INDEX(d, key), key, &__list_ptr_key_matcher);
 }
 
 static dictnode *__dict_remove_keyed_str(dict * restrict d, void *key) {
   return __dict_remove_from_bucket(
-      d->buckets + dict_get_hash_index(d, key),
-      key, &__list_str_key_matcher);
+      d->buckets + BUCKET_STR_INDEX(d, key), key, &__list_str_key_matcher);
 }
 
 #define __dict_remove_using(proc) \
@@ -371,7 +373,7 @@ FLYAPI void *dict_removes(dict * restrict d, char *key) {
 #undef __dict_remove_using
 
 static inline dictnode *__dict_find_in_bucket(
-    struct dictbucket * restrict bucket, void *key, int (*matcher)(void *)) {
+    struct dbucket * restrict bucket, void *key, int (*matcher)(void *)) {
   if (bucket->flags & 0x1) {
     match_key = key;
     return (dictnode *)
@@ -383,14 +385,12 @@ static inline dictnode *__dict_find_in_bucket(
 
 static dictnode *__dict_find_keyed_ptr(dict * restrict d, void *key) {
   return __dict_find_in_bucket(
-      d->buckets + (hash_xorshift64s((uint64_t) key) & (d->capacity - 1)),
-      key, &__list_ptr_key_matcher);
+      d->buckets + BUCKET_PTR_INDEX(d, key), key, &__list_ptr_key_matcher);
 }
 
 static dictnode *__dict_find_keyed_str(dict * restrict d, void *key) {
   return __dict_find_in_bucket(
-      d->buckets + dict_get_hash_index(d, key),
-      key, &__list_str_key_matcher);
+      d->buckets + BUCKET_STR_INDEX(d, key), key, &__list_str_key_matcher);
 }
 
 FLYAPI void *dict_get(dict * restrict d, void *key) {
