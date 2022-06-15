@@ -1,7 +1,7 @@
 #ifndef __ZCM_INTERNAL_DICT_H__
 #define __ZCM_INTERNAL_DICT_H__
 
-struct dictbucket {
+struct dbucket {
   uint_fast8_t flags;
   void *data;
 };
