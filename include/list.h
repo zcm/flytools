@@ -25,9 +25,11 @@
 #define restrict __restrict
 #endif
 
+struct listkind;
+
 typedef struct list {
   flyobj _parent;
-  flykind *kind;
+  struct listkind *kind;
   void *datastore;
 } list;
 
@@ -42,6 +44,8 @@ typedef struct listkind {
   void *(*pop)(list *l);
   void *(*shift)(list *l);
   void (*concat)(list *l1, list *l2);
+  uintptr_t (*remove_first)(list *, int (*)(void *));
+  size_t (*remove_all)(list *, int (*)(void *), int (*)(void *, size_t));
 } listkind;
 
 extern FLYAPI listkind *LISTKIND_DLINK;
@@ -67,6 +71,8 @@ FLYAPI void list_concat_into(list *l1, list *l2);
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *));
 FLYAPI void *list_remove_first(list *l, int (*matcher)(void *));
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
+FLYAPI size_t list_remove_all(
+    list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 FLYAPI void listkind_dlink_init(list *l);
 FLYAPI void listkind_dlink_del(list *l);
