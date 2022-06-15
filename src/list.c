@@ -21,6 +21,13 @@
 
 #include "list.h"
 
+static uintptr_t dllist_remove_first(list *l, int (*matcher)(void *));
+static uintptr_t sllist_remove_first(list *l, int (*matcher)(void *));
+static size_t dllist_remove_all(
+    list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+static size_t sllist_remove_all(
+    list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+
 FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
   { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
   &listkind_dlink_init,
@@ -31,7 +38,9 @@ FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
   &listkind_dlink_unshift,
   &listkind_dlink_pop,
   &listkind_dlink_shift,
-  &listkind_dlink_concat
+  &listkind_dlink_concat,
+  &dllist_remove_first,
+  &dllist_remove_all,
 };
 
 FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
@@ -44,7 +53,9 @@ FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
   &listkind_slink_unshift,
   &listkind_slink_pop,
   &listkind_slink_shift,
-  &listkind_slink_concat
+  &listkind_slink_concat,
+  &sllist_remove_first,
+  &sllist_remove_all,
 };
 
 typedef struct list_dlink_ds {
@@ -63,21 +74,6 @@ typedef struct list_slink_ds {
 #elif defined(_MSC_VER)
 #define inline __inline
 #define restrict __restrict
-#endif
-
-#ifdef FLYNITRO
-#define listkind_shadowcast(kind) ((listkind *)( kind ))
-#else
-static inline listkind *listkind_shadowcast(flykind *kind) {
-  listkind *ret = NULL;
-  FLY_ERR_CLEAR;
-  if(kind->id & (FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND)) {
-    ret = (listkind *)kind;
-  } else {
-    FLY_ERR(EFLYBADCAST);
-  }
-  return ret;
-}
 #endif
 
 FLYAPI list *list_new() {
@@ -103,7 +99,7 @@ FLYAPI list *list_new_kind_with(
   if(ret != NULL) {
     flyobj_init((flyobj *) ret, allocproc, freeproc);
     flyobj_set_id((flyobj *) ret, FLYTOOLS_TYPE_LIST);
-    ret->kind = (flykind *) kind;
+    ret->kind = kind;
     kind->init(ret);
   } else {
     FLY_ERR(EFLYNOMEM);
@@ -112,15 +108,10 @@ FLYAPI list *list_new_kind_with(
 }
 
 FLYAPI void list_del(list *l) {
-  listkind *k;
-  FLY_ERR_CLEAR;
   if (l != NULL) {
-    k = listkind_shadowcast(l->kind);
-    if(k) {
-      k->destroy(l);
-    } else {
-      FLY_ERR(EFLYBADFN);
-    }
+    FLY_ERR_CLEAR;
+
+    l->kind->destroy(l);
     flyobj_del((flyobj *)l);
   } else {
     FLY_ERR(EFLYBADARG);
@@ -139,163 +130,113 @@ FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
 // struct member interaction
 
 FLYAPI size_t list_size(list *l) {
-  listkind *k;
-  size_t ret = 0;
-  FLY_ERR_CLEAR;
   if (l != NULL) {
-    k = listkind_shadowcast(l->kind);
-    if(k) {
-      ret = k->get_size(l);
-    } else {
-      FLY_ERR(EFLYBADFN);
-    }
+    FLY_ERR_CLEAR;
+    return l->kind->get_size(l);
   } else {
     FLY_ERR(EFLYBADARG);
   }
-  return ret;
+  return 0;
 }
 
 FLYAPI void *list_pop(list *l) {
-  void *ret = NULL;
-  listkind *k;
-  FLY_ERR_CLEAR;
   if (l != NULL) {
-    k = listkind_shadowcast(l->kind);
-    if(k) {
-      if(list_size(l) > 0) {
-        ret = k->pop(l);
-      } else {
-        FLY_ERR(EFLYEMPTY);
-      }
+    if (list_size(l) > 0) {
+      FLY_ERR_CLEAR;
+      return l->kind->pop(l);
     } else {
-      FLY_ERR(EFLYBADFN);
+      FLY_ERR(EFLYEMPTY);
     }
   } else {
     FLY_ERR(EFLYBADARG);
   }
-  return ret;
+
+  return NULL;
 }
 
 FLYAPI void list_push(list *l, void *data) {
-  listkind *k;
-  FLY_ERR_CLEAR;
   if (l != NULL) {
-    k = listkind_shadowcast(l->kind);
-    if(k) {
-      k->push(l, data);
-    } else {
-      FLY_ERR(EFLYBADFN);
-    }
+    FLY_ERR_CLEAR;
+    l->kind->push(l, data);
   } else {
-    FLY_ERR(EFLYBADARG);
+    FLY_ERR(EFLYBADFN);
   }
 }
 
 FLYAPI void *list_shift(list *l) {
-  void *ret = NULL;
-  listkind *k;
-  FLY_ERR_CLEAR;
   if (l != NULL) {
-    k = listkind_shadowcast(l->kind);
-    if(k) {
-      if(list_size(l) > 0) {
-        ret = k->shift(l);
-      } else {
-        FLY_ERR(EFLYEMPTY);
-      }
+    if (list_size(l) > 0) {
+      FLY_ERR_CLEAR;
+      return l->kind->shift(l);
     } else {
-      FLY_ERR(EFLYBADFN);
+      FLY_ERR(EFLYEMPTY);
     }
   } else {
     FLY_ERR(EFLYBADARG);
   }
-  return ret;
+
+  return NULL;
 }
 
 FLYAPI void list_unshift(list *l, void *data) {
-  listkind *k;
-  FLY_ERR_CLEAR;
   if (l != NULL) {
-    k = listkind_shadowcast(l->kind);
-    if(k) {
-      k->unshift(l, data);
-    } else {
-      FLY_ERR(EFLYBADFN);
-    }
+    FLY_ERR_CLEAR;
+    l->kind->unshift(l, data);
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
 FLYAPI void list_concat(list *l1, list *l2) {
-  listkind *k1;
-  listkind *k2;
-  int ptr_valid = 1;
-  FLY_ERR_CLEAR;
-  if (l1 != NULL) {
-    k1 = listkind_shadowcast(l1->kind);
-  } else {
-    ptr_valid = 0;
-  }
-  if (l2 != NULL) {
-    k2 = listkind_shadowcast(l2->kind);
-  } else {
-    ptr_valid = 0;
-  }
-  if (ptr_valid) {
-    if(k1 && k2) {
-      if(k1 == k2) {
-        k1->concat(l1, l2);
-      } else {
-        /* TODO: different kinds. for now, concat into l1... */
-        /* but in the future... make a conglomerate list     */
-        list_concat_into(l1, l2); // TODO: change to conglomerate list
-      }
-    } else {
-      if(!k1 && k2) {
-        FLY_ERR(EFLYBADFNONLY1);
-      } else if (k1 && !k2) {
-        FLY_ERR(EFLYBADFNONLY2);
-      } else {
-        FLY_ERR(EFLYBADFNBOTH);
-      }
-    }
-  } else {
+  if (!(l1 && l2)) {
     FLY_ERR(EFLYBADARG);
+    return;
+  }
+
+  FLY_ERR_CLEAR;
+
+  if (l1->kind == l2->kind) {
+    l1->kind->concat(l1, l2);
+  } else {
+    /* TODO: different kinds. for now, concat into l1... */
+    /* but in the future... make a conglomerate list     */
+    list_concat_into(l1, l2); // TODO: change to conglomerate list
   }
 }
 
 FLYAPI void list_concat_into(list *l1, list *l2) {
-  FLY_ERR_CLEAR;
   if (l1 == NULL || l2 == NULL) {
     FLY_ERR(EFLYBADARG);
-  } else {
-    if(l1->kind == l2->kind && l1->kind != NULL) {
-      // silly user, they're the same kind! use list_concat instead (it's faster)
-      list_concat(l1, l2);
-    } else {
-      while(list_size(l2) > 0) {
-        list_unshift(l1, list_pop(l2));
-      }
-      list_del(l2);
-    }
+    return;
   }
+
+  if (l1->kind == l2->kind) {
+    // silly user, they're the same kind! use list_concat instead (it's faster)
+    list_concat(l1, l2);
+    return;
+  }
+
+  FLY_ERR_CLEAR;
+
+  while (list_size(l2) > 0) {
+    list_unshift(l1, list_pop(l2));
+  }
+
+  list_del(l2);
 }
 
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
-  FLY_ERR_CLEAR;
-
   if (!(l && matcher)) {
     FLY_ERR(EFLYBADARG);
     return NULL;
   }
 
   if (!list_size(l)) {
+    FLY_ERR(EFLYEMPTY);
     return NULL;
   }
 
-  if (l->kind == (flykind *) LISTKIND_DLINK
-      || l->kind == (flykind *) LISTKIND_SLINK) {
+  if (l->kind == LISTKIND_DLINK || l->kind == LISTKIND_SLINK) {
     sllistnode *head = ((list_slink_ds *) l->datastore)->head,
                *current = head->next;
 
@@ -313,7 +254,21 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
   return NULL;
 }
 
-static inline uintptr_t __dllist_remove_first(list *l, int (*matcher)(void *)) {
+static inline void dllist_stitch(dllistnode *current) {
+  current->prev->next = current->next;
+  current->next->prev = current->prev;
+}
+
+static inline void sllist_stitch(
+    sllistnode *current, sllistnode *prev, list_slink_ds * restrict ds) {
+  if (current == ds->last) {
+    ds->last = prev;
+  }
+
+  prev->next = current->next;
+}
+
+static uintptr_t dllist_remove_first(list *l, int (*matcher)(void *)) {
   dllistnode *head = ((list_dlink_ds *) l->datastore)->head,
              *current = head->next;
 
@@ -321,8 +276,7 @@ static inline uintptr_t __dllist_remove_first(list *l, int (*matcher)(void *)) {
     if (matcher(current->data)) {
       void *data = current->data;
 
-      current->prev->next = current->next;
-      current->next->prev = current->prev;
+      dllist_stitch(current);
 
       ((flyobj *) l)->freeproc(current);
 
@@ -335,25 +289,20 @@ static inline uintptr_t __dllist_remove_first(list *l, int (*matcher)(void *)) {
   return 0x0;
 }
 
-static inline uintptr_t __sllist_remove_first(list *l, int (*matcher)(void *)) {
+static uintptr_t sllist_remove_first(list *l, int (*matcher)(void *)) {
   sllistnode *head = ((list_slink_ds *) l->datastore)->head,
              *prev = head,
              *current = head->next;
 
   while (current != head) {
     if (matcher(current->data)) {
-      void *data = current->data;
-      list_slink_ds *ds = (list_slink_ds *) l->datastore;
+      uintptr_t data = (uintptr_t) current->data;
 
-      if (current == ds->last) {
-        ds->last = prev;
-      }
-
-      prev->next = current->next;
+      sllist_stitch(current, prev, (list_slink_ds *) l->datastore);
 
       ((flyobj *) l)->freeproc(current);
 
-      return (uintptr_t) data ^ (uintptr_t) 0x1;
+      return data ^ 0x1;
     }
 
     current = (prev = current)->next;
@@ -362,30 +311,19 @@ static inline uintptr_t __sllist_remove_first(list *l, int (*matcher)(void *)) {
   return 0x0;
 }
 
-static inline uintptr_t __list_remove_first(list *l, int (*matcher)(void *)) {
-  FLY_ERR_CLEAR;
-
+FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
   if (!(l && matcher)) {
     FLY_ERR(EFLYBADARG);
-    return 0x0;
+    return NULL;
   }
 
   if (!list_size(l)) {
-    return 0x0;
+    return NULL;
   }
 
-  if (l->kind == (flykind *) LISTKIND_DLINK) {
-    return __dllist_remove_first(l, matcher);
-  } else if (l->kind == (flykind *) LISTKIND_SLINK) {
-    return __sllist_remove_first(l, matcher);
-  }
+  FLY_ERR_CLEAR;
 
-  FLY_ERR(EFLYINTERNAL);
-  return 0x0;
-}
-
-FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
-  uintptr_t data = __list_remove_first(l, matcher);
+  uintptr_t data = l->kind->remove_first(l, matcher);
 
   if (data) {
     --((list_slink_ds *) l->datastore)->size;
@@ -396,18 +334,108 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
 }
 
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
-  FLY_ERR_CLEAR;
-
   if (!(l && fn)) {
     FLY_ERR(EFLYBADARG);
     return;
   }
+
+  FLY_ERR_CLEAR;
 
   size_t i = 0;
   sllistnode *current, *head;
   current = head = ((list_slink_ds *) l->datastore)->head;
 
   while (head != (current = current->next) && !fn(current->data, i++));
+}
+
+static size_t dllist_remove_all(
+    list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+  size_t i = 0, total_removed = 0;
+  dllistnode *head = ((list_dlink_ds *) l->datastore)->head,
+             *current = head->next;
+
+  while (current != head) {
+    if (matcher(current->data)) {
+      void *data = current->data;
+      dllistnode *next = current->next;
+
+      dllist_stitch(current);
+
+      ((flyobj *) l)->freeproc(current);
+
+      ++total_removed;
+
+      if (fn(data, i++)) {
+        break;
+      }
+
+      current = next;
+    } else {
+      current = current->next;
+      ++i;
+    }
+  }
+
+  ((list_dlink_ds *)l->datastore)->size -= total_removed;
+  return total_removed;
+}
+
+#define DEFERRED_FREE(...) \
+  if (chopping_block) \
+    ((flyobj *) l)->freeproc(chopping_block); \
+  __VA_OPT__(chopping_block =) __VA_ARGS__
+
+static size_t sllist_remove_all(
+    list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+  size_t i = 0, total_removed = 0;
+  sllistnode *head = ((list_slink_ds *) l->datastore)->head,
+             *prev = head,
+             *chopping_block = NULL,  /* for DEFERRED_FREE() */
+             *current = head->next;
+
+  while (current != head) {
+    if (matcher(current->data)) {
+      void *data = current->data;
+      sllistnode *next = current->next;
+
+      sllist_stitch(current, prev, (list_slink_ds *) l->datastore);
+
+      DEFERRED_FREE(current);
+
+      ++total_removed;
+
+      if (fn(data, i++)) {
+        break;
+      }
+
+      current = next;
+    } else {
+      DEFERRED_FREE(NULL);
+      current = (prev = current)->next;
+      ++i;
+    }
+  }
+
+  DEFERRED_FREE();
+
+  ((list_slink_ds *)l->datastore)->size -= total_removed;
+  return total_removed;
+}
+
+#undef DEFERRED_FREE
+
+static int do_nothing(void *unused_data, size_t unused_i) {
+  return 0;
+}
+
+FLYAPI size_t list_remove_all(
+    list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+  if (!(l && matcher)) {
+    FLY_ERR(EFLYBADARG);
+    return 0;
+  }
+
+  return l->kind->remove_all(l, matcher, fn ? fn : &do_nothing);
 }
 
 static inline dllistnode *listkind_dlink_get_head(list * restrict l) {

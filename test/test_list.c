@@ -663,9 +663,9 @@ void test_list_remove_first_null_entry_sl(void **state) {
   __test_list_remove_first_null_entry(LISTKIND_SLINK);
 }
 
-static uintptr_t prime = 1;
+static uintptr_t prime = 0;
 static size_t index_sum = 0;
-static char order[6] = { 0 }, indices[6] = { 0 };
+static char order[6] = { 0 }, indices[6] = { 0 }, zilch[6] = { 0 };
 
 int multiply_prime(void *data, size_t index) {
   prime *= (uintptr_t) data;
@@ -690,6 +690,9 @@ void test_list_foreach(void **state) {
   list *l;
   assert_non_null(l = list_new());
 
+  prime = 1;
+  index_sum = 0;
+
   list_foreach(l, &multiply_prime);
 
   assert_int_equal(prime, 1);
@@ -707,6 +710,9 @@ void test_list_foreach(void **state) {
   assert_int_equal(prime, 210);
   assert_int_equal(index_sum, 10);
   assert_int_equal(list_size(l), 5);
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
 
   list_foreach(l, &record_order);
 
@@ -726,10 +732,172 @@ void test_list_foreach(void **state) {
   assert_string_equal("x321", order);
   assert_string_equal("x123", indices);
 
+  list_del(l);
+}
+
+int everything(void *unused_value) {
+  return 1;
+}
+
+int nothing(void *unused_value) {
+  return 0;
+}
+
+int value_is_odd(void *value) {
+  return (uintptr_t) value & 0x1;
+}
+
+int value_is_even(void *value) {
+  return !value_is_odd(value);
+}
+
+static size_t count = 0;
+
+int record_order_by_count(void *data, size_t index) {
+  order[count] = (uintptr_t) data + '0';
+  indices[count] = index + '0';
+  ++count;
+  return 0;
+}
+
+void __test_list_remove_all(listkind *kind) {
+  list *l;
+  assert_non_null(l = list_new_kind(kind));
+
+  prime = 1;
+  index_sum = 2;
+
+  assert_int_equal(
+      0, list_remove_all(l, &everything, &multiply_prime));
+
+  assert_int_equal(prime, 1);
+  assert_int_equal(index_sum, 2);
+  assert_int_equal(list_size(l), 0);
+
+  list_unshift(l, (void *) 1);
+  list_unshift(l, (void *) 2);
+  list_unshift(l, (void *) 3);
+  list_unshift(l, (void *) 4);
+  list_unshift(l, (void *) 5);
+
+  assert_int_equal(list_size(l), 5);
+
+  assert_int_equal(
+      0, list_remove_all(l, &nothing, &multiply_prime));
+
+  assert_int_equal(prime, 1);
+  assert_int_equal(index_sum, 2);
+  assert_int_equal(list_size(l), 5);
+
   memset(order, 0, sizeof (order));
   memset(indices, 0, sizeof (indices));
 
+  count = 0;
+
+  char expected_order[6] = "135";
+  char expected_indices[6] = "024";
+
+  assert_int_equal(
+      3, list_remove_all(l, &value_is_odd, &record_order_by_count));
+
+  assert_int_equal(list_size(l), 2);
+  assert_string_equal(order, expected_order);
+  assert_string_equal(indices, expected_indices);
+  assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
+  assert_memory_equal(indices + 3, zilch, sizeof (indices) - 3);
+
+  order[0] = expected_order[0] = 'a';
+  indices[0] = expected_indices[0] = 'b';
+
+  assert_int_equal(
+      0, list_remove_all(l, &value_is_odd, &record_order_by_count));
+
+  assert_int_equal(list_size(l), 2);
+  assert_string_equal(order, expected_order);
+  assert_string_equal(indices, expected_indices);
+  assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
+  assert_memory_equal(indices + 3, zilch, sizeof (indices) - 3);
+
+  count = 0;
+
+  char expected_order_2[6] = "245";
+  char expected_indices_2[6] = "014";
+
+  assert_int_equal(
+      2, list_remove_all(l, &value_is_even, &record_order_by_count));
+
+  assert_int_equal(list_size(l), 0);
+  assert_string_equal(order, expected_order_2);
+  assert_string_equal(indices, expected_indices_2);
+  assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
+  assert_memory_equal(indices + 3, zilch, sizeof (indices) - 3);
+
+  assert_int_equal(
+      0, list_remove_all(l, &value_is_even, &record_order_by_count));
+
+  assert_int_equal(list_size(l), 0);
+  assert_string_equal(order, expected_order_2);
+  assert_string_equal(indices, expected_indices_2);
+  assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
+  assert_memory_equal(indices + 3, zilch, sizeof (indices) - 3);
+
+  list_push(l, (void *) 6);
+  assert_int_equal(list_size(l), 1);
+
+  count = 0;
+  expected_order_2[0] = '6';
+
+  assert_int_equal(
+      1, list_remove_all(l, &everything, &record_order_by_count));
+
+  assert_int_equal(list_size(l), 0);
+  assert_string_equal(order, expected_order_2);
+  assert_string_equal(indices, expected_indices_2);
+  assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
+  assert_memory_equal(indices + 3, zilch, sizeof (indices) - 3);
+
   list_del(l);
+
+  assert_non_null(l = list_new());
+
+  list_unshift(l, (void *) 1);
+  list_unshift(l, (void *) 2);
+  list_unshift(l, (void *) 3);
+  list_unshift(l, (void *) 4);
+  list_unshift(l, (void *) 5);
+
+  assert_int_equal(list_size(l), 5);
+
+  order[0] = indices[0] = 'a';
+  order[1] = indices[1] = 'b';
+  order[2] = indices[2] = 'c';
+  order[3] = indices[3] = 'd';
+
+  char expected_order_3[6] = "a3c1";
+  char expected_indices_3[6] = "a1c3";
+
+  assert_int_equal(
+      2, list_remove_all(l, &value_is_odd, &record_order_r_stop));
+
+  assert_int_equal(list_size(l), 3);
+  assert_string_equal(order, expected_order_3);
+  assert_string_equal(indices, expected_indices_3);
+  assert_memory_equal(order + 4, zilch, sizeof (order) - 4);
+  assert_memory_equal(indices + 4, zilch, sizeof (indices) - 4);
+
+  list_del(l);
+}
+
+void test_list_remove_all_dl(void **state) {
+  (void) state;
+
+  __test_list_remove_all(LISTKIND_DLINK);
+}
+
+void test_list_remove_all_sl(void **state) {
+  (void) state;
+
+  __test_list_remove_all(LISTKIND_SLINK);
 }
 
 int main(void) {
@@ -755,6 +923,8 @@ int main(void) {
       cmocka_unit_test(test_list_remove_first_null_entry_dl),
       cmocka_unit_test(test_list_remove_first_null_entry_sl),
       cmocka_unit_test(test_list_foreach),
+      cmocka_unit_test(test_list_remove_all_dl),
+      cmocka_unit_test(test_list_remove_all_sl),
   };
 
   return cmocka_run_group_tests_name(
