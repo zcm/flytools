@@ -16,43 +16,54 @@
 
 #include "hash.h"
 
+#ifdef __TURBOC__
+#define ror(value, width) \
+  (((value) >> (width)) | ((value) << (32 - width)))
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#define ror(value, width) _rotr64((value), (width))
+#else
+#ifdef __has_include
+#if __has_include(<x86intrin.h>)
+#include <x86intrin.h>
+#define ror(value, width) __rorq((value), (width))
+#endif
+#endif
+#endif
+
+#ifndef ror
+#warning "Using default definition for ror() macro; assuming 64-bit shiftwidth"
+#define ror(value, width) \
+  (((value) >> (width)) | ((value) << (64 - width)))
+#endif
+
+#define _xorshift64s_variant(x, a, b, c, m) \
+  (x ^= x >> a, \
+   x ^= x << b, \
+   x ^= x << c, \
+   x * m)
+
+#define M32 0x2545F4914F6CDD1DULL
+
 FLYAPI uint64_t hash_xorshift64s(uint64_t x) {
   /* Variant A_1(12,25,27), multiplier M32 */
-  x ^= x >> 12;
-  x ^= x << 25;
-  return (x ^ x << 27) * 0x2545F4914F6CDD1DULL;
+  return _xorshift64s_variant(x, 12, 25, 27, M32);
 }
 
-// Turbo C doesn't like "static inline."
-// In light of this, if we're using Turbo C, we change this to a macro.
-// It should give us the same runtime efficiency.
-#ifdef __TURBOC__
-#define _rotr1(value) (((value) >> 1) | ((value) << 31))
-#else
-#if defined(__STRICT_ANSI__)
-#define inline
-#elif defined(_MSC_VER)
-#define inline __inline
-#endif
-static inline unsigned int _rotr1(unsigned int value) {
-#if defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(NO_ASM)
-    asm ("rorl $1,%1" : "=a" (value) : "0" (value));
-    return value;
-#else
-    return (value >> 1) | (value << 31);
-#endif
-#if defined(__STRICT_ANSI__) || defined(_MSC_VER)
-#undef inline
-#endif
+FLYAPI uintptr_t hash_xorshift64s_ptr(uintptr_t ptr) {
+  ptr = _xorshift64s_variant(ptr, 12, 25, 27, M32);
+  return ror(ptr, 4);
 }
-#endif
+
+#undef _xorshift64s_variant
+#undef M32
 
 #define hash_macro_v(constant, itr, itr_body, terminal_case, body) \
     register size_t itr = 0; \
     register size_t ret = constant; \
     while( terminal_case ) { \
         ret ^= (size_t) s[itr] + itr; \
-        ret = _rotr1(ret); \
+        ret = ror(ret, 1); \
         itr_body \
         i++; \
     } \
@@ -64,10 +75,6 @@ static inline unsigned int _rotr1(unsigned int value) {
 
 #define hash_macro(itr, terminal_case) \
     hash_macro_c(0xFAFAFAFA, itr, terminal_case)
-
-#ifdef __TURBOC__
-#undef _rotr1
-#endif
 
 FLYAPI size_t blind_bounded_hash_string(
     const char *s,
@@ -86,6 +93,8 @@ FLYAPI size_t hash_string(const char *s) {
 #undef hash_macro
 #undef hash_macro_c
 #undef hash_macro_v
+
+#undef ror
 
 FLYAPI size_t hash_pointer_using(
     const void *ptr,

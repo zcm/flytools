@@ -31,6 +31,17 @@
 FLYAPI uint64_t hash_xorshift64s(uint64_t x);
 
 /**
+ * Hashes a pointer using xorshift64*. The implementation uses the variant
+ * A_1(12,25,27), multiplier M32 and applies a rotation 16 bits to the right to
+ * avoid skewing hash distribution when using short bitmasks due to bits that
+ * are usually zero (e.g. 48-bit x86-64 addresses) or byte alignment patterns.
+ *
+ * @param ptr the pointer to hash
+ * @return the hash of the pointer
+ */
+FLYAPI uintptr_t hash_xorshift64s_ptr(uintptr_t ptr);
+
+/**
  * Computes the uncompressed hash of the given string, ignoring null characters,
  * continuing until @c limit characters have been hashed. This function should
  * generally be avoided due to its power of ignoring null characters; it is used
