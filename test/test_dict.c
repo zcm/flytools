@@ -483,6 +483,51 @@ void test_dict_set_overwrites(void **state) {
   dict_del(d);
 }
 
+void test_dict_resize(void **state) {
+  (void) state;
+
+  dict *d;
+
+  assert_non_null(d = dict_new_of_size(4));
+  assert_int_equal(d->size, 0);
+  assert_int_equal(d->exponent, 2);
+
+  char *word_assoc[32] = {
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+    "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+    "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one",
+    "twenty-two", "twenty-three", "twenty-four", "twenty-five", "twenty-six",
+    "twenty-seven", "twenty-eight", "twenty-nine", "thirty", "thirty-one",
+  };
+
+  const size_t expected_exponents[32] = {
+    //  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16
+        2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  4,  4,  5,  5,  5,  5,
+    // 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+        5,  5,  5,  5,  5,  5,  5,  5,  6,  6,  6,  6,  6,  6,  6,  6,
+  };
+
+  size_t i, j, last_x = 2;
+
+  for (i = 0; i < 32; i++) {
+    dict_set(d, (void *) i, word_assoc[i]);
+    assert_int_equal(d->size, i + 1);
+    assert_int_equal(d->exponent, expected_exponents[i]);
+    if (last_x != d->exponent) {
+      last_x = d->exponent;
+      for (j = 0; j < i; j++) {
+        assert_string_equal(dict_get(d, (void *) j), word_assoc[j]);
+      }
+    }
+  }
+
+  for (i = 0; i < 32; i++) {
+    assert_string_equal(dict_get(d, (void *) i), word_assoc[i]);
+  }
+
+  dict_del(d);
+}
+
 #define dict_unit_test(f) \
   cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
 
@@ -501,6 +546,7 @@ int main(void) {
       dict_unit_test(test_dict_removes_from_empty),
       dict_unit_test(test_dict_null_as_key),
       dict_unit_test(test_dict_set_overwrites),
+      dict_unit_test(test_dict_resize),
   };
 
   return cmocka_run_group_tests_name(
