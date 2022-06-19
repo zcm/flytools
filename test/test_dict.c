@@ -483,12 +483,19 @@ void test_dict_set_overwrites(void **state) {
   dict_del(d);
 }
 
-void test_dict_resize(void **state) {
-  (void) state;
+void *(*volatile _passthrough_malloc)(size_t) = &malloc;
+void (*volatile _passthrough_free)(void *) = &free;
 
-  dict *d;
+void *passthrough_malloc(size_t size) {
+  return _passthrough_malloc(size);
+}
 
-  assert_non_null(d = dict_new_of_size(4));
+void passthrough_free(void *ptr) {
+  _passthrough_free(ptr);
+}
+
+void _test_dict_resize(dict *d) {
+  assert_non_null(d);
   assert_int_equal(d->size, 0);
   assert_int_equal(d->exponent, 2);
 
@@ -528,6 +535,18 @@ void test_dict_resize(void **state) {
   dict_del(d);
 }
 
+void test_dict_resize(void **state) {
+  (void) state;
+
+  _test_dict_resize(dict_new_of_size(4));
+}
+
+void test_dict_resize_custom_allocator(void **state) {
+  (void) state;
+
+  _test_dict_resize(dict_new_with(4, &passthrough_malloc, &passthrough_free));
+}
+
 #define dict_unit_test(f) \
   cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
 
@@ -547,6 +566,7 @@ int main(void) {
       dict_unit_test(test_dict_null_as_key),
       dict_unit_test(test_dict_set_overwrites),
       dict_unit_test(test_dict_resize),
+      dict_unit_test(test_dict_resize_custom_allocator),
   };
 
   return cmocka_run_group_tests_name(

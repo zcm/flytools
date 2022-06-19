@@ -142,7 +142,9 @@ static dict *_dict_init_with(
         calloc(size, sizeof (struct dbucket));
     } else {
       d->buckets = (struct dbucket *)
-        memset((*alloc)(size * sizeof(struct dbucket)), 0, size);
+        memset(
+            alloc(size * sizeof(struct dbucket)),
+            0, size * sizeof (struct dbucket));
     }
 
     if(d->buckets == NULL) {
