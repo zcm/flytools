@@ -277,53 +277,74 @@ static int _relocate_node(void *node, size_t unused_size) {
   return 0;
 }
 
-static void _dict_resize(dict *d) {
+static int _dict_resize(dict *d) {
   register size_t i;
+  struct dbucket * restrict buckets;
   const size_t og_capacity = _curr_bitmask = 1 << d->exponent;
 
   _curr_dict = d;
   _next_bitmask = (_curr_bitmask << 1) - 1;
 
   if (d->alloc == &malloc) {
-    struct dbucket * restrict buckets = d->buckets =
+    buckets = d->buckets =
       realloc(d->buckets, (1 << ++(d->exponent)) * sizeof (struct dbucket));
 
-    memset(d->buckets + og_capacity, 0, og_capacity * sizeof (struct dbucket));
+    if (!buckets) {
+      return 0;
+    }
+  } else {
+    buckets = d->alloc((1 << ++(d->exponent)) * sizeof (struct dbucket));
 
-    for (i = 0; i < og_capacity; ++i) {
-      if (buckets[i].data) {
-        if (buckets[i].flags & 0x1) {
-          list_remove_all(
-              buckets[i].data, &_should_relocate_node, &_relocate_node);
+    if (!buckets) {
+      return 0;
+    }
 
-          size_t size;
+    memcpy(buckets, d->buckets, og_capacity * sizeof (struct dbucket));
+    d->del(d->buckets);
+    d->buckets = buckets;
+  }
 
-          if ((size = list_size(buckets[i].data)) <= 1) {
-            list *ptr_save;
-            buckets[i].data = list_pop(ptr_save = buckets[i].data);
-            buckets[i].flags = size ? buckets[i].flags & ~0x1 : 0x0;
+  memset(buckets + og_capacity, 0, og_capacity * sizeof (struct dbucket));
 
-            if (_recycle_bin) {
-              list_del(_recycle_bin);
-            }
-            _recycle_bin = ptr_save;
+  FLY_ERR_CLEAR;
+
+  for (i = 0; i < og_capacity; ++i) {
+    if (buckets[i].data) {
+      if (buckets[i].flags & 0x1) {
+        list_remove_all(
+            buckets[i].data, &_should_relocate_node, &_relocate_node);
+
+        size_t size;
+
+        if ((size = list_size(buckets[i].data)) <= 1) {
+          list *ptr_save;
+          buckets[i].data = list_pop(ptr_save = buckets[i].data);
+          buckets[i].flags = size ? buckets[i].flags & ~0x1 : 0x0;
+
+          if (_recycle_bin) {
+            list_del(_recycle_bin);
           }
-        } else if (_should_relocate_node(buckets[i].data)) {
-          if (_relocate_node(buckets[i].data, 0)) {
-            break;  /* out of memory */
-          }
-          buckets[i] = (const struct dbucket) { 0 };
+          _recycle_bin = ptr_save;
         }
+      } else if (_should_relocate_node(buckets[i].data)) {
+        if (_relocate_node(buckets[i].data, 0)) {
+          break;  /* out of memory */
+        }
+        buckets[i] = (const struct dbucket) { 0 };
       }
     }
   }
 
   _curr_dict = NULL;
 
+  int ret = flytools_last_error();
+
   if (_recycle_bin) {
     list_del(_recycle_bin);
     _recycle_bin = NULL;
   }
+
+  return ret;
 }
 
 #define WITH_NEW_NODE_OR_DIE(operation) \
@@ -336,7 +357,10 @@ static void _dict_resize(dict *d) {
 
 #define RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, amount) \
   if (100 * (d->size + amount) >> d->exponent > LOAD_FACTOR) { \
-    _dict_resize(d); \
+    if (_dict_resize(d)) { \
+      FLY_ERR(EFLYNOMEM); \
+      return; \
+    } \
     goto start; \
   } \
 
