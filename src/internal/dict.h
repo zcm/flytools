@@ -11,6 +11,7 @@ typedef struct dictnode {
 	void *key;     //!< Key pointer. Can be `char *` or generic `void *`.
 	void *value;   //!< Data pointer.
   uint64_t hash; //!< Full uncompressed hash of `key`.
+  size_t index;  //!< Index into parent dict's `items` array.
 
   //! Callback that compares keys for equality in lookup operations.
   int (*key_matcher)(const void *, const void *, const void *);

@@ -136,30 +136,47 @@ FLYAPI dict *dict_alloc() {
 static dict *_dict_init_with(
     dict *d, const size_t size,
     void *(*alloc)(size_t), void (*del)(void *)) {
-  if (d != NULL) {
-    if (alloc == &malloc) {
-      d->buckets = (struct dbucket *)
-        calloc(size, sizeof (struct dbucket));
-    } else {
-      d->buckets = (struct dbucket *)
-        memset(
-            alloc(size * sizeof(struct dbucket)),
-            0, size * sizeof (struct dbucket));
-    }
+  if (!d) {
+    FLY_ERR(EFLYBADARG);
+    return NULL;
+  }
 
-    if(d->buckets == NULL) {
+  if (alloc == &malloc) {
+    if (!(d->buckets = (struct dbucket *)
+          calloc(size, sizeof (struct dbucket)))) {
       FLY_ERR(EFLYNOMEM);
-    } else {
-      d->size = 0;
-      d->exponent = llogb((double) size);
-      d->alloc = alloc;
-      d->del = del;
-
-      FLY_ERR_CLEAR;
+      return NULL;
+    }
+    if (!(d->items = (struct dictnode **)
+          calloc(size * LOAD_FACTOR / 100, sizeof (struct dictnode *)))) {
+      free(d->buckets);  /* supposedly this succeeded so don't leak it */
+      FLY_ERR(EFLYNOMEM);
+      return NULL;
     }
   } else {
-    FLY_ERR(EFLYBADARG);
+    if (!(d->buckets = (struct dbucket *)
+          memset(
+            alloc(size * sizeof (struct dbucket)),
+            0, size * sizeof (struct dbucket)))) {
+      FLY_ERR(EFLYNOMEM);
+      return NULL;
+    }
+    if (!(d->items = (struct dictnode **)
+          memset(
+            alloc(size * LOAD_FACTOR / 100 * sizeof (struct dictnode *)),
+            0, size * LOAD_FACTOR / 100 * sizeof (struct dictnode *)))) {
+      del(d->buckets);  /* supposedly this succeeded so don't leak it */
+      FLY_ERR(EFLYNOMEM);
+      return NULL;
+    }
   }
+
+  d->size = 0;
+  d->exponent = llogb((double) size);
+  d->alloc = alloc;
+  d->del = del;
+
+  FLY_ERR_CLEAR;
 
   return d;
 }
@@ -238,6 +255,7 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
       i++;
     }
     d->del(d->buckets);
+    d->del(d->items);
     d->del(d);
   } else {
     FLY_ERR(EFLYBADARG);
@@ -282,7 +300,9 @@ static int _relocate_node(void *node, size_t unused_size) {
 static int _dict_resize(dict *d) {
   register size_t i;
   struct dbucket * restrict buckets;
+  struct dictnode ** restrict items;
   const size_t og_capacity = _curr_bitmask = 1 << d->exponent;
+  const size_t og_item_capacity = og_capacity * LOAD_FACTOR / 100;
 
   _curr_dict = d;
   _next_bitmask = (_curr_bitmask << 1) - 1;
@@ -294,6 +314,13 @@ static int _dict_resize(dict *d) {
     if (!buckets) {
       return 0;
     }
+
+    items = d->items =
+      realloc(d->items, og_item_capacity * 2 * sizeof (struct dictnode *));
+
+    if (!items) {
+      return 0;
+    }
   } else {
     buckets = d->alloc((1 << ++(d->exponent)) * sizeof (struct dbucket));
 
@@ -301,12 +328,25 @@ static int _dict_resize(dict *d) {
       return 0;
     }
 
+    items = d->alloc(og_item_capacity * 2 * sizeof (struct dictnode *));
+
+    if (!items) {
+      d->del(buckets);
+      return 0;
+    }
+
     memcpy(buckets, d->buckets, og_capacity * sizeof (struct dbucket));
     d->del(d->buckets);
     d->buckets = buckets;
+
+    memcpy(items, d->items, og_item_capacity * sizeof (struct dictnode *));
+    d->del(d->items);
+    d->items = items;
   }
 
   memset(buckets + og_capacity, 0, og_capacity * sizeof (struct dbucket));
+  memset(items + og_item_capacity, 0,
+      og_item_capacity * sizeof (struct dictnode *));
 
   FLY_ERR_CLEAR;
 
@@ -346,7 +386,7 @@ static int _dict_resize(dict *d) {
     _recycle_bin = NULL;
   }
 
-  return ret;
+  return ret == EFLYEMPTY ? EFLYOK : ret;
 }
 
 #define WITH_NEW_NODE_OR_DIE(operation) \
@@ -379,8 +419,7 @@ start:
     RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, 1);
     WITH_NEW_NODE_OR_DIE(bucket->data = node);
 
-    d->size++;
-    return;
+    goto ensure_updated;
   }
 
   if (bucket->flags & 0x1) {
@@ -426,8 +465,9 @@ start:
 
   WITH_NEW_NODE_OR_DIE(list_push(bucket->data, node));
 
+ensure_updated:
   /* Will be skipped if there's an error inside WITH_NEW_NODE_OR_DIE */
-  d->size++;
+  d->items[node->index = d->size++] = node;
 }
 
 #undef WITH_NEW_NODE_OR_DIE
@@ -508,22 +548,33 @@ static dictnode *_dict_remove_keyed_str(dict * restrict d, void *key) {
       d->buckets + BUCKET_STR_INDEX(d, key), key, &_list_str_key_matcher);
 }
 
-#define _dict_remove_using(proc) \
-  dictnode *node = _dict_lookup_using(d, key, proc); \
-  if (node) { \
-    void *value = node->value; \
-    d->size--; \
-    dictnode_del(node, d->del); \
-    return value; \
-  } \
-  return NULL;
+static inline void * _dict_remove_using(
+    dict * restrict d, void *key, dictnode *(*proc)(dict * restrict, void *)) {
+  dictnode *node = _dict_lookup_using(d, key, proc);
+
+  if (!node) {
+    return NULL;
+  }
+
+  void *value = node->value;
+
+  d->size--;
+
+  d->items[d->size]->index = node->index;
+  d->items[node->index] = d->items[d->size];
+  d->items[d->size] = NULL;
+
+  dictnode_del(node, d->del);
+
+  return value;
+}
 
 FLYAPI void *dict_remove(dict * restrict d, void *key) {
-  _dict_remove_using(&_dict_remove_keyed_ptr);
+  return _dict_remove_using(d, key, &_dict_remove_keyed_ptr);
 }
 
 FLYAPI void *dict_removes(dict * restrict d, char *key) {
-  _dict_remove_using(&_dict_remove_keyed_str);
+  return _dict_remove_using(d, key, &_dict_remove_keyed_str);
 }
 
 #undef _dict_remove_using
@@ -559,17 +610,13 @@ FLYAPI void *dict_gets(dict * restrict d, char *key) {
   return node ? node->value : NULL;
 }
 
-/*FLYAPI void dict_iterate_callback(dict *d, void (*callback)(dictnode *)) {
-	unsigned int i = 0;
-	while(i < d->maxsize) {
-		dllistnode *current = d->buckets[i]->head->next;
-		while(d->buckets[i]->head != current) {
-			(*callback)(current->data);
-			current = current->next;
-		}
-		i++;
-	}
-}*/
+FLYAPI void dict_foreach(dict *d, int (*fn)(void *, size_t)) {
+  size_t i = 0;
+
+  while (i != d->size && !fn(d->items[i]->value, i)) {
+    ++i;
+  }
+}
 
 #if __STDC_VERSION__ < 199901L
 #undef restrict

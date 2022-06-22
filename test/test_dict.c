@@ -547,6 +547,78 @@ void test_dict_resize_custom_allocator(void **state) {
   _test_dict_resize(dict_new_with(4, &passthrough_malloc, &passthrough_free));
 }
 
+static char *letters = "abcdefghij";
+static char *answers = "abcdefghij";
+static char *answers2 = "abjdifh";
+static char *answers3 = "abjdhf";
+static char *answers4 = "fbjdh";
+static char *answers5 = "fbjdhz";
+static char *answers6 = "fbjdhzacegi";
+static char *answers7 = "fbjdhzacegiabcdefghij";
+
+static char *answer_key = NULL;
+
+static int verify_order(char *lptr, size_t i) {
+  char letter[2] = { *lptr },
+       answer[2] = { answer_key[i] };
+
+  assert_string_equal(letter, answer);
+  return 0;
+}
+
+void test_dict_foreach(void **state) {
+  (void) state;
+
+  dict *d = dict_new();
+
+  dict_foreach(d, (void *) &_fail);
+
+  for (uintptr_t i = 0; i < 10; ++i) {
+    dict_set(d, (void *) i, letters + i);
+  }
+
+  answer_key = answers;
+  dict_foreach(d, (void *) &verify_order);
+
+  dict_remove(d, (void *) 2);
+  dict_remove(d, (void *) 4);
+  dict_remove(d, (void *) 6);
+
+  answer_key = answers2;
+  dict_foreach(d, (void *) &verify_order);
+
+  dict_remove(d, (void *) 8);
+
+  answer_key = answers3;
+  dict_foreach(d, (void *) &verify_order);
+
+  dict_remove(d, (void *) 0);
+
+  answer_key = answers4;
+  dict_foreach(d, (void *) &verify_order);
+
+  dict_set(d, (void *) 100, "z");
+
+  answer_key = answers5;
+  dict_foreach(d, (void *) &verify_order);
+
+  for (uintptr_t i = 0; i < 10; ++i) {
+    dict_set(d, (void *) i, letters + i);
+  }
+
+  answer_key = answers6;
+  dict_foreach(d, (void *) &verify_order);
+
+  for (uintptr_t i = 10; i < 19; ++i) {
+    dict_set(d, (void *) i, letters + i - 10);
+  }
+
+  answer_key = answers7;
+  dict_foreach(d, (void *) &verify_order);
+
+  dict_del(d);
+}
+
 #define dict_unit_test(f) \
   cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
 
@@ -567,6 +639,7 @@ int main(void) {
       dict_unit_test(test_dict_set_overwrites),
       dict_unit_test(test_dict_resize),
       dict_unit_test(test_dict_resize_custom_allocator),
+      dict_unit_test(test_dict_foreach),
   };
 
   return cmocka_run_group_tests_name(
