@@ -30,6 +30,7 @@
  */
 
 struct dbucket;  //!< Single bucket for a \ref dict.
+struct dictnode;
 
 /**
  * A structure that represents a dictionary abstract data type (ADT). This
@@ -40,6 +41,7 @@ typedef struct dict {
   size_t size;             //!< Number of elements stored in this \ref dict.
   size_t exponent;         //!< Capacity in log<sub>2</sub>(# of buckets) terms.
   struct dbucket *buckets; //!< Array of containers for \ref dict elements.
+  struct dictnode **items; //!< Linear array of elements for iteration, etc.
   void *(*alloc)(size_t);  //!< Allocator for internal structures.
   void (*del)(void *);     //!< Deallocator for internal structures.
 } dict;
@@ -188,13 +190,14 @@ FLYAPI void *dict_get(dict * restrict d, void *key);
  * @return NULL if the value is not found; otherwise a pointer to that value
  */
 FLYAPI void *dict_gets(dict * restrict d, char *key);
+
 /**
  * Iterates through the dictionary, applying the specified callback function to
- * each item in the dictionary.
+ * each item.
  * @param d the dictionary through which to iterate
- * @param callback the callback function to apply to all of the nodes
+ * @param fn the callback function to apply to all of the nodes
  */
-FLYAPI void dict_iterate_callback(dict *d, void (*callback)(void *));
+FLYAPI void dict_foreach(dict *d, int (*fn)(void *, size_t));
 
 /** @} */
 
