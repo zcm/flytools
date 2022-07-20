@@ -72,21 +72,21 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
 FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
-FLYAPI void listkind_dlink_init(list *l);
-FLYAPI void listkind_dlink_del(list *l);
-FLYAPI void listkind_dlink_push(list *l, void *data);
-FLYAPI void listkind_dlink_unshift(list *l, void *data);
-FLYAPI void *listkind_dlink_pop(list *l);
-FLYAPI void *listkind_dlink_shift(list *l);
-FLYAPI void listkind_dlink_concat(list *l1, list *l2);
+FLYAPI void dllist_init(list *l);
+FLYAPI void dllist_del(list *l);
+FLYAPI void dllist_push(list *l, void *data);
+FLYAPI void dllist_unshift(list *l, void *data);
+FLYAPI void *dllist_pop(list *l);
+FLYAPI void *dllist_shift(list *l);
+FLYAPI void dllist_concat(list *l1, list *l2);
 
-FLYAPI void listkind_slink_init(list *l);
-FLYAPI void listkind_slink_del(list *l);
-FLYAPI void listkind_slink_push(list *l, void *data);
-FLYAPI void listkind_slink_unshift(list *l, void *data);
-FLYAPI void *listkind_slink_pop(list *l);
-FLYAPI void *listkind_slink_shift(list *l);
-FLYAPI void listkind_slink_concat(list *l1, list *l2);
+FLYAPI void sllist_init(list *l);
+FLYAPI void sllist_del(list *l);
+FLYAPI void sllist_push(list *l, void *data);
+FLYAPI void sllist_unshift(list *l, void *data);
+FLYAPI void *sllist_pop(list *l);
+FLYAPI void *sllist_shift(list *l);
+FLYAPI void sllist_concat(list *l1, list *l2);
 
 #if defined(_MSC_VER)
 #undef restrict
