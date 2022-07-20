@@ -32,8 +32,6 @@ FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
   { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
   &listkind_dlink_init,
   &listkind_dlink_del,
-  &listkind_dlink_get_size,
-  &listkind_dlink_set_size,
   &listkind_dlink_push,
   &listkind_dlink_unshift,
   &listkind_dlink_pop,
@@ -47,8 +45,6 @@ FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
   { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
   &listkind_slink_init,
   &listkind_slink_del,
-  &listkind_slink_get_size,
-  &listkind_slink_set_size,
   &listkind_slink_push,
   &listkind_slink_unshift,
   &listkind_slink_pop,
@@ -59,12 +55,10 @@ FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
 };
 
 typedef struct list_dlink_ds {
-  size_t size;
   dllistnode *head;
 } list_dlink_ds;
 
 typedef struct list_slink_ds {
-  size_t size;
   sllistnode *head;
   sllistnode *last;
 } list_slink_ds;
@@ -129,19 +123,9 @@ FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
 
 // struct member interaction
 
-FLYAPI size_t list_size(list *l) {
-  if (l != NULL) {
-    FLY_ERR_CLEAR;
-    return l->kind->get_size(l);
-  } else {
-    FLY_ERR(EFLYBADARG);
-  }
-  return 0;
-}
-
 FLYAPI void *list_pop(list *l) {
   if (l != NULL) {
-    if (list_size(l) > 0) {
+    if (l->size > 0) {
       FLY_ERR_CLEAR;
       return l->kind->pop(l);
     } else {
@@ -165,7 +149,7 @@ FLYAPI void list_push(list *l, void *data) {
 
 FLYAPI void *list_shift(list *l) {
   if (l != NULL) {
-    if (list_size(l) > 0) {
+    if (l->size > 0) {
       FLY_ERR_CLEAR;
       return l->kind->shift(l);
     } else {
@@ -218,7 +202,7 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
 
   FLY_ERR_CLEAR;
 
-  while (list_size(l2) > 0) {
+  while (l2->size > 0) {
     list_unshift(l1, list_pop(l2));
   }
 
@@ -231,7 +215,7 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
     return NULL;
   }
 
-  if (!list_size(l)) {
+  if (!l->size) {
     FLY_ERR(EFLYEMPTY);
     return NULL;
   }
@@ -317,7 +301,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
     return NULL;
   }
 
-  if (!list_size(l)) {
+  if (!l->size) {
     return NULL;
   }
 
@@ -326,7 +310,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
   uintptr_t data = l->kind->remove_first(l, matcher);
 
   if (data) {
-    --((list_slink_ds *) l->datastore)->size;
+    l->size--;
     return (void *) (data ^ 0x1);
   }
 
@@ -376,7 +360,7 @@ static size_t dllist_remove_all(
     }
   }
 
-  ((list_dlink_ds *)l->datastore)->size -= total_removed;
+  l->size -= total_removed;
   return total_removed;
 }
 
@@ -418,7 +402,7 @@ static size_t sllist_remove_all(
 
   DEFERRED_FREE();
 
-  ((list_slink_ds *)l->datastore)->size -= total_removed;
+  l->size -= total_removed;
   return total_removed;
 }
 
@@ -451,23 +435,16 @@ FLYAPI void listkind_dlink_init(list *l) {
   l->datastore = (*allocproc)(sizeof(list_dlink_ds));
   listkind_dlink_set_head(l, dllistnode_alloc_with(allocproc));
   dllistnode_head_init(listkind_dlink_get_head(l));
-  listkind_dlink_set_size(l, 0);
+  l->size = 0;
 }
 
 FLYAPI void listkind_dlink_del(list *l) {
-  while(listkind_dlink_get_size(l) > 0) {
+  while (l->size > 0) {
     listkind_dlink_pop(l);
   }
+
   ((flyobj *)l)->freeproc(listkind_dlink_get_head(l));
   ((flyobj *)l)->freeproc(l->datastore);
-}
-
-FLYAPI size_t listkind_dlink_get_size(list *l) {
-  return ((list_dlink_ds *)l->datastore)->size;
-}
-
-FLYAPI void listkind_dlink_set_size(list *l, size_t size) {
-  ((list_dlink_ds *)l->datastore)->size = size;
 }
 
 FLYAPI void listkind_dlink_push(list *l, void *data) {
@@ -477,7 +454,7 @@ FLYAPI void listkind_dlink_push(list *l, void *data) {
   dllistnode_set_prev(node, listkind_dlink_get_head(l));
   dllistnode_set_prev(dllistnode_get_next(listkind_dlink_get_head(l)), node);
   dllistnode_set_next(listkind_dlink_get_head(l), node);
-  listkind_dlink_set_size(l, listkind_dlink_get_size(l) + 1);
+  l->size++;
 }
 
 FLYAPI void listkind_dlink_unshift(list *l, void *data) {
@@ -487,7 +464,7 @@ FLYAPI void listkind_dlink_unshift(list *l, void *data) {
   dllistnode_set_prev(node, dllistnode_get_prev(listkind_dlink_get_head(l)));
   dllistnode_set_next(dllistnode_get_prev(listkind_dlink_get_head(l)), node);
   dllistnode_set_prev(listkind_dlink_get_head(l), node);
-  listkind_dlink_set_size(l, listkind_dlink_get_size(l) + 1);
+  l->size++;
 }
 
 FLYAPI void *listkind_dlink_pop(list *l) {
@@ -495,7 +472,7 @@ FLYAPI void *listkind_dlink_pop(list *l) {
   dllistnode *node = dllistnode_get_next(listkind_dlink_get_head(l));
   dllistnode_set_prev(dllistnode_get_next(node), listkind_dlink_get_head(l));
   dllistnode_set_next(listkind_dlink_get_head(l), dllistnode_get_next(node));
-  listkind_dlink_set_size(l, listkind_dlink_get_size(l) - 1);
+  l->size--;
   ret = dllistnode_get_data(node);
   dllistnode_del_with(node, ((flyobj *)l)->freeproc);
   return ret;
@@ -506,14 +483,15 @@ FLYAPI void *listkind_dlink_shift(list *l) {
   dllistnode *node = dllistnode_get_prev(listkind_dlink_get_head(l));
   dllistnode_set_next(dllistnode_get_prev(node), listkind_dlink_get_head(l));
   dllistnode_set_prev(listkind_dlink_get_head(l), dllistnode_get_prev(node));
-  listkind_dlink_set_size(l, listkind_dlink_get_size(l) - 1);
+  l->size--;
   ret = dllistnode_get_data(node);
   dllistnode_del_with(node, ((flyobj *)l)->freeproc);
   return ret;
 }
 
 FLYAPI void listkind_dlink_concat(list *l1, list *l2) {
-  size_t newsize = listkind_dlink_get_size(l1) + listkind_dlink_get_size(l2);
+  size_t newsize = l1->size + l2->size;
+
   dllistnode_set_next(dllistnode_get_prev(listkind_dlink_get_head(l1)),
                       dllistnode_get_next(listkind_dlink_get_head(l2)));
   dllistnode_set_prev(dllistnode_get_next(listkind_dlink_get_head(l2)),
@@ -522,10 +500,11 @@ FLYAPI void listkind_dlink_concat(list *l1, list *l2) {
                       listkind_dlink_get_head(l1));
   dllistnode_set_prev(listkind_dlink_get_head(l1),
                       dllistnode_get_prev(listkind_dlink_get_head(l2)));
-  listkind_dlink_set_size(l1, newsize);
+  l1->size = newsize;
   // set the size to 0 so that destroy avoids destroying the inner nodes
   // (because they are now part of the first list's structure)
-  listkind_dlink_set_size(l2, 0);
+  l2->size = 0;
+
   list_del(l2);
 }
 
@@ -551,23 +530,16 @@ FLYAPI void listkind_slink_init(list *l) {
   listkind_slink_set_head(l, sllistnode_alloc_with(allocproc));
   listkind_slink_set_last(l, listkind_slink_get_head(l));
   sllistnode_head_init(listkind_slink_get_head(l));
-  listkind_slink_set_size(l, 0);
+  l->size = 0;
 }
 
 FLYAPI void listkind_slink_del(list *l) {
-  while(listkind_slink_get_size(l) > 0) {
+  while (l->size > 0) {
     listkind_slink_pop(l);
   }
+
   ((flyobj *)l)->freeproc(listkind_slink_get_head(l));
   ((flyobj *)l)->freeproc(l->datastore);
-}
-
-FLYAPI size_t listkind_slink_get_size(list *l) {
-  return ((list_slink_ds *)l->datastore)->size;
-}
-
-FLYAPI void listkind_slink_set_size(list *l, size_t size) {
-  ((list_slink_ds *)l->datastore)->size = size;
 }
 
 FLYAPI void listkind_slink_push(list *l, void *data) {
@@ -575,10 +547,12 @@ FLYAPI void listkind_slink_push(list *l, void *data) {
   sllistnode_set_data(node, data);
   sllistnode_set_next(node, sllistnode_get_next(listkind_slink_get_head(l)));
   sllistnode_set_next(listkind_slink_get_head(l), node);
-  if(listkind_slink_get_size(l) == 0) {
+
+  if (l->size == 0) {
     listkind_slink_set_last(l, node);
   }
-  listkind_slink_set_size(l, listkind_slink_get_size(l) + 1);
+
+  l->size++;
 }
 
 FLYAPI void listkind_slink_unshift(list *l, void *data) {
@@ -587,17 +561,20 @@ FLYAPI void listkind_slink_unshift(list *l, void *data) {
   sllistnode_set_next(node, listkind_slink_get_head(l));
   sllistnode_set_next(listkind_slink_get_last(l), node);
   listkind_slink_set_last(l, node);
-  listkind_slink_set_size(l, listkind_slink_get_size(l) + 1);
+  l->size++;
 }
 
 FLYAPI void *listkind_slink_pop(list *l) {
   void *ret = NULL;
   sllistnode *node = sllistnode_get_next(listkind_slink_get_head(l));
   sllistnode_set_next(listkind_slink_get_head(l), sllistnode_get_next(node));
-  listkind_slink_set_size(l, listkind_slink_get_size(l) - 1);
-  if(listkind_slink_get_size(l) == 0) {
+
+  l->size--;
+
+  if (l->size == 0) {
     listkind_slink_set_last(l, listkind_slink_get_head(l));
   }
+
   ret = sllistnode_get_data(node);
   sllistnode_del_with(node, ((flyobj *)l)->freeproc);
   return ret;
@@ -619,22 +596,25 @@ FLYAPI void *listkind_slink_shift(list *l) {
   }
   sllistnode_set_next(new_last, listkind_slink_get_head(l));
   listkind_slink_set_last(l, new_last);
-  listkind_slink_set_size(l, listkind_slink_get_size(l) - 1);
+  l->size--;
   ret = sllistnode_get_data(last);
   sllistnode_del_with(last, ((flyobj *)l)->freeproc);
   return ret;
 }
 
 FLYAPI void listkind_slink_concat(list *l1, list *l2) {
-  size_t newsize = listkind_slink_get_size(l1) + listkind_slink_get_size(l2);
+  size_t newsize = l1->size + l2->size;
+
   sllistnode_set_next(listkind_slink_get_last(l1),
                       sllistnode_get_next(listkind_slink_get_head(l2)));
   listkind_slink_set_last(l1, listkind_slink_get_last(l2));
   sllistnode_set_next(listkind_slink_get_last(l1), listkind_slink_get_head(l1));
-  listkind_slink_set_size(l1, newsize);
+
+  l1->size = newsize;
   // set the size to 0 so that destroy avoids destroying the inner nodes
   // (because they are now part of the first list's structure)
-  listkind_slink_set_size(l2, 0);
+  l2->size = 0;
+
   list_del(l2);
 }
 

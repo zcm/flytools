@@ -26,7 +26,7 @@ void test_list_new(void **state) {
 
   list *l = list_new();
   assert_non_null(l);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   list_del(l);
 }
 
@@ -41,42 +41,42 @@ void test_list_push_pop(void **state) {
   assert_non_null(l);
 
   list_push(l, data[0]);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   list_push(l, data[1]);
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   list_push(l, data[2]);
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   list_push(l, data[3]);
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
   list_push(l, data[4]);
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   char *value;
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "fifth");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "fourth");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "third");
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "second");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "first");
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_del(l);
 }
@@ -92,42 +92,42 @@ void test_list_unshift_shift(void **state) {
   assert_non_null(l);
 
   list_unshift(l, data[0]);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   list_unshift(l, data[1]);
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   list_unshift(l, data[2]);
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   list_unshift(l, data[3]);
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
   list_unshift(l, data[4]);
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   char *value;
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "fifth");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "fourth");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "third");
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "second");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "first");
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_del(l);
 }
@@ -143,42 +143,42 @@ void test_list_push_shift(void **state) {
   assert_non_null(l);
 
   list_push(l, data[0]);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   list_push(l, data[1]);
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   list_push(l, data[2]);
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   list_push(l, data[3]);
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
   list_push(l, data[4]);
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   char *value;
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "first");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "second");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "third");
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "fourth");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal(value, "fifth");
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_del(l);
 }
@@ -194,42 +194,42 @@ void test_list_unshift_pop(void **state) {
   assert_non_null(l);
 
   list_unshift(l, data[0]);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   list_unshift(l, data[1]);
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   list_unshift(l, data[2]);
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   list_unshift(l, data[3]);
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
   list_unshift(l, data[4]);
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   char *value;
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "first");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "second");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "third");
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "fourth");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal(value, "fifth");
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_del(l);
 }
@@ -240,20 +240,20 @@ void test_list_pop_from_empty(void **state) {
   list *l = list_new();
   assert_non_null(l);
 
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_pop(l));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_push(l, l);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   assert_ptr_equal(list_pop(l), l);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_pop(l));
 
   list_push(l, l);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   assert_ptr_equal(list_pop(l), l);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_pop(l));
 
   list_del(l);
@@ -265,20 +265,20 @@ void test_list_shift_from_empty(void **state) {
   list *l = list_new();
   assert_non_null(l);
 
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_shift(l));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_unshift(l, l);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   assert_ptr_equal(list_shift(l), l);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_shift(l));
 
   list_unshift(l, l);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   assert_ptr_equal(list_shift(l), l);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_shift(l));
 
   list_del(l);
@@ -294,7 +294,7 @@ void test_list_del_nonempty(void **state) {
   list_push(l, l);
   list_push(l, l);
 
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   list_del(l);
 }
@@ -321,17 +321,17 @@ void test_list_concat(void **state) {
     list_unshift(l2, (void *) data[i]);
   }
 
-  assert_int_equal(list_size(l1), 3);
-  assert_int_equal(list_size(l2), 4);
+  assert_int_equal(l1->size, 3);
+  assert_int_equal(l2->size, 4);
 
   list_concat(l1, l2);
 
   while (i > 0) {
-    assert_int_equal(list_size(l1), i);
+    assert_int_equal(l1->size, i);
     assert_ptr_equal(list_shift(l1), data[--i]);
   }
 
-  assert_int_equal(list_size(l1), 0);
+  assert_int_equal(l1->size, 0);
 
   list_del(l1);
 }
@@ -355,17 +355,17 @@ void test_list_concat_from_empty(void **state) {
     list_unshift(l1, (void *) data[i]);
   }
 
-  assert_int_equal(list_size(l1), 3);
-  assert_int_equal(list_size(l2), 0);
+  assert_int_equal(l1->size, 3);
+  assert_int_equal(l2->size, 0);
 
   list_concat(l1, l2);
 
   while (i > 0) {
-    assert_int_equal(list_size(l1), i);
+    assert_int_equal(l1->size, i);
     assert_ptr_equal(list_shift(l1), data[--i]);
   }
 
-  assert_int_equal(list_size(l1), 0);
+  assert_int_equal(l1->size, 0);
 
   list_del(l1);
 }
@@ -389,17 +389,17 @@ void test_list_concat_into_empty(void **state) {
     list_unshift(l2, (void *) data[i]);
   }
 
-  assert_int_equal(list_size(l1), 0);
-  assert_int_equal(list_size(l2), 3);
+  assert_int_equal(l1->size, 0);
+  assert_int_equal(l2->size, 3);
 
   list_concat(l1, l2);
 
   while (i > 0) {
-    assert_int_equal(list_size(l1), i);
+    assert_int_equal(l1->size, i);
     assert_ptr_equal(list_shift(l1), data[--i]);
   }
 
-  assert_int_equal(list_size(l1), 0);
+  assert_int_equal(l1->size, 0);
 
   list_del(l1);
 }
@@ -411,14 +411,14 @@ void test_list_concat_both_empty(void **state) {
   assert_non_null(l1 = list_new());
   assert_non_null(l2 = list_new());
 
-  assert_int_equal(list_size(l1), 0);
-  assert_int_equal(list_size(l2), 0);
+  assert_int_equal(l1->size, 0);
+  assert_int_equal(l2->size, 0);
 
   list_concat(l1, l2);
 
-  assert_int_equal(list_size(l1), 0);
+  assert_int_equal(l1->size, 0);
   assert_null(list_pop(l1));
-  assert_int_equal(list_size(l1), 0);
+  assert_int_equal(l1->size, 0);
 
   list_del(l1);
 }
@@ -440,7 +440,7 @@ static inline void __test_list_find_first(listkind *kind) {
   assert_non_null(l = list_new_kind(kind));
 
   assert_null(list_find_first(l, &char0_is_f));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_unshift(l, "first");
   list_unshift(l, "second");
@@ -450,7 +450,7 @@ static inline void __test_list_find_first(listkind *kind) {
   list_unshift(l, "sixth");
   list_unshift(l, "seventh");
 
-  assert_int_equal(list_size(l), 7);
+  assert_int_equal(l->size, 7);
 
   char *value;
 
@@ -507,7 +507,7 @@ static inline void __test_list_find_first_null_entry(listkind *kind) {
   list_push(l, NULL);
   list_push(l, "one");
 
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   char *value;
 
@@ -515,25 +515,25 @@ static inline void __test_list_find_first_null_entry(listkind *kind) {
 
   assert_non_null(value = list_find_first(l, &char0_is_t));
   assert_string_equal(value, "two");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
   assert_non_null(value = list_find_first(l, &char0_is_o));
   assert_string_equal(value, "one");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   assert_null(list_find_first(l, &value_is_null));
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   assert_non_null(value = list_find_first(l, &value_after_null));
   assert_string_equal(value, "two");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   list_pop(l);
   list_pop(l);
   list_push(l, "one");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   assert_null(list_find_first(l, &value_after_null));
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   list_del(l);
 }
@@ -553,7 +553,7 @@ static inline void __test_list_remove_first(listkind *kind) {
   assert_non_null(l = list_new_kind(kind));
 
   assert_null(list_remove_first(l, &char0_is_f));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_unshift(l, "first");
   list_unshift(l, "second");
@@ -563,36 +563,36 @@ static inline void __test_list_remove_first(listkind *kind) {
   list_unshift(l, "sixth");
   list_unshift(l, "seventh");
 
-  assert_int_equal(list_size(l), 7);
+  assert_int_equal(l->size, 7);
 
   char *value;
 
   assert_non_null(value = list_remove_first(l, &char0_is_f));
   assert_string_equal(value, "first");
-  assert_int_equal(list_size(l), 6);
+  assert_int_equal(l->size, 6);
   assert_non_null(value = list_remove_first(l, &char0_is_f));
   assert_string_equal(value, "fourth");
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
   assert_non_null(value = list_remove_first(l, &char2_is_v));
   assert_string_equal(value, "seventh");
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
   assert_non_null(value = list_remove_first(l, &char2_is_x));
   assert_string_equal(value, "sixth");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   assert_non_null(value = list_remove_first(l, &char1_is_e));
   assert_string_equal(value, "second");
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   assert_non_null(value = list_remove_first(l, &char0_is_f));
   assert_string_equal(value, "fifth");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   assert_non_null(value = list_remove_first(l, &char3_is_r));
   assert_string_equal(value, "third");
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   assert_null(list_remove_first(l, &char0_is_e));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_null(list_remove_first(l, &char0_is_f));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_del(l);
 }
@@ -616,7 +616,7 @@ static inline void __test_list_remove_first_null_entry(listkind *kind) {
   list_push(l, NULL);
   list_push(l, "one");
 
-  assert_int_equal(list_size(l), 4);
+  assert_int_equal(l->size, 4);
 
   char *value;
 
@@ -624,31 +624,31 @@ static inline void __test_list_remove_first_null_entry(listkind *kind) {
 
   assert_non_null(value = list_remove_first(l, &char0_is_t));
   assert_string_equal(value, "two");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   assert_non_null(value = list_remove_first(l, &char0_is_o));
   assert_string_equal(value, "one");
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
 
   assert_non_null(value = list_remove_first(l, &value_after_null));
   assert_string_equal(value, "three");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
 
   list_push(l, "one 2.0");
   list_unshift(l, "three 2.0");
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
 
   assert_null(list_remove_first(l, &value_is_null));
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
 
   assert_non_null(value = list_pop(l));
   assert_string_equal(value, "one 2.0");
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
   assert_non_null(value = list_pop(l));
   assert_string_equal(value, "three 2.0");
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   assert_null(list_remove_first(l, &value_after_null));
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_del(l);
 }
@@ -697,7 +697,7 @@ void test_list_foreach(void **state) {
 
   assert_int_equal(prime, 1);
   assert_int_equal(index_sum, 0);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_unshift(l, (void *) 1);
   list_unshift(l, (void *) 2);
@@ -709,7 +709,7 @@ void test_list_foreach(void **state) {
 
   assert_int_equal(prime, 210);
   assert_int_equal(index_sum, 10);
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   memset(order, 0, sizeof (order));
   memset(indices, 0, sizeof (indices));
@@ -772,7 +772,7 @@ void __test_list_remove_all(listkind *kind) {
 
   assert_int_equal(prime, 1);
   assert_int_equal(index_sum, 2);
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
 
   list_unshift(l, (void *) 1);
   list_unshift(l, (void *) 2);
@@ -780,14 +780,14 @@ void __test_list_remove_all(listkind *kind) {
   list_unshift(l, (void *) 4);
   list_unshift(l, (void *) 5);
 
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   assert_int_equal(
       0, list_remove_all(l, &nothing, &multiply_prime));
 
   assert_int_equal(prime, 1);
   assert_int_equal(index_sum, 2);
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   memset(order, 0, sizeof (order));
   memset(indices, 0, sizeof (indices));
@@ -800,7 +800,7 @@ void __test_list_remove_all(listkind *kind) {
   assert_int_equal(
       3, list_remove_all(l, &value_is_odd, &record_order_by_count));
 
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   assert_string_equal(order, expected_order);
   assert_string_equal(indices, expected_indices);
   assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
@@ -812,7 +812,7 @@ void __test_list_remove_all(listkind *kind) {
   assert_int_equal(
       0, list_remove_all(l, &value_is_odd, &record_order_by_count));
 
-  assert_int_equal(list_size(l), 2);
+  assert_int_equal(l->size, 2);
   assert_string_equal(order, expected_order);
   assert_string_equal(indices, expected_indices);
   assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
@@ -826,7 +826,7 @@ void __test_list_remove_all(listkind *kind) {
   assert_int_equal(
       2, list_remove_all(l, &value_is_even, &record_order_by_count));
 
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_string_equal(order, expected_order_2);
   assert_string_equal(indices, expected_indices_2);
   assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
@@ -835,14 +835,14 @@ void __test_list_remove_all(listkind *kind) {
   assert_int_equal(
       0, list_remove_all(l, &value_is_even, &record_order_by_count));
 
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_string_equal(order, expected_order_2);
   assert_string_equal(indices, expected_indices_2);
   assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
   assert_memory_equal(indices + 3, zilch, sizeof (indices) - 3);
 
   list_push(l, (void *) 6);
-  assert_int_equal(list_size(l), 1);
+  assert_int_equal(l->size, 1);
 
   count = 0;
   expected_order_2[0] = '6';
@@ -850,7 +850,7 @@ void __test_list_remove_all(listkind *kind) {
   assert_int_equal(
       1, list_remove_all(l, &everything, &record_order_by_count));
 
-  assert_int_equal(list_size(l), 0);
+  assert_int_equal(l->size, 0);
   assert_string_equal(order, expected_order_2);
   assert_string_equal(indices, expected_indices_2);
   assert_memory_equal(order + 3, zilch, sizeof (order) - 3);
@@ -866,7 +866,7 @@ void __test_list_remove_all(listkind *kind) {
   list_unshift(l, (void *) 4);
   list_unshift(l, (void *) 5);
 
-  assert_int_equal(list_size(l), 5);
+  assert_int_equal(l->size, 5);
 
   order[0] = indices[0] = 'a';
   order[1] = indices[1] = 'b';
@@ -879,7 +879,7 @@ void __test_list_remove_all(listkind *kind) {
   assert_int_equal(
       2, list_remove_all(l, &value_is_odd, &record_order_r_stop));
 
-  assert_int_equal(list_size(l), 3);
+  assert_int_equal(l->size, 3);
   assert_string_equal(order, expected_order_3);
   assert_string_equal(indices, expected_indices_3);
   assert_memory_equal(order + 4, zilch, sizeof (order) - 4);

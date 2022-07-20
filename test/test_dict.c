@@ -25,7 +25,7 @@ int verify_dict_size(dict * restrict d) {
 
   while (i < 1 << d->exponent) {
     if (d->buckets[i].flags & 0x1) {
-      bucket_sum += list_size(d->buckets[i].data);
+      bucket_sum += ((list *) d->buckets[i].data)->size;
     } else if (d->buckets[i].data) {
       bucket_sum += 1;
     }
