@@ -242,11 +242,11 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
 
     while (i < capacity) {
       if (d->buckets[i].flags & 0x1) {
-        while (list_size(d->buckets[i].data) > 0) {
+        while (((list *) d->buckets[i].data)->size > 0) {
           dictnode_del(list_pop(d->buckets[i].data), d->del);
         }
 
-        assert(list_size(d->buckets[i].data) == 0);
+        assert(((list *) d->buckets[i].data)->size == 0);
         list_del(d->buckets[i].data);
       } else if (d->buckets[i].data) {
         dictnode_del(d->buckets[i].data, d->del);
@@ -358,7 +358,7 @@ static int _dict_resize(dict *d) {
 
         size_t size;
 
-        if ((size = list_size(buckets[i].data)) <= 1) {
+        if ((size = ((list *) buckets[i].data)->size) <= 1) {
           list *ptr_save;
           buckets[i].data = list_pop(ptr_save = buckets[i].data);
           buckets[i].flags = size ? buckets[i].flags & ~0x1 : 0x0;
@@ -516,7 +516,7 @@ static dictnode *_dict_remove_from_bucket(
   dictnode *node;
 
   if (bucket->flags & 0x1) {
-    if (list_size((list *) bucket->data) > 1) {
+    if (((list *) bucket->data)->size > 1) {
       _match_key = key;
       return (dictnode *)
         list_remove_first((list *) bucket->data, matcher);

@@ -30,6 +30,7 @@ struct listkind;
 typedef struct list {
   flyobj _parent;
   struct listkind *kind;
+  size_t size;
   void *datastore;
 } list;
 
@@ -37,8 +38,6 @@ typedef struct listkind {
   flykind _parent;
   void (*init)(list *l);
   void (*destroy)(list *l);
-  size_t (*get_size)(list *l);
-  void (*set_size)(list *l, size_t size);
   void (*push)(list *l, void *data);
   void (*unshift)(list *l, void *data);
   void *(*pop)(list *l);
@@ -59,7 +58,6 @@ FLYAPI list *list_new_kind_with(
     listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *));
 FLYAPI void list_del(list *l);
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *));
-FLYAPI size_t list_size(list *l);
 FLYAPI void *list_pop(list *l);
 FLYAPI void list_push(list *l, void *data);
 FLYAPI void *list_shift(list *l);
@@ -76,8 +74,6 @@ FLYAPI size_t list_remove_all(
 
 FLYAPI void listkind_dlink_init(list *l);
 FLYAPI void listkind_dlink_del(list *l);
-FLYAPI size_t listkind_dlink_get_size(list *l);
-FLYAPI void listkind_dlink_set_size(list *l, size_t size);
 FLYAPI void listkind_dlink_push(list *l, void *data);
 FLYAPI void listkind_dlink_unshift(list *l, void *data);
 FLYAPI void *listkind_dlink_pop(list *l);
@@ -86,8 +82,6 @@ FLYAPI void listkind_dlink_concat(list *l1, list *l2);
 
 FLYAPI void listkind_slink_init(list *l);
 FLYAPI void listkind_slink_del(list *l);
-FLYAPI size_t listkind_slink_get_size(list *l);
-FLYAPI void listkind_slink_set_size(list *l, size_t size);
 FLYAPI void listkind_slink_push(list *l, void *data);
 FLYAPI void listkind_slink_unshift(list *l, void *data);
 FLYAPI void *listkind_slink_pop(list *l);
