@@ -41,16 +41,3 @@ void dllistnode_del_with(dllistnode *node, void (*free_callback)(void *)) {
 void sllistnode_del_with(sllistnode *node, void (*free_callback)(void *)) {
 	(*free_callback)(node);
 }
-
-// linked list node operations
-
-void sllistnode_head_init(sllistnode *head) {
-	head->data = NULL;
-	head->next = head;
-}
-
-void dllistnode_head_init(dllistnode *head) {
-	head->data = NULL;
-	head->next = head;
-	head->prev = head;
-}
