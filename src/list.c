@@ -21,47 +21,38 @@
 
 #include "list.h"
 
-static uintptr_t dllist_remove_first(list *l, int (*matcher)(void *));
-static uintptr_t sllist_remove_first(list *l, int (*matcher)(void *));
+static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *));
+static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *));
 static size_t dllist_remove_all(
-    list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+    dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static size_t sllist_remove_all(
-    list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+    sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
-  { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
-  &dllist_init,
-  &dllist_del,
-  &dllist_push,
-  &dllist_unshift,
-  &dllist_pop,
-  &dllist_shift,
-  &dllist_concat,
-  &dllist_remove_first,
-  &dllist_remove_all,
+  sizeof (dllist),
+  (void *) &dllist_init,
+  (void *) &dllist_del,
+  (void *) &dllist_push,
+  (void *) &dllist_unshift,
+  (void *) &dllist_pop,
+  (void *) &dllist_shift,
+  (void *) &dllist_concat,
+  (void *) &dllist_remove_first,
+  (void *) &dllist_remove_all,
 };
 
 FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
-  { FLYTOOLS_TYPE_LIST | FLYTOOLS_TYPE_KIND },
-  &sllist_init,
-  &sllist_del,
-  &sllist_push,
-  &sllist_unshift,
-  &sllist_pop,
-  &sllist_shift,
-  &sllist_concat,
-  &sllist_remove_first,
-  &sllist_remove_all,
+  sizeof (sllist),
+  (void *) &sllist_init,
+  (void *) &sllist_del,
+  (void *) &sllist_push,
+  (void *) &sllist_unshift,
+  (void *) &sllist_pop,
+  (void *) &sllist_shift,
+  (void *) &sllist_concat,
+  (void *) &sllist_remove_first,
+  (void *) &sllist_remove_all,
 };
-
-typedef struct list_dlink_ds {
-  dllistnode *head;
-} list_dlink_ds;
-
-typedef struct list_slink_ds {
-  sllistnode *head;
-  sllistnode *last;
-} list_slink_ds;
 
 #if defined(__STRICT_ANSI__)
 #define inline
@@ -88,11 +79,12 @@ FLYAPI list *list_new_with(
 
 FLYAPI list *list_new_kind_with(
     listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *)) {
-  list *ret = (list *)(*allocproc)(sizeof(list));
-  FLY_ERR_CLEAR;
+  list *ret = allocproc(kind->size);
+
   if(ret != NULL) {
+    FLY_ERR_CLEAR;
+
     flyobj_init((flyobj *) ret, allocproc, freeproc);
-    flyobj_set_id((flyobj *) ret, FLYTOOLS_TYPE_LIST);
     ret->kind = kind;
     kind->init(ret);
   } else {
@@ -221,7 +213,7 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
   }
 
   if (l->kind == LISTKIND_DLINK || l->kind == LISTKIND_SLINK) {
-    sllistnode *head = ((list_slink_ds *) l->datastore)->head,
+    sllistnode *head = ((sllist *) l)->head,
                *current = head->next;
 
     while (current != head) {
@@ -244,16 +236,16 @@ static inline void dllist_stitch(dllistnode *current) {
 }
 
 static inline void sllist_stitch(
-    sllistnode *current, sllistnode *prev, list_slink_ds * restrict ds) {
-  if (current == ds->last) {
-    ds->last = prev;
+    sllistnode *current, sllistnode *prev, sllist * restrict l) {
+  if (current == l->last) {
+    l->last = prev;
   }
 
   prev->next = current->next;
 }
 
-static uintptr_t dllist_remove_first(list *l, int (*matcher)(void *)) {
-  dllistnode *head = ((list_dlink_ds *) l->datastore)->head,
+static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *)) {
+  dllistnode *head = l->head,
              *current = head->next;
 
   while (current != head) {
@@ -273,8 +265,8 @@ static uintptr_t dllist_remove_first(list *l, int (*matcher)(void *)) {
   return 0x0;
 }
 
-static uintptr_t sllist_remove_first(list *l, int (*matcher)(void *)) {
-  sllistnode *head = ((list_slink_ds *) l->datastore)->head,
+static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *)) {
+  sllistnode *head = l->head,
              *prev = head,
              *current = head->next;
 
@@ -282,7 +274,7 @@ static uintptr_t sllist_remove_first(list *l, int (*matcher)(void *)) {
     if (matcher(current->data)) {
       uintptr_t data = (uintptr_t) current->data;
 
-      sllist_stitch(current, prev, (list_slink_ds *) l->datastore);
+      sllist_stitch(current, prev, l);
 
       ((flyobj *) l)->freeproc(current);
 
@@ -327,15 +319,15 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
 
   size_t i = 0;
   sllistnode *current, *head;
-  current = head = ((list_slink_ds *) l->datastore)->head;
+  current = head = ((sllist *) l)->head;
 
   while (head != (current = current->next) && !fn(current->data, i++));
 }
 
 static size_t dllist_remove_all(
-    list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+    dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t i = 0, total_removed = 0;
-  dllistnode *head = ((list_dlink_ds *) l->datastore)->head,
+  dllistnode *head = l->head,
              *current = head->next;
 
   while (current != head) {
@@ -370,9 +362,9 @@ static size_t dllist_remove_all(
   __VA_OPT__(chopping_block =) __VA_ARGS__
 
 static size_t sllist_remove_all(
-    list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+    sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t i = 0, total_removed = 0;
-  sllistnode *head = ((list_slink_ds *) l->datastore)->head,
+  sllistnode *head = l->head,
              *prev = head,
              *chopping_block = NULL,  /* for DEFERRED_FREE() */
              *current = head->next;
@@ -382,7 +374,7 @@ static size_t sllist_remove_all(
       void *data = current->data;
       sllistnode *next = current->next;
 
-      sllist_stitch(current, prev, (list_slink_ds *) l->datastore);
+      sllist_stitch(current, prev, l);
 
       DEFERRED_FREE(current);
 
@@ -422,157 +414,128 @@ FLYAPI size_t list_remove_all(
   return l->kind->remove_all(l, matcher, fn ? fn : &do_nothing);
 }
 
-static inline dllistnode *dllist_get_head(list * restrict l) {
-  return ((list_dlink_ds *)l->datastore)->head;
-}
-
-static inline void dllist_set_head(list * restrict l, dllistnode *n) {
-  ((list_dlink_ds *)l->datastore)->head = n;
-}
-
-FLYAPI void dllist_init(list *l) {
+FLYAPI void dllist_init(dllist *l) {
   void *(*allocproc)(size_t) = ((flyobj *)l)->allocproc;
-  l->datastore = (*allocproc)(sizeof(list_dlink_ds));
-  dllist_set_head(l, dllistnode_alloc_with(allocproc));
-  dllistnode_head_init(dllist_get_head(l));
+  l->head = dllistnode_alloc_with(allocproc);
+  dllistnode_head_init(l->head);
   l->size = 0;
 }
 
-FLYAPI void dllist_del(list *l) {
+FLYAPI void dllist_del(dllist *l) {
   while (l->size > 0) {
     dllist_pop(l);
   }
 
-  ((flyobj *)l)->freeproc(dllist_get_head(l));
-  ((flyobj *)l)->freeproc(l->datastore);
+  ((flyobj *)l)->freeproc(l->head);
 }
 
-FLYAPI void dllist_push(list *l, void *data) {
+FLYAPI void dllist_push(dllist *l, void *data) {
   dllistnode *node = dllistnode_alloc_with(((flyobj *)l)->allocproc);
   dllistnode_set_data(node, data);
-  dllistnode_set_next(node, dllistnode_get_next(dllist_get_head(l)));
-  dllistnode_set_prev(node, dllist_get_head(l));
-  dllistnode_set_prev(dllistnode_get_next(dllist_get_head(l)), node);
-  dllistnode_set_next(dllist_get_head(l), node);
+  dllistnode_set_next(node, dllistnode_get_next(l->head));
+  dllistnode_set_prev(node, l->head);
+  dllistnode_set_prev(dllistnode_get_next(l->head), node);
+  dllistnode_set_next(l->head, node);
   l->size++;
 }
 
-FLYAPI void dllist_unshift(list *l, void *data) {
+FLYAPI void dllist_unshift(dllist *l, void *data) {
   dllistnode *node = dllistnode_alloc_with(((flyobj *)l)->allocproc);
   dllistnode_set_data(node, data);
-  dllistnode_set_next(node, dllist_get_head(l));
-  dllistnode_set_prev(node, dllistnode_get_prev(dllist_get_head(l)));
-  dllistnode_set_next(dllistnode_get_prev(dllist_get_head(l)), node);
-  dllistnode_set_prev(dllist_get_head(l), node);
+  dllistnode_set_next(node, l->head);
+  dllistnode_set_prev(node, dllistnode_get_prev(l->head));
+  dllistnode_set_next(dllistnode_get_prev(l->head), node);
+  dllistnode_set_prev(l->head, node);
   l->size++;
 }
 
-FLYAPI void *dllist_pop(list *l) {
+FLYAPI void *dllist_pop(dllist *l) {
   void *ret = NULL;
-  dllistnode *node = dllistnode_get_next(dllist_get_head(l));
-  dllistnode_set_prev(dllistnode_get_next(node), dllist_get_head(l));
-  dllistnode_set_next(dllist_get_head(l), dllistnode_get_next(node));
+  dllistnode *node = dllistnode_get_next(l->head);
+  dllistnode_set_prev(dllistnode_get_next(node), l->head);
+  dllistnode_set_next(l->head, dllistnode_get_next(node));
   l->size--;
   ret = dllistnode_get_data(node);
   dllistnode_del_with(node, ((flyobj *)l)->freeproc);
   return ret;
 }
 
-FLYAPI void *dllist_shift(list *l) {
+FLYAPI void *dllist_shift(dllist *l) {
   void *ret = NULL;
-  dllistnode *node = dllistnode_get_prev(dllist_get_head(l));
-  dllistnode_set_next(dllistnode_get_prev(node), dllist_get_head(l));
-  dllistnode_set_prev(dllist_get_head(l), dllistnode_get_prev(node));
+  dllistnode *node = dllistnode_get_prev(l->head);
+  dllistnode_set_next(dllistnode_get_prev(node), l->head);
+  dllistnode_set_prev(l->head, dllistnode_get_prev(node));
   l->size--;
   ret = dllistnode_get_data(node);
   dllistnode_del_with(node, ((flyobj *)l)->freeproc);
   return ret;
 }
 
-FLYAPI void dllist_concat(list *l1, list *l2) {
+FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
   size_t newsize = l1->size + l2->size;
 
-  dllistnode_set_next(dllistnode_get_prev(dllist_get_head(l1)),
-                      dllistnode_get_next(dllist_get_head(l2)));
-  dllistnode_set_prev(dllistnode_get_next(dllist_get_head(l2)),
-                      dllistnode_get_prev(dllist_get_head(l1)));
-  dllistnode_set_next(dllistnode_get_prev(dllist_get_head(l2)),
-                      dllist_get_head(l1));
-  dllistnode_set_prev(dllist_get_head(l1),
-                      dllistnode_get_prev(dllist_get_head(l2)));
+  dllistnode_set_next(dllistnode_get_prev(l1->head),
+                      dllistnode_get_next(l2->head));
+  dllistnode_set_prev(dllistnode_get_next(l2->head),
+                      dllistnode_get_prev(l1->head));
+  dllistnode_set_next(dllistnode_get_prev(l2->head),
+                      l1->head);
+  dllistnode_set_prev(l1->head,
+                      dllistnode_get_prev(l2->head));
   l1->size = newsize;
   // set the size to 0 so that destroy avoids destroying the inner nodes
   // (because they are now part of the first list's structure)
   l2->size = 0;
 
-  list_del(l2);
+  list_del((list *) l2);
 }
 
-static inline sllistnode *sllist_get_head(list * restrict l) {
-  return ((list_slink_ds *)l->datastore)->head;
-}
-
-static inline sllistnode *sllist_get_last(list * restrict l) {
-  return ((list_slink_ds *)l->datastore)->last;
-}
-
-static inline void sllist_set_head(list * restrict l, sllistnode *n) {
-  ((list_slink_ds *)l->datastore)->head = n;
-}
-
-static inline void sllist_set_last(list * restrict l, sllistnode *n) {
-  ((list_slink_ds *)l->datastore)->last = n;
-}
-
-FLYAPI void sllist_init(list *l) {
+FLYAPI void sllist_init(sllist *l) {
   void *(*allocproc)(size_t) = ((flyobj *)l)->allocproc;
-  l->datastore = (*allocproc)(sizeof(list_slink_ds));
-  sllist_set_head(l, sllistnode_alloc_with(allocproc));
-  sllist_set_last(l, sllist_get_head(l));
-  sllistnode_head_init(sllist_get_head(l));
+  l->head = l->last = sllistnode_alloc_with(allocproc);
+  sllistnode_head_init(l->head);
   l->size = 0;
 }
 
-FLYAPI void sllist_del(list *l) {
+FLYAPI void sllist_del(sllist *l) {
   while (l->size > 0) {
     sllist_pop(l);
   }
 
-  ((flyobj *)l)->freeproc(sllist_get_head(l));
-  ((flyobj *)l)->freeproc(l->datastore);
+  ((flyobj *)l)->freeproc(l->head);
 }
 
-FLYAPI void sllist_push(list *l, void *data) {
+FLYAPI void sllist_push(sllist *l, void *data) {
   sllistnode *node = sllistnode_alloc_with(((flyobj *)l)->allocproc);
   sllistnode_set_data(node, data);
-  sllistnode_set_next(node, sllistnode_get_next(sllist_get_head(l)));
-  sllistnode_set_next(sllist_get_head(l), node);
+  sllistnode_set_next(node, sllistnode_get_next(l->head));
+  sllistnode_set_next(l->head, node);
 
   if (l->size == 0) {
-    sllist_set_last(l, node);
+    l->last = node;
   }
 
   l->size++;
 }
 
-FLYAPI void sllist_unshift(list *l, void *data) {
+FLYAPI void sllist_unshift(sllist *l, void *data) {
   sllistnode *node = sllistnode_alloc_with(((flyobj *)l)->allocproc);
   sllistnode_set_data(node, data);
-  sllistnode_set_next(node, sllist_get_head(l));
-  sllistnode_set_next(sllist_get_last(l), node);
-  sllist_set_last(l, node);
+  sllistnode_set_next(node, l->head);
+  sllistnode_set_next(l->last, node);
+  l->last = node;
   l->size++;
 }
 
-FLYAPI void *sllist_pop(list *l) {
+FLYAPI void *sllist_pop(sllist *l) {
   void *ret = NULL;
-  sllistnode *node = sllistnode_get_next(sllist_get_head(l));
-  sllistnode_set_next(sllist_get_head(l), sllistnode_get_next(node));
+  sllistnode *node = sllistnode_get_next(l->head);
+  sllistnode_set_next(l->head, sllistnode_get_next(node));
 
   l->size--;
 
   if (l->size == 0) {
-    sllist_set_last(l, sllist_get_head(l));
+    l->last = l->head;
   }
 
   ret = sllistnode_get_data(node);
@@ -580,7 +543,7 @@ FLYAPI void *sllist_pop(list *l) {
   return ret;
 }
 
-FLYAPI void *sllist_shift(list *l) {
+FLYAPI void *sllist_shift(sllist *l) {
   void *ret = NULL;
   /* This'll unfortunately run in O(n) time, but we have no way to find what the
    * new last pointer will become unless we iterate all the way to the end.
@@ -588,39 +551,35 @@ FLYAPI void *sllist_shift(list *l) {
    * something) or use an implementation of the iterator pattern. -zack
    */
   sllistnode *new_last = NULL;
-  sllistnode *current = sllist_get_head(l);
-  sllistnode *last = sllist_get_last(l);
+  sllistnode *current = l->head;
+  sllistnode *last = l->last;
   while(current != last) {
     new_last = current;
     current = sllistnode_get_next(current);
   }
-  sllistnode_set_next(new_last, sllist_get_head(l));
-  sllist_set_last(l, new_last);
+  sllistnode_set_next(new_last, l->head);
+  l->last = new_last;
   l->size--;
   ret = sllistnode_get_data(last);
   sllistnode_del_with(last, ((flyobj *)l)->freeproc);
   return ret;
 }
 
-FLYAPI void sllist_concat(list *l1, list *l2) {
+FLYAPI void sllist_concat(sllist *l1, sllist *l2) {
   size_t newsize = l1->size + l2->size;
 
-  sllistnode_set_next(sllist_get_last(l1),
-                      sllistnode_get_next(sllist_get_head(l2)));
-  sllist_set_last(l1, sllist_get_last(l2));
-  sllistnode_set_next(sllist_get_last(l1), sllist_get_head(l1));
+  sllistnode_set_next(l1->last,
+                      sllistnode_get_next(l2->head));
+  l1->last = l2->last;
+  sllistnode_set_next(l1->last, l1->head);
 
   l1->size = newsize;
   // set the size to 0 so that destroy avoids destroying the inner nodes
   // (because they are now part of the first list's structure)
   l2->size = 0;
 
-  list_del(l2);
+  list_del((list *) l2);
 }
-
-#ifdef listkind_shadowcast
-#undef listkind_shadowcast
-#endif
 
 #if defined(__STRICT_ANSI__)
 #undef inline

@@ -61,7 +61,3 @@ FLYAPI void flyobj_set_default_freeproc(void (*proc)(void *)) {
   _flyobj_default_freeproc = proc;
 }
 
-FLYAPI void flyobj_set_id(flyobj *obj, uint32_t id) {
-  obj->type_id = id;
-}
-

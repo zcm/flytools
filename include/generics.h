@@ -21,7 +21,6 @@
 #define __FLYOBJ_H__
 
 typedef struct flyobj {
-  uint32_t type_id;
   /** The stored allocation routine for allocating new nodes. */
   void *(*allocproc)(size_t);
   /**
@@ -31,10 +30,6 @@ typedef struct flyobj {
   void (*freeproc)(void *);
 } flyobj;
 
-typedef struct flykind {
-  uint32_t id;
-} flykind;
-
 FLYAPI void flyobj_del(flyobj *obj);
 FLYAPI void flyobj_init(
     flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *));
@@ -43,6 +38,5 @@ FLYAPI void *(*flyobj_get_default_allocproc())(size_t);
 FLYAPI void flyobj_set_default_allocproc(void *(*proc)(size_t));
 FLYAPI void (*flyobj_get_default_freeproc())(void *);
 FLYAPI void flyobj_set_default_freeproc(void (*proc)(void *));
-FLYAPI void flyobj_set_id(flyobj *obj, uint32_t id);
 
 #endif
