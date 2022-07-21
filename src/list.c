@@ -414,21 +414,25 @@ FLYAPI size_t list_remove_all(
   return l->kind->remove_all(l, matcher, fn ? fn : &do_nothing);
 }
 
-static inline void sllistnode_head_init(sllistnode * restrict head) {
-	head->data = NULL;
-	head->next = head;
+static inline void dllistnode_head_init(dllistnode * restrict head) {
+  head->data = NULL;
+  head->next = head;
+  head->prev = head;
 }
 
-static inline void dllistnode_head_init(dllistnode * restrict head) {
-	head->data = NULL;
-	head->next = head;
-	head->prev = head;
+static inline void sllistnode_head_init(sllistnode * restrict head) {
+  head->data = NULL;
+  head->next = head;
 }
 
 FLYAPI void dllist_init(dllist *l) {
-  dllistnode_head_init(
-      l->head = ((flyobj *) l)->allocproc(sizeof (dllistnode)));
   l->size = 0;
+
+  if ((l->head = ((flyobj *) l)->allocproc(sizeof (dllistnode)))) {
+    dllistnode_head_init(l->head);
+  } else {
+    FLY_ERR(EFLYNOMEM);
+  }
 }
 
 FLYAPI void dllist_del(dllist *l) {
@@ -497,9 +501,13 @@ FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
 }
 
 FLYAPI void sllist_init(sllist *l) {
-  sllistnode_head_init(
-      l->head = l->last = ((flyobj *) l)->allocproc(sizeof (sllistnode)));
   l->size = 0;
+
+  if ((l->head = l->last = ((flyobj *) l)->allocproc(sizeof (dllistnode)))) {
+    sllistnode_head_init(l->head);
+  } else {
+    FLY_ERR(EFLYNOMEM);
+  }
 }
 
 FLYAPI void sllist_del(sllist *l) {
