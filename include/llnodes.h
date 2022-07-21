@@ -73,22 +73,4 @@ void dllistnode_del_with(dllistnode *node, void (*free_callback)(void *));
  */
 void sllistnode_del_with(sllistnode *node, void (*free_callback)(void *));
 
-// linked list node operations
-
-/**
- * Initializes the specified singly linked list node to be a header node. Makes
- * the data pointer NULL and makes the respective links of the node point to
- * itself.
- * @param head the node to initialize as a header node
- */
-void sllistnode_head_init(sllistnode *head);
-
-/**
- * Initializes the specified doubly linked list node to be a header node. Makes
- * the data pointer NULL and makes the respective links of the node point to
- * itself.
- * @param head the node to initialize as a header node
- */
-void dllistnode_head_init(dllistnode *head);
-
 #endif
