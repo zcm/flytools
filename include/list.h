@@ -27,15 +27,40 @@
 
 struct listkind;
 
+#define LIST_DEFINITION \
+  struct {                 \
+    flyobj _parent;        \
+    struct listkind *kind; \
+    size_t size;           \
+  }
+
 typedef struct list {
-  flyobj _parent;
-  struct listkind *kind;
-  size_t size;
-  void *datastore;
+  LIST_DEFINITION;
 } list;
 
+typedef struct dllist {
+  union {
+    list _list;
+    LIST_DEFINITION;
+  };
+
+  dllistnode *head;
+} dllist;
+
+typedef struct sllist {
+  union {
+    list _list;
+    LIST_DEFINITION;
+  };
+
+  sllistnode *head;
+  sllistnode *last;
+} sllist;
+
+#undef LIST_DEFINITION
+
 typedef struct listkind {
-  flykind _parent;
+  size_t size;
   void (*init)(list *l);
   void (*destroy)(list *l);
   void (*push)(list *l, void *data);
@@ -72,21 +97,21 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
 FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
-FLYAPI void dllist_init(list *l);
-FLYAPI void dllist_del(list *l);
-FLYAPI void dllist_push(list *l, void *data);
-FLYAPI void dllist_unshift(list *l, void *data);
-FLYAPI void *dllist_pop(list *l);
-FLYAPI void *dllist_shift(list *l);
-FLYAPI void dllist_concat(list *l1, list *l2);
+FLYAPI void dllist_init(dllist *l);
+FLYAPI void dllist_del(dllist *l);
+FLYAPI void dllist_push(dllist *l, void *data);
+FLYAPI void dllist_unshift(dllist *l, void *data);
+FLYAPI void *dllist_pop(dllist *l);
+FLYAPI void *dllist_shift(dllist *l);
+FLYAPI void dllist_concat(dllist *l1, dllist *l2);
 
-FLYAPI void sllist_init(list *l);
-FLYAPI void sllist_del(list *l);
-FLYAPI void sllist_push(list *l, void *data);
-FLYAPI void sllist_unshift(list *l, void *data);
-FLYAPI void *sllist_pop(list *l);
-FLYAPI void *sllist_shift(list *l);
-FLYAPI void sllist_concat(list *l1, list *l2);
+FLYAPI void sllist_init(sllist *l);
+FLYAPI void sllist_del(sllist *l);
+FLYAPI void sllist_push(sllist *l, void *data);
+FLYAPI void sllist_unshift(sllist *l, void *data);
+FLYAPI void *sllist_pop(sllist *l);
+FLYAPI void *sllist_shift(sllist *l);
+FLYAPI void sllist_concat(sllist *l1, sllist *l2);
 
 #if defined(_MSC_VER)
 #undef restrict
