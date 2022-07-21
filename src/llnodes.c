@@ -25,10 +25,6 @@ dllistnode *dllistnode_alloc_with(void *(*alloc_callback)(size_t)) {
 	return ret;
 }
 
-dllistnode *dllistnode_alloc() {
-	return dllistnode_alloc_with(&malloc);
-}
-
 sllistnode *sllistnode_alloc_with(void *(*alloc_callback)(size_t)) {
 	sllistnode *ret = (sllistnode *)(*alloc_callback)(sizeof(sllistnode));
 	if(!ret) {
@@ -38,67 +34,15 @@ sllistnode *sllistnode_alloc_with(void *(*alloc_callback)(size_t)) {
 	return ret;
 }
 
-sllistnode *sllistnode_alloc() {
-	return sllistnode_alloc_with(&malloc);
-}
-
 void dllistnode_del_with(dllistnode *node, void (*free_callback)(void *)) {
 	(*free_callback)(node);
-}
-
-void dllistnode_del(dllistnode *node) {
-	dllistnode_del_with(node, &free);
 }
 
 void sllistnode_del_with(sllistnode *node, void (*free_callback)(void *)) {
 	(*free_callback)(node);
 }
 
-void sllistnode_del(sllistnode *node) {
-	sllistnode_del_with(node, &free);
-}
-
 // linked list node operations
-
-dllistnode *dllistnode_get_next(dllistnode *curnode) {
-	return curnode->next;
-}
-
-dllistnode *dllistnode_get_prev(dllistnode *curnode) {
-	return curnode->prev;
-}
-
-sllistnode *sllistnode_get_next(sllistnode *curnode) {
-	return curnode->next;
-}
-
-void dllistnode_set_next(dllistnode *curnode, dllistnode *next) {
-  curnode->next = next;
-}
-
-void dllistnode_set_prev(dllistnode *curnode, dllistnode *prev) {
-  curnode->prev = prev;
-}
-
-void sllistnode_set_next(sllistnode *curnode, sllistnode *next) {
-  curnode->next = next;
-}
-
-void *dllistnode_get_data(dllistnode *node) {
-  return node->data;
-}
-
-void dllistnode_set_data(dllistnode *node, void *data) {
-  node->data = data;
-}
-
-void *sllistnode_get_data(sllistnode *node) {
-  return node->data;
-}
-
-void sllistnode_set_data(sllistnode *node, void *data) {
-  node->data = data;
-}
 
 void sllistnode_head_init(sllistnode *head) {
 	head->data = NULL;

@@ -56,20 +56,6 @@ dllistnode *dllistnode_alloc_with(void *(*alloc_callback)(size_t));
 sllistnode *sllistnode_alloc_with(void *(*alloc_callback)(size_t));
 
 /**
- * Allocates (but does not initialize) a new doubly linked list node. Allocates
- * memory using the default allocation routine, malloc().
- * @return the newly allocated doubly linked list node
- */
-dllistnode *dllistnode_alloc();
-
-/**
- * Allocates (but does not initialize) a new singly linked list node. Allocates
- * memory using the default allocation routine, malloc().
- * @return the newly allocated singly linked list node
- */
-sllistnode *sllistnode_alloc();
-
-/**
  * Frees the memory associated with this doubly linked list node using the
  * specified freeing routine.
  * @param node the node to destroy
@@ -77,14 +63,6 @@ sllistnode *sllistnode_alloc();
  * return the memory for the node to the system
  */
 void dllistnode_del_with(dllistnode *node, void (*free_callback)(void *));
-
-/**
- * Frees the memory associated with this doubly linked list node. Frees the
- * memory using the default allocation routine, free().  Does not free the
- * element pointed to by this element pointer.
- * @param node the node to destroy
- */
-void dllistnode_del(dllistnode *node);
 
 /**
  * Frees the memory associated with this singly linked list node using the
@@ -95,46 +73,7 @@ void dllistnode_del(dllistnode *node);
  */
 void sllistnode_del_with(sllistnode *node, void (*free_callback)(void *));
 
-/**
- * Frees the memory associated with this singly linked list node. Frees the
- * memory using the default allocation routine, free().  Does not free the
- * element pointed to by this element pointer.
- * @param node the node to destroy
- */
-void sllistnode_del(sllistnode *node);
-
 // linked list node operations
-/**
- * Returns the node pointed to by the given doubly linked list node's
- * next pointer.
- * @param curnode the node of which to return the next node
- * @return a pointer to the node after the current node
- */
-dllistnode *dllistnode_get_next(dllistnode *curnode);
-
-/**
- * Returns the node pointed to by the given doubly linked list node's prev
- * pointer.
- * @param curnode the node of which to return the prev node
- * @return a pointer to the node before the current node
- */
-dllistnode *dllistnode_get_prev(dllistnode *curnode);
-
-/**
- * Returns the node pointed to by the given singly linked list node's next
- * pointer.
- * @param curnode the node of which to return the next node
- * @return a pointer to the node after the current node
- */
-sllistnode *sllistnode_get_next(sllistnode *curnode);
-
-void dllistnode_set_next(dllistnode *curnode, dllistnode *next);
-void dllistnode_set_prev(dllistnode *curnode, dllistnode *prev);
-void sllistnode_set_next(sllistnode *curnode, sllistnode *next);
-void *dllistnode_get_data(dllistnode *node);
-void dllistnode_set_data(dllistnode *node, void *data);
-void *sllistnode_get_data(sllistnode *node);
-void sllistnode_set_data(sllistnode *node, void *data);
 
 /**
  * Initializes the specified singly linked list node to be a header node. Makes
