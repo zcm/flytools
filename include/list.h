@@ -19,12 +19,13 @@
 #include <stdlib.h>
 #include "common.h"
 #include "generics.h"
-#include "llnodes.h"
 
 #if defined(_MSC_VER)
 #define restrict __restrict
 #endif
 
+struct dllistnode;
+struct sllistnode;
 struct listkind;
 
 #define LIST_DEFINITION \
@@ -44,7 +45,7 @@ typedef struct dllist {
     LIST_DEFINITION;
   };
 
-  dllistnode *head;
+  struct dllistnode *head;
 } dllist;
 
 typedef struct sllist {
@@ -53,8 +54,8 @@ typedef struct sllist {
     LIST_DEFINITION;
   };
 
-  sllistnode *head;
-  sllistnode *last;
+  struct sllistnode *head;
+  struct sllistnode *last;
 } sllist;
 
 #undef LIST_DEFINITION
