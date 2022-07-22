@@ -30,7 +30,7 @@ struct listkind;
 
 #define LIST_DEFINITION \
   struct {                 \
-    flyobj _parent;        \
+    FLYOBJ_SUPER;          \
     struct listkind *kind; \
     size_t size;           \
   }

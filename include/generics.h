@@ -20,20 +20,26 @@
 #ifndef __FLYOBJ_H__
 #define __FLYOBJ_H__
 
-typedef struct flyobj {
-  /** The stored allocation routine for allocating new nodes. */
-  void *(*allocproc)(size_t);
-  /**
-   * The stored freeing routine for destroying the structure and nodes. If
-   * null, the standard free() will be used.
-   */
-  void (*freeproc)(void *);
-} flyobj;
+#define FLYOBJ_DEFINITION \
+  struct {                  \
+    void *(*alloc)(size_t); \
+    void (*del)(void *);    \
+  }
 
-FLYAPI void flyobj_del(flyobj *obj);
+struct flyobj {
+  FLYOBJ_DEFINITION;
+};
+
+#define FLYOBJ_SUPER \
+  union {               \
+    struct flyobj _obj; \
+    FLYOBJ_DEFINITION;  \
+  }
+
+FLYAPI void flyobj_del(struct flyobj *obj);
 FLYAPI void flyobj_init(
-    flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *));
-FLYAPI void flyobj_set_freeproc(flyobj *obj, void (*proc)(void *));
+    struct flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *));
+FLYAPI void flyobj_set_freeproc(struct flyobj *obj, void (*proc)(void *));
 FLYAPI void *(*flyobj_get_default_allocproc())(size_t);
 FLYAPI void flyobj_set_default_allocproc(void *(*proc)(size_t));
 FLYAPI void (*flyobj_get_default_freeproc())(void *);

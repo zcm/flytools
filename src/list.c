@@ -95,7 +95,7 @@ FLYAPI list *list_new_kind_with(
   if(ret != NULL) {
     FLY_ERR_CLEAR;
 
-    flyobj_init((flyobj *) ret, allocproc, freeproc);
+    flyobj_init(&ret->_obj, allocproc, freeproc);
     ret->kind = kind;
     kind->init(ret);
   } else {
@@ -109,7 +109,7 @@ FLYAPI void list_del(list *l) {
     FLY_ERR_CLEAR;
 
     l->kind->destroy(l);
-    flyobj_del((flyobj *)l);
+    flyobj_del(&l->_obj);
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -118,7 +118,7 @@ FLYAPI void list_del(list *l) {
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
   FLY_ERR_CLEAR;
   if (l != NULL) {
-    flyobj_set_freeproc((flyobj *)l, freeproc);
+    flyobj_set_freeproc(&l->_obj, freeproc);
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -265,7 +265,7 @@ static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *)) {
 
       dllist_stitch(current);
 
-      ((flyobj *) l)->freeproc(current);
+      l->del(current);
 
       return (uintptr_t) data ^ (uintptr_t) 0x1;
     }
@@ -287,7 +287,7 @@ static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *)) {
 
       sllist_stitch(current, prev, l);
 
-      ((flyobj *) l)->freeproc(current);
+      l->del(current);
 
       return data ^ 0x1;
     }
@@ -348,7 +348,7 @@ static size_t dllist_remove_all(
 
       dllist_stitch(current);
 
-      ((flyobj *) l)->freeproc(current);
+      l->del(current);
 
       ++total_removed;
 
@@ -369,7 +369,7 @@ static size_t dllist_remove_all(
 
 #define DEFERRED_FREE(...) \
   if (chopping_block) \
-    ((flyobj *) l)->freeproc(chopping_block); \
+    l->del(chopping_block); \
   __VA_OPT__(chopping_block =) __VA_ARGS__
 
 static size_t sllist_remove_all(
@@ -439,7 +439,7 @@ static inline void sllistnode_head_init(sllistnode * restrict head) {
 static inline void *listnode_alloc(void * restrict l, size_t node_size) {
   void *node;
 
-  if (!(node = ((flyobj *) l)->allocproc(node_size))) {
+  if (!(node = ((struct flyobj *) l)->alloc(node_size))) {
     FLY_ERR(EFLYNOMEM);
   }
 
@@ -449,7 +449,7 @@ static inline void *listnode_alloc(void * restrict l, size_t node_size) {
 FLYAPI void dllist_init(dllist *l) {
   l->size = 0;
 
-  if ((l->head = ((flyobj *) l)->allocproc(sizeof (dllistnode)))) {
+  if ((l->head = l->alloc(sizeof (dllistnode)))) {
     dllistnode_head_init(l->head);
   } else {
     FLY_ERR(EFLYNOMEM);
@@ -461,7 +461,7 @@ FLYAPI void dllist_del(dllist *l) {
     dllist_pop(l);
   }
 
-  ((flyobj *)l)->freeproc(l->head);
+  l->del(l->head);
 }
 
 FLYAPI void dllist_push(dllist *l, void *data) {
@@ -501,7 +501,7 @@ FLYAPI void *dllist_pop(dllist *l) {
   l->head->next = node->next;
   l->size--;
   ret = node->data;
-  ((flyobj *) l)->freeproc(node);
+  l->del(node);
   return ret;
 }
 
@@ -512,7 +512,7 @@ FLYAPI void *dllist_shift(dllist *l) {
   l->head->prev = node->prev;
   l->size--;
   ret = node->data;
-  ((flyobj *) l)->freeproc(node);
+  l->del(node);
   return ret;
 }
 
@@ -534,7 +534,7 @@ FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
 FLYAPI void sllist_init(sllist *l) {
   l->size = 0;
 
-  if ((l->head = l->last = ((flyobj *) l)->allocproc(sizeof (dllistnode)))) {
+  if ((l->head = l->last = l->alloc(sizeof (dllistnode)))) {
     sllistnode_head_init(l->head);
   } else {
     FLY_ERR(EFLYNOMEM);
@@ -546,7 +546,7 @@ FLYAPI void sllist_del(sllist *l) {
     sllist_pop(l);
   }
 
-  ((flyobj *)l)->freeproc(l->head);
+  l->del(l->head);
 }
 
 FLYAPI void sllist_push(sllist *l, void *data) {
@@ -593,7 +593,7 @@ FLYAPI void *sllist_pop(sllist *l) {
   }
 
   ret = node->data;
-  ((flyobj *) l)->freeproc(node);
+  l->del(node);
   return ret;
 }
 
@@ -615,7 +615,7 @@ FLYAPI void *sllist_shift(sllist *l) {
   l->last = new_last;
   l->size--;
   ret = last->data;
-  ((flyobj *) l)->freeproc(last);
+  l->del(last);
   return ret;
 }
 

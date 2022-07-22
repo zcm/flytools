@@ -19,27 +19,27 @@
 static void *(*_flyobj_default_allocproc)(size_t) = &malloc;
 static void (*_flyobj_default_freeproc)(void *) = &free;
 
-FLYAPI void flyobj_del(flyobj *obj) {
+FLYAPI void flyobj_del(struct flyobj *obj) {
   if (obj != NULL) {
-    obj->freeproc(obj);
+    obj->del(obj);
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
 FLYAPI void flyobj_init(
-    flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *)) {
+    struct flyobj *obj, void *(*alloc)(size_t), void (*del)(void *)) {
   if (obj != NULL) {
-    obj->allocproc = allocproc;
-    obj->freeproc = freeproc;
+    obj->alloc = alloc;
+    obj->del = del;
   } else {
     FLY_ERR(EFLYBADARG);
   }
 }
 
-FLYAPI void flyobj_set_freeproc(flyobj *obj, void (*proc)(void *)) {
+FLYAPI void flyobj_set_freeproc(struct flyobj *obj, void (*proc)(void *)) {
   if (obj != NULL) {
-    obj->freeproc = proc == NULL ? flyobj_get_default_freeproc() : proc;
+    obj->del = proc == NULL ? flyobj_get_default_freeproc() : proc;
   } else {
     FLY_ERR(EFLYBADARG);
   }
