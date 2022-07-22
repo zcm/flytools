@@ -1,6 +1,6 @@
 CC := clang
 #OBJ = $(patsubst %.c,%.o,$(wildcard src/*.c))
-OBJ = src/common.o src/generics.o src/dict.o src/hash.o src/list.o src/llnodes.o
+OBJ = src/common.o src/generics.o src/dict.o src/hash.o src/list.o
 CFLAGS += -Iinclude -Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
 VPATH = src:include:.
 
@@ -18,8 +18,7 @@ all: $(OBJ) build/libflytools.a($(OBJ))
 
 src/dict.o: hash.h dict.h common.h list.h
 src/hash.o: hash.h common.h
-src/list.o: list.h llnodes.h common.h
-src/llnodes.o: llnodes.h common.h
+src/list.o: list.h common.h
 
 # uncomment to enable compilation of scanner code
 #src/scanner.c: scanner.h
