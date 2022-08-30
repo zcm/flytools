@@ -20,6 +20,18 @@
 #define __func__ __FUNCTION__
 #endif
 
+#ifdef FLYAPIBUILD
+#if (defined(_WIN32) && !defined(_WIN64)) || defined(__i386) || defined(_M_IX86)
+#define IS32BIT
+#endif
+
+#ifdef IS32BIT
+#define ONE 1
+#else
+#define ONE 1ULL
+#endif
+#endif
+
 #if defined(_MSC_VER) && !defined(FLYAPI)
 // This will be defined by the build environment if compiling the API.
 // External projects linking against the Flytools should never define the
