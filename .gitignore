@@ -2,6 +2,7 @@ build/*
 !build/.gitkeep
 test/bin/*
 !test/bin/.gitkeep
+test/mstest/build
 *.[oa]
 .*.un~
 *.tmp
