@@ -1,0 +1,15 @@
+#ifndef FLYTOOLS_MSTEST_ADAPTERS_H
+#define FLYTOOLS_MSTEST_ADAPTERS_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
+void assert_true(bool b);
+void assert_null(void* obj);
+void assert_non_null(void* obj);
+void assert_int_equal(uint64_t a, uint64_t b);
+void assert_string_equal(char *s, char *t);
+
+void _fail();
+
+#endif

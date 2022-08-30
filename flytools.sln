@@ -5,6 +5,8 @@ VisualStudioVersion = 17.3.32811.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "flytools", "flytools.vcxproj", "{F9216401-432F-C8C3-AA81-FD03B28F6E53}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mstest", "test\mstest\mstest.vcxproj", "{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -21,6 +23,14 @@ Global
 		{F9216401-432F-C8C3-AA81-FD03B28F6E53}.Release|Win32.Build.0 = Release|Win32
 		{F9216401-432F-C8C3-AA81-FD03B28F6E53}.Release|x64.ActiveCfg = Release|x64
 		{F9216401-432F-C8C3-AA81-FD03B28F6E53}.Release|x64.Build.0 = Release|x64
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Debug|Win32.Build.0 = Debug|Win32
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Debug|x64.ActiveCfg = Debug|x64
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Debug|x64.Build.0 = Debug|x64
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Release|Win32.ActiveCfg = Release|Win32
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Release|Win32.Build.0 = Release|Win32
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Release|x64.ActiveCfg = Release|x64
+		{CF23C2B3-7A53-4E4F-A716-A7ED18E35768}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

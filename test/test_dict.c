@@ -1,3 +1,6 @@
+#ifndef _WINDLL
+#define TEST(name, def) void name(void **state) def
+
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
@@ -20,6 +23,24 @@ int dict_test_teardown(void **state) {
   return 0;
 }
 
+#else
+static void **state;
+
+#ifndef TEST
+#include <stdio.h>
+
+#include "dict.h"
+#include "internal/dict.h"
+
+#include "adapters.h"
+
+#define TEST(name, def) void name() def
+#endif
+
+#define restrict
+#endif
+
+#ifndef METHODS_ONLY
 int verify_dict_size(dict * restrict d) {
   size_t bucket_sum = 0, i = 0;
 
@@ -38,17 +59,18 @@ int verify_dict_size(dict * restrict d) {
 
 #define assert_fly_error(err) \
   assert_int_equal(flytools_last_error(), err)
+#endif
 
-void test_dict_new(void **state) {
+TEST(test_dict_new, {
   (void) state;
 
   dict *d = dict_new();
   assert_non_null(d);
   assert_int_equal(d->size, 0);
   dict_del(d);
-}
+})
 
-void test_dict_new_of_size(void **state) {
+TEST(test_dict_new_of_size, {
   (void) state;
 
   dict *d;
@@ -86,18 +108,20 @@ void test_dict_new_of_size(void **state) {
   d = dict_new_of_size(10);
   assert_null(d);
   assert_fly_error(EFLYBADARG);
-}
+})
 
-void test_dict_set_then_get(void **state) {
+#ifndef METHODS_ONLY
+struct pet {
+  char *name, *animal;
+};
+
+struct pet cat_cj = { "cj", "cat" },
+           cat_donna = {"donna", "cat" },
+           dog_wahwa = {"wahwa", "dog" };
+#endif
+
+TEST(test_dict_set_then_get, {
   (void) state;
-
-  struct pet {
-    char *name, *animal;
-  };
-
-  struct pet cat_cj = { "cj", "cat" },
-             cat_donna = {"donna", "cat" },
-             dog_wahwa = {"wahwa", "dog" };
 
   dict *d = dict_new();
   assert_non_null(d);
@@ -133,9 +157,9 @@ void test_dict_set_then_get(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_sets_then_gets(void **state) {
+TEST(test_dict_sets_then_gets, {
   (void) state;
 
   dict *d = dict_new();
@@ -172,18 +196,20 @@ void test_dict_sets_then_gets(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_set_then_remove(void **state) {
+#ifndef METHODS_ONLY
+struct bev {
+  char *brand, *type;
+};
+
+struct bev coke = { "pepsi", "cola" },
+           energy = { "monster", "legal stimulant" },
+           fruit = { "fanta", "juice substitute" };
+#endif
+
+TEST(test_dict_set_then_remove, {
   (void) state;
-
-  struct bev {
-    char *brand, *type;
-  };
-
-  struct bev coke = { "pepsi", "cola" },
-             energy = { "monster", "legal stimulant" },
-             fruit = { "fanta", "juice substitute" };
 
   dict *d = dict_new();
   assert_non_null(d);
@@ -223,9 +249,9 @@ void test_dict_set_then_remove(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_sets_then_removes(void **state) {
+TEST(test_dict_sets_then_removes, {
   (void) state;
 
   dict *d = dict_new();
@@ -266,10 +292,9 @@ void test_dict_sets_then_removes(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-
-void test_dict_set_sets_get_gets_remove_removes_combo(void **state) {
+TEST(test_dict_set_sets_get_gets_remove_removes_combo, {
   (void) state;
 
   dict *d = dict_new();
@@ -342,9 +367,9 @@ void test_dict_set_sets_get_gets_remove_removes_combo(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_get_from_empty(void **state) {
+TEST(test_dict_get_from_empty, {
   (void) state;
 
   dict *d = dict_new_of_size(2);
@@ -356,9 +381,9 @@ void test_dict_get_from_empty(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_remove_from_empty(void **state) {
+TEST(test_dict_remove_from_empty, {
   (void) state;
 
   dict *d = dict_new_of_size(2);
@@ -370,9 +395,9 @@ void test_dict_remove_from_empty(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_gets_from_empty(void **state) {
+TEST(test_dict_gets_from_empty, {
   (void) state;
 
   dict *d = dict_new_of_size(2);
@@ -384,9 +409,9 @@ void test_dict_gets_from_empty(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_removes_from_empty(void **state) {
+TEST(test_dict_removes_from_empty, {
   (void) state;
 
   dict *d = dict_new_of_size(2);
@@ -398,15 +423,15 @@ void test_dict_removes_from_empty(void **state) {
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-}
+})
 
-void test_dict_null_as_key(void **state) {
-  (void) state;
-
+#ifndef METHODS_ONLY
+void do_test_dict_null_as_key() {
   dict *d;
   assert_non_null(d = dict_new_of_size(32));
 
-  char *one = "first", *two = "second";
+  char *one = "first";
+  char *two = "second";
 
   dict_set(d, one, "uno");
   assert_int_equal(d->size, 1);
@@ -440,14 +465,22 @@ void test_dict_null_as_key(void **state) {
   assert_null(value = dict_get(d, NULL));
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
-  assert_null(value = dict_remove(d, NULL));
+  value = dict_remove(d, NULL);
+  assert_null(value);
   assert_int_equal(d->size, 2);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
 }
+#endif
 
-void test_dict_set_overwrites(void **state) {
+TEST(test_dict_null_as_key, {
+  (void) state;
+
+  do_test_dict_null_as_key();
+})
+
+TEST(test_dict_set_overwrites, {
   (void) state;
 
   dict *d = dict_new();
@@ -481,8 +514,9 @@ void test_dict_set_overwrites(void **state) {
   assert_int_equal(d->size, 0);
 
   dict_del(d);
-}
+})
 
+#ifndef METHODS_ONLY
 void *(*volatile _passthrough_malloc)(size_t) = &malloc;
 void (*volatile _passthrough_free)(void *) = &free;
 
@@ -534,19 +568,21 @@ void _test_dict_resize(dict *d) {
 
   dict_del(d);
 }
+#endif
 
-void test_dict_resize(void **state) {
+TEST(test_dict_resize, {
   (void) state;
 
   _test_dict_resize(dict_new_of_size(4));
-}
+})
 
-void test_dict_resize_custom_allocator(void **state) {
+TEST(test_dict_resize_custom_allocator, {
   (void) state;
 
   _test_dict_resize(dict_new_with(4, &passthrough_malloc, &passthrough_free));
-}
+})
 
+#ifndef METHODS_ONLY
 static char *letters = "abcdefghij";
 static char *answers = "abcdefghij";
 static char *answers2 = "abjdifh";
@@ -566,9 +602,7 @@ static int verify_order(char *lptr, size_t i) {
   return 0;
 }
 
-void test_dict_foreach(void **state) {
-  (void) state;
-
+void do_test_dict_foreach() {
   dict *d = dict_new();
 
   dict_foreach(d, (void *) &_fail);
@@ -618,6 +652,15 @@ void test_dict_foreach(void **state) {
 
   dict_del(d);
 }
+#endif
+
+TEST(test_dict_foreach, {
+  (void) state;
+
+  do_test_dict_foreach();
+})
+
+#ifndef _WINDLL
 
 #define dict_unit_test(f) \
   cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
@@ -645,3 +688,5 @@ int main(void) {
   return cmocka_run_group_tests_name(
       "flytools dict", tests, NULL, NULL);
 }
+
+#endif
