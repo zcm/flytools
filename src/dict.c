@@ -18,7 +18,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef _MSC_VER
+#define llogb logb
+#define thread_local __declspec(thread)
+#else
 #include <threads.h>
+#endif
 
 #include "dict.h"
 #include "internal/dict.h"
@@ -78,7 +84,7 @@ static int _generic_key_matcher(void *node) {
       ((dictnode *) node)->key, _match_key, _match_key_matcher);
 }
 
-FLYAPI dictnode *dictnode_alloc_with(void *(*alloc)(size_t)) {
+dictnode *dictnode_alloc_with(void *(*alloc)(size_t)) {
 	void *ret = (*alloc)(sizeof(dictnode));
   FLY_ERR_CLEAR;
 	if(ret == NULL) {
@@ -87,11 +93,11 @@ FLYAPI dictnode *dictnode_alloc_with(void *(*alloc)(size_t)) {
 	return (dictnode *)ret;
 }
 
-FLYAPI dictnode *dictnode_alloc() {
+dictnode *dictnode_alloc() {
 	return dictnode_alloc_with(&malloc);
 }
 
-FLYAPI dictnode *dictnode_new(
+dictnode *dictnode_new(
     void *key, void *value, uint64_t hash,
     int (*key_matcher)(const void *, const void *, const void *),
     void *(*alloc)(size_t)) {
@@ -108,7 +114,7 @@ FLYAPI dictnode *dictnode_new(
   return ret;
 }
 
-FLYAPI void dictnode_del(dictnode *dnode, void (*del)(void *)) {
+void dictnode_del(dictnode *dnode, void (*del)(void *)) {
   FLY_ERR_CLEAR;
   if (dnode != NULL) {
     if (dnode->key_matcher == &_str_key_matcher) {
@@ -172,7 +178,7 @@ static dict *_dict_init_with(
   }
 
   d->size = 0;
-  d->exponent = llogb((double) size);
+  d->exponent = (size_t) llogb((double) size);
   d->alloc = alloc;
   d->del = del;
 
@@ -236,7 +242,7 @@ FLYAPI dict *dict_new() {
 FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
   if (d != NULL) {
     register size_t i = 0;
-    const size_t capacity = 1 << d->exponent;
+    const size_t capacity = ONE << d->exponent;
 
     FLY_ERR_CLEAR;
 
@@ -301,7 +307,7 @@ static int _dict_resize(dict *d) {
   register size_t i;
   struct dbucket * restrict buckets;
   struct dictnode ** restrict items;
-  const size_t og_capacity = _curr_bitmask = 1 << d->exponent;
+  const size_t og_capacity = _curr_bitmask = ONE << d->exponent;
   const size_t og_item_capacity = og_capacity * LOAD_FACTOR / 100;
 
   _curr_dict = d;
@@ -309,7 +315,7 @@ static int _dict_resize(dict *d) {
 
   if (d->alloc == &malloc) {
     buckets = d->buckets =
-      realloc(d->buckets, (1 << ++(d->exponent)) * sizeof (struct dbucket));
+      realloc(d->buckets, (ONE << ++(d->exponent)) * sizeof (struct dbucket));
 
     if (!buckets) {
       return 0;
@@ -322,7 +328,7 @@ static int _dict_resize(dict *d) {
       return 0;
     }
   } else {
-    buckets = d->alloc((1 << ++(d->exponent)) * sizeof (struct dbucket));
+    buckets = d->alloc((ONE << ++(d->exponent)) * sizeof (struct dbucket));
 
     if (!buckets) {
       return 0;
@@ -413,7 +419,7 @@ static void _dict_set_bucket_atomic(
   dictnode *node;  /* Also used implicitly in macro expansion */
 
 start:
-  bucket = d->buckets + (hash & (1 << d->exponent) - 1);
+  bucket = d->buckets + (hash & (ONE << d->exponent) - 1);
 
   if (!bucket->data) {
     RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, 1);
@@ -534,9 +540,9 @@ static dictnode *_dict_remove_from_bucket(
 }
 
 #define BUCKET_PTR_INDEX(d, key) \
-  (hash_xorshift64s((uint64_t) key) & (1 << d->exponent) - 1)
+  (hash_xorshift64s((uint64_t) key) & (ONE << d->exponent) - 1)
 #define BUCKET_STR_INDEX(d, key) \
-  (hash_string(key) & (1 << d->exponent) - 1)
+  (hash_string(key) & (ONE << d->exponent) - 1)
 
 static dictnode *_dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return _dict_remove_from_bucket(

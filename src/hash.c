@@ -51,8 +51,14 @@ FLYAPI uint64_t hash_xorshift64s(uint64_t x) {
 }
 
 FLYAPI uintptr_t hash_xorshift64s_ptr(uintptr_t ptr) {
+#ifdef IS32BIT
+  uint64_t x = ror(hash_xorshift64s((uint64_t) ptr), 4);
+  x ^= x >> 32;
+  return (uintptr_t) x;
+#else
   ptr = _xorshift64s_variant(ptr, 12, 25, 27, M32);
   return ror(ptr, 4);
+#endif
 }
 
 #undef _xorshift64s_variant

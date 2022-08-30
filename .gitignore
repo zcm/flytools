@@ -5,3 +5,5 @@ test/bin/*
 *.[oa]
 .*.un~
 *.tmp
+.vs
+*.vcxproj.user

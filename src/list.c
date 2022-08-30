@@ -367,17 +367,12 @@ static size_t dllist_remove_all(
   return total_removed;
 }
 
-#define DEFERRED_FREE(...) \
-  if (chopping_block) \
-    l->del(chopping_block); \
-  __VA_OPT__(chopping_block =) __VA_ARGS__
-
 static size_t sllist_remove_all(
     sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t i = 0, total_removed = 0;
   sllistnode *head = l->head,
              *prev = head,
-             *chopping_block = NULL,  /* for DEFERRED_FREE() */
+             *chopping_block = NULL,
              *current = head->next;
 
   while (current != head) {
@@ -387,7 +382,11 @@ static size_t sllist_remove_all(
 
       sllist_stitch(current, prev, l);
 
-      DEFERRED_FREE(current);
+      // Defer freeing because of need to modify prev
+      if (chopping_block) {
+        l->del(chopping_block);
+      }
+      chopping_block = current;
 
       ++total_removed;
 
@@ -397,19 +396,18 @@ static size_t sllist_remove_all(
 
       current = next;
     } else {
-      DEFERRED_FREE(NULL);
       current = (prev = current)->next;
       ++i;
     }
   }
 
-  DEFERRED_FREE();
+  if (chopping_block) {
+    l->del(chopping_block);
+  }
 
   l->size -= total_removed;
   return total_removed;
 }
-
-#undef DEFERRED_FREE
 
 static int do_nothing(void *unused_data, size_t unused_i) {
   return 0;
