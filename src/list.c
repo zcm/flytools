@@ -21,16 +21,8 @@
 
 #include "list.h"
 
-typedef struct sllistnode {
-  void *data;
-  struct sllistnode *next;
-} sllistnode;
-
-typedef struct dllistnode {
-  void *data;
-  struct dllistnode *next;
-  struct dllistnode *prev;
-} dllistnode;
+typedef struct sllistnode sllistnode;
+typedef struct dllistnode dllistnode;
 
 static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *));
 static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *));

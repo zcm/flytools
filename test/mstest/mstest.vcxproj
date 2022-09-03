@@ -181,6 +181,7 @@
     <ClCompile Include="mstest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\tests.h" />
     <ClInclude Include="adapters.h" />
   </ItemGroup>
   <ItemGroup>
