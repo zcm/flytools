@@ -24,8 +24,17 @@
 #define restrict __restrict
 #endif
 
-struct dllistnode;
-struct sllistnode;
+struct sllistnode {
+  void *data;
+  struct sllistnode *next;
+};
+
+struct dllistnode {
+  void *data;
+  struct dllistnode *next;
+  struct dllistnode *prev;
+};
+
 struct listkind;
 
 #define LIST_DEFINITION \

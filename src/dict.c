@@ -522,17 +522,27 @@ static dictnode *_dict_remove_from_bucket(
   dictnode *node;
 
   if (bucket->flags & 0x1) {
-    if (((list *) bucket->data)->size > 1) {
+    sllist *bucket_list = bucket->data;
+
+    if (bucket_list->size > 1) {
       _match_key = key;
       return (dictnode *)
-        list_remove_first((list *) bucket->data, matcher);
+        list_remove_first((list *) bucket_list, matcher);
     }
 
-    node = list_pop((list *) bucket->data);
+    if (!matcher(bucket_list->last->data)) {
+      return NULL;
+    }
+
+    node = list_pop((list *) bucket_list);
     list_del((list *) bucket->data);
     bucket->flags = 0x0;
   } else {
-    node = (dictnode *) bucket->data;
+    node = bucket->data;
+
+    if (!(node && matcher(node))) {
+      return NULL;
+    }
   }
 
   bucket->data = 0x0;

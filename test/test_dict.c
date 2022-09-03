@@ -1,16 +1,9 @@
-#ifndef _WINDLL
-#define TEST(name, def) void name(void **state) def
-
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-#include <cmocka.h>
-
-#include <stdio.h>
+#include "tests.h"
 
 #include "dict.h"
 #include "internal/dict.h"
 
+#ifndef _WINDLL
 int dict_test_setup(void **state) {
   (void) state;
 
@@ -22,22 +15,6 @@ int dict_test_teardown(void **state) {
 
   return 0;
 }
-
-#else
-static void **state;
-
-#ifndef TEST
-#include <stdio.h>
-
-#include "dict.h"
-#include "internal/dict.h"
-
-#include "adapters.h"
-
-#define TEST(name, def) void name() def
-#endif
-
-#define restrict
 #endif
 
 #ifndef METHODS_ONLY
@@ -478,6 +455,68 @@ TEST(test_dict_null_as_key, {
   (void) state;
 
   do_test_dict_null_as_key();
+})
+
+#ifndef METHODS_ONLY
+void do_test_dict_remove_after_collision() {
+  void *one = (void *) 0x1;
+  void *two = (void *) 0x5;
+
+  // Hashes must collide for test to be valid
+  assert_int_equal(
+      hash_xorshift64s((uint64_t) one) & 0b11,
+      hash_xorshift64s((uint64_t) two) & 0b11);
+  assert_int_equal(
+      hash_xorshift64s_ptr((uintptr_t) one) & 0b11,
+      hash_xorshift64s_ptr((uintptr_t) two) & 0b11);
+
+  char *first = "first";
+  char *second = "second";
+
+  dict *d = dict_new_of_size(4);
+
+  dict_set(d, one, first);
+  assert_int_equal(1, d->size);
+  assert_int_equal(2, d->exponent);
+
+  dict_set(d, two, second);
+  assert_int_equal(2, d->size);
+  assert_int_equal(2, d->exponent);
+
+  char *value;
+
+  assert_non_null(value = (char *) dict_get(d, one));
+  assert_string_equal(first, value);
+  assert_int_equal(2, d->size);
+  assert_int_equal(2, d->exponent);
+
+  assert_non_null(value = (char *) dict_get(d, two));
+  assert_string_equal(second, value);
+  assert_int_equal(2, d->size);
+  assert_int_equal(2, d->exponent);
+
+  assert_non_null(value = (char *) dict_remove(d, one));
+  assert_string_equal(first, value);
+  assert_int_equal(1, d->size);
+  assert_int_equal(2, d->exponent);
+
+  assert_null(value = (char *) dict_remove(d, one));
+  assert_int_equal(1, d->size);
+  assert_int_equal(2, d->exponent);
+
+  assert_non_null(value = (char *) dict_get(d, two));
+  assert_string_equal(second, value);
+  assert_int_equal(1, d->size);
+  assert_int_equal(2, d->exponent);
+
+  dict_del(d);
+}
+#endif
+
+TEST(test_dict_remove_after_collision, {
+  (void) state;
+
+  do_test_dict_remove_after_collision();
 })
 
 TEST(test_dict_set_overwrites, {
