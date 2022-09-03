@@ -1,14 +1,9 @@
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-#include <cmocka.h>
-
-#include <stdio.h>
-#include <string.h>
+#include "tests.h"
 
 #include "list.h"
 
 
+#ifndef _WINDLL
 int list_setup(void **state) {
   (void) state;
 
@@ -20,19 +15,19 @@ int list_teardown(void **state) {
 
   return 0;
 }
+#endif
 
-void test_list_new(void **state) {
+TEST(test_list_new, {
   (void) state;
 
   list *l = list_new();
   assert_non_null(l);
   assert_int_equal(l->size, 0);
   list_del(l);
-}
+})
 
-void test_list_push_pop(void **state) {
-  (void) state;
-
+#ifndef METHODS_ONLY
+void do_test_list_push_pop() {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
@@ -81,9 +76,7 @@ void test_list_push_pop(void **state) {
   list_del(l);
 }
 
-void test_list_unshift_shift(void **state) {
-  (void) state;
-
+void do_test_list_unshift_shift() {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
@@ -132,9 +125,7 @@ void test_list_unshift_shift(void **state) {
   list_del(l);
 }
 
-void test_list_push_shift(void **state) {
-  (void) state;
-
+void do_test_list_push_shift() {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
@@ -183,9 +174,7 @@ void test_list_push_shift(void **state) {
   list_del(l);
 }
 
-void test_list_unshift_pop(void **state) {
-  (void) state;
-
+void do_test_list_unshift_pop() {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
@@ -233,8 +222,33 @@ void test_list_unshift_pop(void **state) {
 
   list_del(l);
 }
+#endif
 
-void test_list_pop_from_empty(void **state) {
+TEST(test_list_push_shift, {
+  (void) state;
+
+  do_test_list_push_shift();
+})
+
+TEST(test_list_unshift_pop, {
+  (void) state;
+
+  do_test_list_unshift_pop();
+})
+
+TEST(test_list_push_pop, {
+  (void) state;
+
+  do_test_list_push_pop();
+})
+
+TEST(test_list_unshift_shift, {
+  (void) state;
+
+  do_test_list_unshift_shift();
+})
+
+TEST(test_list_pop_from_empty, {
   (void) state;
 
   list *l = list_new();
@@ -257,9 +271,9 @@ void test_list_pop_from_empty(void **state) {
   assert_null(list_pop(l));
 
   list_del(l);
-}
+})
 
-void test_list_shift_from_empty(void **state) {
+TEST(test_list_shift_from_empty, {
   (void) state;
 
   list *l = list_new();
@@ -282,9 +296,9 @@ void test_list_shift_from_empty(void **state) {
   assert_null(list_shift(l));
 
   list_del(l);
-}
+})
 
-void test_list_del_nonempty(void **state) {
+TEST(test_list_del_nonempty, {
   (void) state;
 
   list *l = list_new();
@@ -297,11 +311,10 @@ void test_list_del_nonempty(void **state) {
   assert_int_equal(l->size, 3);
 
   list_del(l);
-}
+})
 
-void test_list_concat(void **state) {
-  (void) state;
-
+#ifndef METHODS_ONLY
+void do_test_list_concat() {
   static size_t data[] = {
     0x101, 0x102, 0x103, 0x201, 0x202, 0x203, 0x204
   };
@@ -336,9 +349,7 @@ void test_list_concat(void **state) {
   list_del(l1);
 }
 
-void test_list_concat_from_empty(void **state) {
-  (void) state;
-
+void do_test_list_concat_from_empty() {
   static size_t data[] = {
     0x101, 0x102, 0x103
   };
@@ -370,9 +381,7 @@ void test_list_concat_from_empty(void **state) {
   list_del(l1);
 }
 
-void test_list_concat_into_empty(void **state) {
-  (void) state;
-
+void do_test_list_concat_into_empty() {
   static size_t data[] = {
     0x101, 0x102, 0x103
   };
@@ -404,9 +413,7 @@ void test_list_concat_into_empty(void **state) {
   list_del(l1);
 }
 
-void test_list_concat_both_empty(void **state) {
-  (void) state;
-
+void do_test_list_concat_both_empty() {
   list *l1, *l2;
   assert_non_null(l1 = list_new());
   assert_non_null(l2 = list_new());
@@ -422,7 +429,33 @@ void test_list_concat_both_empty(void **state) {
 
   list_del(l1);
 }
+#endif
 
+TEST(test_list_concat, {
+  (void) state;
+
+  do_test_list_concat();
+})
+
+TEST(test_list_concat_from_empty, {
+  (void) state;
+
+  do_test_list_concat_from_empty();
+})
+
+TEST(test_list_concat_into_empty, {
+  (void) state;
+
+  do_test_list_concat_into_empty();
+})
+
+TEST(test_list_concat_both_empty, {
+  (void) state;
+
+  do_test_list_concat_both_empty();
+})
+
+#ifndef METHODS_ONLY
 #define DEFINE_FUNC_CHAR_IS(i, c) \
   int char##i##_is_##c(void *value) { \
     return value && ((char *) value)[i] == *#c; \
@@ -469,15 +502,17 @@ static inline void __test_list_find_first(listkind *kind) {
 
   list_del(l);
 }
+#endif
 
-void test_list_find_first_dl(void **state) {
+TEST(test_list_find_first_dl, {
   __test_list_find_first(LISTKIND_DLINK);
-}
+})
 
-void test_list_find_first_sl(void **state) {
+TEST(test_list_find_first_sl, {
   __test_list_find_first(LISTKIND_SLINK);
-}
+})
 
+#ifndef METHODS_ONLY
 DEFINE_FUNC_CHAR_IS(0, t);
 DEFINE_FUNC_CHAR_IS(0, o);
 DEFINE_FUNC_CHAR_IS(1, h);
@@ -497,7 +532,9 @@ int value_after_null(void *value) {
   value_was_null = value == NULL;
   return 0;
 }
+#endif
 
+#ifndef METHODS_ONLY
 static inline void __test_list_find_first_null_entry(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
@@ -537,17 +574,19 @@ static inline void __test_list_find_first_null_entry(listkind *kind) {
 
   list_del(l);
 }
+#endif
 
-void test_list_find_first_null_entry_dl(void **state) {
+TEST(test_list_find_first_null_entry_dl, {
   (void) state;
   __test_list_find_first_null_entry(LISTKIND_DLINK);
-}
+})
 
-void test_list_find_first_null_entry_sl(void **state) {
+TEST(test_list_find_first_null_entry_sl, {
   (void) state;
   __test_list_find_first_null_entry(LISTKIND_SLINK);
-}
+})
 
+#ifndef METHODS_ONLY
 static inline void __test_list_remove_first(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
@@ -596,17 +635,19 @@ static inline void __test_list_remove_first(listkind *kind) {
 
   list_del(l);
 }
+#endif
 
-void test_list_remove_first_dl(void **state) {
+TEST(test_list_remove_first_dl, {
   (void) state;
   __test_list_remove_first(LISTKIND_DLINK);
-}
+})
 
-void test_list_remove_first_sl(void **state) {
+TEST(test_list_remove_first_sl, {
   (void) state;
   __test_list_remove_first(LISTKIND_SLINK);
-}
+})
 
+#ifndef METHODS_ONLY
 static inline void __test_list_remove_first_null_entry(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
@@ -652,17 +693,19 @@ static inline void __test_list_remove_first_null_entry(listkind *kind) {
 
   list_del(l);
 }
+#endif
 
-void test_list_remove_first_null_entry_dl(void **state) {
+TEST(test_list_remove_first_null_entry_dl, {
   (void) state;
   __test_list_remove_first_null_entry(LISTKIND_DLINK);
-}
+})
 
-void test_list_remove_first_null_entry_sl(void **state) {
+TEST(test_list_remove_first_null_entry_sl, {
   (void) state;
   __test_list_remove_first_null_entry(LISTKIND_SLINK);
-}
+})
 
+#ifndef METHODS_ONLY
 static uintptr_t prime = 0;
 static size_t index_sum = 0;
 static char order[6] = { 0 }, indices[6] = { 0 }, zilch[6] = { 0 };
@@ -683,8 +726,9 @@ int record_order_r_stop(void *data, size_t index) {
   record_order(data, 2 - index + 1);
   return index == 2;
 }
+#endif
 
-void test_list_foreach(void **state) {
+TEST(test_list_foreach, {
   (void) state;
 
   list *l;
@@ -733,8 +777,9 @@ void test_list_foreach(void **state) {
   assert_string_equal("x123", indices);
 
   list_del(l);
-}
+})
 
+#ifndef METHODS_ONLY
 int everything(void *unused_value) {
   return 1;
 }
@@ -887,19 +932,21 @@ void __test_list_remove_all(listkind *kind) {
 
   list_del(l);
 }
+#endif
 
-void test_list_remove_all_dl(void **state) {
+TEST(test_list_remove_all_dl, {
   (void) state;
 
   __test_list_remove_all(LISTKIND_DLINK);
-}
+})
 
-void test_list_remove_all_sl(void **state) {
+TEST(test_list_remove_all_sl, {
   (void) state;
 
   __test_list_remove_all(LISTKIND_SLINK);
-}
+})
 
+#ifndef _WINDLL
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_list_new),
@@ -930,3 +977,4 @@ int main(void) {
   return cmocka_run_group_tests_name(
       "flytools list", tests, list_setup, list_teardown);
 }
+#endif

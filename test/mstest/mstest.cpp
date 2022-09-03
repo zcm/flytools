@@ -5,6 +5,7 @@
 
 extern "C" {
 #include "test_dict.c"
+#include "test_list.c"
 }
 
 #undef TEST
@@ -18,5 +19,8 @@ namespace flytools {
 	TEST_CLASS(dict) {
 		public:
 #include "test_dict.c"
+	};
+	TEST_CLASS(list) {
+#include "test_list.c"
 	};
 }

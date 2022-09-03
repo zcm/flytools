@@ -31,6 +31,25 @@ void assert_string_equal(char *s, char *t) {
 	Assert::AreEqual(str_s, str_t);
 }
 
+void assert_ptr_equal(void *p1, void *p2) {
+	Assert::AreEqual(p1, p2);
+}
+
+void assert_memory_equal(void *p1, void *p2, size_t size) {
+	if (p1 == p2) {
+		return;
+	}
+
+	char *c1 = (char *) p1,
+		 *c2 = (char *) p2;
+
+	for (size_t i = 0; i < size; i++) {
+		if (c1[i] != c2[i]) {
+			Assert::Fail();
+		}
+	}
+}
+
 void _fail() {
 	Assert::Fail();
 }
