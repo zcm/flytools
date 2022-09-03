@@ -24,6 +24,9 @@
     <ClCompile Include="..\test_dict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_list.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="adapters.h">
