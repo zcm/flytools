@@ -6,6 +6,7 @@
 extern "C" {
 #include "test_dict.c"
 #include "test_list.c"
+#include "test_hash.c"
 }
 
 #undef TEST
@@ -22,5 +23,8 @@ namespace flytools {
 	};
 	TEST_CLASS(list) {
 #include "test_list.c"
+	};
+	TEST_CLASS(hash) {
+#include "test_hash.c"
 	};
 }
