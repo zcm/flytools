@@ -1,14 +1,9 @@
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-#include <cmocka.h>
-
-#include <stdio.h>
-#include <string.h>
+#include "tests.h"
 
 #include "hash.h"
 
 
+#ifndef _WINDLL
 int hash_setup(void **state) {
   (void) state;
 
@@ -20,14 +15,14 @@ int hash_teardown(void **state) {
 
   return 0;
 }
+#endif
 
+#ifndef METHODS_ONLY
 #define ANSWERS 26
 #define INPUT 0
 #define EXPECTED 1
 
-void test_hash_xorshift64s(void **state) {
-  (void) state;
-
+void do_test_hash_xorshift64s() {
   static uint64_t answers[ANSWERS][2] = {
     {0,            0x0000000000000000ULL},
     {1,            0xA4303534716CDD1DULL},
@@ -52,9 +47,7 @@ void test_hash_xorshift64s(void **state) {
   }
 }
 
-void test_hash_xorshift64s_ptr(void **state) {
-  (void) state;
-
+void do_test_hash_xorshift64s_ptr() {
   static uintptr_t answers[ANSWERS][4] = {
     {0,            0x0000000000000000ULL,  0,  0},
     {1,            0xDA4303534716CDD1ULL,  1, 17},
@@ -98,7 +91,22 @@ void test_hash_xorshift64s_ptr(void **state) {
         hash_xorshift64s_ptr(answers[i][INPUT]), answers[i][EXPECTED]);
   }
 }
+#endif
 
+TEST(test_hash_xorshift64s, {
+  (void) state;
+
+  do_test_hash_xorshift64s();
+})
+
+TEST(test_hash_xorshift64s_ptr, {
+  (void) state;
+
+  do_test_hash_xorshift64s_ptr();
+})
+
+
+#ifndef METHODS_ONLY
 void dump_totals(size_t *totals, const size_t max_value) {
 #if 0  /* for manually debugging tests */
   size_t s;
@@ -124,9 +132,7 @@ void dump_totals(size_t *totals, const size_t max_value) {
 #define EXAMPLE_PTR 0x617000000300
 #define FAR         0x07F00000A000
 
-void test_hash_xorshift64s_ptr_no_pattern(void **state) {
-  (void) state;
-
+void do_test_hash_xorshift64s_ptr_no_pattern() {
   size_t totals[/* 64 */ 1 << 6] = { 0 };
 
   uintptr_t p;
@@ -216,6 +222,16 @@ void test_hash_xorshift64s_ptr_no_pattern(void **state) {
 #undef INPUT
 #undef EXPECTED
 
+#endif
+
+TEST(test_hash_xorshift64s_ptr_no_pattern, {
+  (void) state;
+
+  do_test_hash_xorshift64s_ptr_no_pattern();
+})
+
+#ifndef _WINDLL
+
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_hash_xorshift64s),
@@ -226,3 +242,5 @@ int main(void) {
   return cmocka_run_group_tests_name(
       "flytools hash", tests, hash_setup, hash_teardown);
 }
+
+#endif

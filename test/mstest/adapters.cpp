@@ -20,6 +20,14 @@ void assert_int_equal(uint64_t a, uint64_t b) {
 	Assert::AreEqual(a, b);
 }
 
+void assert_int_not_equal(uint64_t a, uint64_t b) {
+	Assert::AreNotEqual(a, b);
+}
+
+void assert_in_range(uint64_t value, uint64_t minimum, uint64_t maximum) {
+	Assert::IsTrue(minimum <= value && value <= maximum);
+}
+
 void assert_string_equal(char *s, char *t) {
 	if (s == t) {
 		return;

@@ -177,6 +177,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\test_dict.c" />
+    <ClCompile Include="..\test_hash.c" />
     <ClCompile Include="..\test_list.c" />
     <ClCompile Include="adapters.cpp" />
     <ClCompile Include="mstest.cpp" />
