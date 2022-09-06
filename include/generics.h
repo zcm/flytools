@@ -20,21 +20,35 @@
 #ifndef __FLYOBJ_H__
 #define __FLYOBJ_H__
 
-#define FLYOBJ_DEFINITION \
-  struct {                  \
-    void *(*alloc)(size_t); \
-    void (*del)(void *);    \
+#define STRUCTIFY(def)  \
+  struct {              \
+    def                 \
   }
+
+#define UNIFY_PARENT(parent, def)  \
+  union {                          \
+    parent;                        \
+    def                            \
+  }
+
+#ifdef __TURBOC__
+#define INHERIT_STRUCT_DEF(def) def
+#define UNIFY_OBJECT_DEF(parent, def) def
+#else
+#define INHERIT_STRUCT_DEF(def) STRUCTIFY(def);
+#define UNIFY_OBJECT_DEF(parent, def) UNIFY_PARENT(parent, STRUCTIFY(def););
+#endif
+
+#define FLYOBJ_DEFINITION \
+  void *(*alloc)(size_t); \
+  void (*del)(void *);
 
 struct flyobj {
-  FLYOBJ_DEFINITION;
+  INHERIT_STRUCT_DEF(FLYOBJ_DEFINITION)
 };
 
-#define FLYOBJ_SUPER \
-  union {               \
-    struct flyobj _obj; \
-    FLYOBJ_DEFINITION;  \
-  }
+#define FLYOBJ_SUPER               \
+  UNIFY_OBJECT_DEF(struct flyobj _obj, FLYOBJ_DEFINITION)
 
 FLYAPI void flyobj_del(struct flyobj *obj);
 FLYAPI void flyobj_init(

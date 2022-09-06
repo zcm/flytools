@@ -20,8 +20,13 @@
 #define __func__ __FUNCTION__
 #endif
 
+#ifdef __TURBOC__
+#define __func__ ""
+#endif
+
 #ifdef FLYAPIBUILD
-#if (defined(_WIN32) && !defined(_WIN64)) || defined(__i386) || defined(_M_IX86)
+#if (defined(_WIN32) && !defined(_WIN64)) \
+  || defined(__i386) || defined(_M_IX86) || defined(__TURBOC__)
 #define IS32BIT
 #endif
 
