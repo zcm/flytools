@@ -23,7 +23,12 @@
 #define llogb logb
 #define thread_local __declspec(thread)
 #else
+#ifdef __TURBOC__
+#define thread_local
+#define inline
+#else
 #include <threads.h>
+#endif
 #endif
 
 #include "dict.h"
@@ -303,8 +308,13 @@ static int _relocate_node(void *node, size_t unused_size) {
   return 0;
 }
 
+#ifdef __TURBOC__
+static struct dbucket zero_bucket = { 0 };
+#endif
+
 static int _dict_resize(dict *d) {
   register size_t i;
+  int ret;
   struct dbucket * restrict buckets;
   struct dictnode ** restrict items;
   const size_t og_capacity = _curr_bitmask = ONE << d->exponent;
@@ -359,10 +369,10 @@ static int _dict_resize(dict *d) {
   for (i = 0; i < og_capacity; ++i) {
     if (buckets[i].data) {
       if (buckets[i].flags & 0x1) {
+        size_t size;
+
         list_remove_all(
             buckets[i].data, &_should_relocate_node, &_relocate_node);
-
-        size_t size;
 
         if ((size = ((list *) buckets[i].data)->size) <= 1) {
           list *ptr_save;
@@ -378,14 +388,18 @@ static int _dict_resize(dict *d) {
         if (_relocate_node(buckets[i].data, 0)) {
           break;  /* out of memory */
         }
+#ifdef __TURBOC__
+        buckets[i] = zero_bucket;
+#else
         buckets[i] = (const struct dbucket) { 0 };
+#endif
       }
     }
   }
 
   _curr_dict = NULL;
 
-  int ret = flytools_last_error();
+  ret = flytools_last_error();
 
   if (_recycle_bin) {
     list_del(_recycle_bin);
@@ -444,6 +458,8 @@ start:
 
     RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, 1);
   } else {
+    list *bucket_list;
+
     node = bucket->data;
 
     if (node->key_matcher(node->key, key, key_matcher)) {
@@ -452,8 +468,6 @@ start:
     }
 
     RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, 1);
-
-    list *bucket_list;
 
     if (_recycle_bin) {
       bucket_list = _recycle_bin;
@@ -504,6 +518,8 @@ FLYAPI void dict_sets(dict * restrict d, char *key, void *value) {
 static inline dictnode *_dict_lookup_using(
     dict * restrict d, void *key,
     dictnode *(*lookup_proc)(dict * restrict, void *)) {
+  dictnode *found;
+
   FLY_ERR_CLEAR;
 
   if (!d) {
@@ -512,7 +528,7 @@ static inline dictnode *_dict_lookup_using(
   }
 
   _match_key = key;
-  dictnode *found = lookup_proc(d, key);
+  found = lookup_proc(d, key);
   _match_key = NULL;
   return found;
 }
@@ -566,13 +582,14 @@ static dictnode *_dict_remove_keyed_str(dict * restrict d, void *key) {
 
 static inline void * _dict_remove_using(
     dict * restrict d, void *key, dictnode *(*proc)(dict * restrict, void *)) {
+  void *value;
   dictnode *node = _dict_lookup_using(d, key, proc);
 
   if (!node) {
     return NULL;
   }
 
-  void *value = node->value;
+  value = node->value;
 
   d->size--;
 

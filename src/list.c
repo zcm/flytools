@@ -31,7 +31,17 @@ static size_t dllist_remove_all(
 static size_t sllist_remove_all(
     sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
-FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
+#ifdef __TURBOC__
+#define ASSIGN_STATIC_PTR(KIND) \
+  static listkind KIND##_IMPL; \
+  FLYAPI listkind *KIND = &KIND##_IMPL; \
+  static listkind KIND##_IMPL =
+#else
+#define ASSIGN_STATIC_PTR(KIND) \
+  FLYAPI listkind *KIND = &(listkind)
+#endif
+
+ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   sizeof (dllist),
   (void *) &dllist_init,
   (void *) &dllist_del,
@@ -44,7 +54,7 @@ FLYAPI listkind *LISTKIND_DLINK = &(listkind) {
   (void *) &dllist_remove_all,
 };
 
-FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
+ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   sizeof (sllist),
   (void *) &sllist_init,
   (void *) &sllist_del,
@@ -57,11 +67,19 @@ FLYAPI listkind *LISTKIND_SLINK = &(listkind) {
   (void *) &sllist_remove_all,
 };
 
+#undef ASSIGN_STATIC_PTR
+
 #if defined(__STRICT_ANSI__)
 #define inline
 #elif defined(_MSC_VER)
 #define inline __inline
 #define restrict __restrict
+#elif __STDC_VERSION__ < 199901L
+#define restrict
+#endif
+
+#ifdef __TURBOC__
+#define inline
 #endif
 
 FLYAPI list *list_new() {
@@ -87,7 +105,7 @@ FLYAPI list *list_new_kind_with(
   if(ret != NULL) {
     FLY_ERR_CLEAR;
 
-    flyobj_init(&ret->_obj, allocproc, freeproc);
+    flyobj_init((struct flyobj *) ret, allocproc, freeproc);
     ret->kind = kind;
     kind->init(ret);
   } else {
@@ -101,7 +119,7 @@ FLYAPI void list_del(list *l) {
     FLY_ERR_CLEAR;
 
     l->kind->destroy(l);
-    flyobj_del(&l->_obj);
+    flyobj_del((struct flyobj *) l);
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -110,7 +128,7 @@ FLYAPI void list_del(list *l) {
 FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
   FLY_ERR_CLEAR;
   if (l != NULL) {
-    flyobj_set_freeproc(&l->_obj, freeproc);
+    flyobj_set_freeproc((struct flyobj *) l, freeproc);
   } else {
     FLY_ERR(EFLYBADARG);
   }
@@ -291,6 +309,8 @@ static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *)) {
 }
 
 FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
+  uintptr_t data;
+
   if (!(l && matcher)) {
     FLY_ERR(EFLYBADARG);
     return NULL;
@@ -302,7 +322,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
 
   FLY_ERR_CLEAR;
 
-  uintptr_t data = l->kind->remove_first(l, matcher);
+  data = l->kind->remove_first(l, matcher);
 
   if (data) {
     l->size--;
@@ -313,6 +333,9 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
 }
 
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
+  size_t i;
+  sllistnode *current, *head;
+
   if (!(l && fn)) {
     FLY_ERR(EFLYBADARG);
     return;
@@ -320,8 +343,7 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
 
   FLY_ERR_CLEAR;
 
-  size_t i = 0;
-  sllistnode *current, *head;
+  i = 0;
   current = head = ((sllist *) l)->head;
 
   while (head != (current = current->next) && !fn(current->data, i++));

@@ -6,56 +6,46 @@
 .autodepend
 
 !ifndef CFLAGS
-CFLAGS =
+CFLAGS = -DFLYAPIBUILD
 !endif
+
+INC = -Iinclude -Isrc -Icompat\turboc
+
 CC = tcc
 MAKE = make
 RM = del
 
 MAKEFILE = Makefile.mak
 
-DEP1 = dict\dict.lib justify\justify.lib
-DEP2 = llist\llist.lib memcheck\memcheck.lib
-DEP = $(DEP1) $(DEP2)
-LIB = flytools.lib
+DEP = build\dict.obj build\hash.obj build\list.obj \
+			build\common.obj build\generics.obj
+LIB = build\flytools.lib
 
 all: $(LIB)
 
 clean:
-	cd dict
-	$(MAKE) -fmakefile.mak clean
-	cd ../justify
-	$(MAKE) -fmakefile.mak clean
-	cd ../llist
-	$(MAKE) -fmakefile.mak clean
-	cd ../memcheck
-	$(MAKE) -fmakefile.mak clean
-	cd ..
 	$(RM) $(LIB)
+	$(RM) build\*.obj
 	$(RM) $(LIB:.lib=.bak)
 
-$(LIB): $(DEP) $(MAKEFILE)
+$(LIB): $(DEP) compat\turboc\stdint.h $(MAKEFILE)
 
-dict\dict.lib: dict\dict.c dict\dict.h dict\hash.h
-	cd dict
-	$(MAKE) -fmakefile.mak $(MFLAGS) -DCFLAGS="$(CFLAGS)"
-	cd ..
+build\dict.obj: src\dict.c include\dict.h include\hash.h include\common.h src\internal\dict.h
+	$(CC) $(CFLAGS) $(INC) -o$@ -c $(*:build=src).c
 	tlib $(LIB) -+$@
 
-justify\justify.lib: justify\justify.c justify\justify.h
-	cd justify
-	$(MAKE) -fmakefile.mak $(MFLAGS) -DCFLAGS="$(CFLAGS)"
-	cd ..
+build\hash.obj: src\hash.c include\hash.h include\common.h
+	$(CC) $(CFLAGS) $(INC) -o$@ -c $(*:build=src).c
 	tlib $(LIB) -+$@
 
-llist\llist.lib: llist\llist.c llist\llist.h llist\dllist.c llist\dllist.h llist\sllist.c llist\sllist.h llist\llnodes.c llist\llnodes.h
-	cd llist
-	$(MAKE) -fmakefile.mak $(MFLAGS) -DCFLAGS="$(CFLAGS)"
-	cd ..
+build\list.obj: src\list.c include\list.h include\common.h include\generics.h
+	$(CC) $(CFLAGS) $(INC) -o$@ -c $(*:build=src).c
 	tlib $(LIB) -+$@
 
-memcheck\memcheck.lib: memcheck\memcheck.c memcheck\memcheck.h
-	cd memcheck
-	$(MAKE) -fmakefile.mak $(MFLAGS) -DCFLAGS="$(CFLAGS)"
-	cd ..
+build\common.obj: src\common.c include\common.h
+	$(CC) $(CFLAGS) $(INC) -o$@ -c $(*:build=src).c
+	tlib $(LIB) -+$@
+
+build\generics.obj: src\generics.c include\generics.h include\common.h
+	$(CC) $(CFLAGS) $(INC) -o$@ -c $(*:build=src).c
 	tlib $(LIB) -+$@

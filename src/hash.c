@@ -43,7 +43,11 @@
    x ^= x << c, \
    x * m)
 
+#ifdef __TURBOC__
+#define M32 0x2545F4914F6CDD1D
+#else
 #define M32 0x2545F4914F6CDD1DULL
+#endif
 
 FLYAPI uint64_t hash_xorshift64s(uint64_t x) {
   /* Variant A_1(12,25,27), multiplier M32 */

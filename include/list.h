@@ -37,32 +37,22 @@ struct dllistnode {
 
 struct listkind;
 
-#define LIST_DEFINITION \
-  struct {                 \
-    FLYOBJ_SUPER;          \
-    struct listkind *kind; \
-    size_t size;           \
-  }
+#define LIST_DEFINITION             \
+  INHERIT_STRUCT_DEF(FLYOBJ_SUPER)  \
+  struct listkind *kind;            \
+  size_t size;
 
 typedef struct list {
-  LIST_DEFINITION;
+  INHERIT_STRUCT_DEF(LIST_DEFINITION)
 } list;
 
 typedef struct dllist {
-  union {
-    list _list;
-    LIST_DEFINITION;
-  };
-
+  UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
   struct dllistnode *head;
 } dllist;
 
 typedef struct sllist {
-  union {
-    list _list;
-    LIST_DEFINITION;
-  };
-
+  UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
   struct sllistnode *head;
   struct sllistnode *last;
 } sllist;
