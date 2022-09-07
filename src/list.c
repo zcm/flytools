@@ -18,6 +18,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "list.h"
 
@@ -40,6 +42,19 @@ static size_t sllist_remove_all(
 #define ASSIGN_STATIC_PTR(KIND) \
   FLYAPI listkind *KIND = &(listkind)
 #endif
+
+ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
+  sizeof (arlist),
+  (void *) &arlist_init,
+  (void *) &arlist_del,
+  (void *) &arlist_push,
+  (void *) &arlist_unshift,
+  (void *) &arlist_pop,
+  (void *) &arlist_shift,
+  (void *) &arlist_concat,
+  NULL, //(void *) &arlist_remove_first,
+  NULL, //(void *) &arlist_remove_all,
+};
 
 ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   sizeof (dllist),
@@ -436,6 +451,115 @@ FLYAPI size_t list_remove_all(
 
   return l->kind->remove_all(l, matcher, fn ? fn : &do_nothing);
 }
+
+#define ARLIST_DEFAULT_CAPACITY 8
+
+FLYAPI void arlist_init(arlist *l) {
+  l->size = 0;
+  l->capacity = 0;
+  l->elements = NULL;
+}
+
+FLYAPI void arlist_del(arlist *l) {
+  l->del(l->elements);
+}
+
+static bool arlist_grow(arlist *l, size_t new_elements) {
+  void *next_elements;
+  size_t delta = l->capacity >> 1;
+
+  if (delta < new_elements) {
+    delta = new_elements;
+  }
+
+  l->capacity += delta;
+
+  if (l->capacity < ARLIST_DEFAULT_CAPACITY) {
+    l->capacity = ARLIST_DEFAULT_CAPACITY;
+  }
+
+  if (!(next_elements = realloc(l->elements, l->capacity * sizeof (void *)))) {
+    // realloc() failed, l->elements unchanged
+    return 0;
+  }
+
+  l->elements = next_elements;
+  return 1;
+}
+
+#undef ARLIST_DEFAULT_CAPACITY
+
+static inline bool arlist_ensure_capacity(arlist *l, size_t new_elements) {
+  if (l->size + new_elements > l->capacity) {
+    return arlist_grow(l, new_elements);
+  }
+  return 1;
+}
+
+#define ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements)  \
+  if (!arlist_ensure_capacity(l, new_elements)) {    \
+    FLY_ERR(EFLYNOMEM);                              \
+    return;                                          \
+  }
+
+FLYAPI void arlist_push(arlist *l, void *data) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l, 1)
+
+  memmove(l->elements + 1, l->elements, l->size * sizeof (void *));
+
+  l->size++;
+  l->elements[0] = data;
+
+  FLY_ERR_CLEAR;
+}
+
+FLYAPI void arlist_unshift(arlist *l, void *data) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l, 1);
+
+  l->elements[l->size++] = data;
+
+  FLY_ERR_CLEAR;
+}
+
+FLYAPI void *arlist_pop(arlist *l) {
+  void *ret;
+
+  if (!l->size) {
+    FLY_ERR(EFLYEMPTY);
+    return NULL;
+  }
+
+  ret = l->elements[0];
+
+  memmove(l->elements, l->elements + 1, --(l->size) * sizeof (void *));
+
+  FLY_ERR_CLEAR;
+
+  return ret;
+}
+
+FLYAPI void *arlist_shift(arlist *l) {
+  if (!l->size) {
+    FLY_ERR(EFLYEMPTY);
+    return NULL;
+  }
+
+  FLY_ERR_CLEAR;
+
+  return l->elements[--(l->size)];
+}
+
+FLYAPI void arlist_concat(arlist * restrict l1, arlist * restrict l2) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l1, l2->size)
+
+  memcpy(l1->elements + l1->size, l2->elements, l2->size * sizeof (void *));
+
+  l1->size += l2->size;
+
+  FLY_ERR_CLEAR;
+}
+
+#undef ARLIST_HAS_CAPACITY_OR_DIE
 
 static inline void dllistnode_head_init(dllistnode * restrict head) {
   head->data = NULL;

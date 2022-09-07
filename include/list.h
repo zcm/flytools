@@ -46,6 +46,12 @@ typedef struct list {
   INHERIT_STRUCT_DEF(LIST_DEFINITION)
 } list;
 
+typedef struct arlist {
+  UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
+  size_t capacity;
+  void **elements;
+} arlist;
+
 typedef struct dllist {
   UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
   struct dllistnode *head;
@@ -72,6 +78,7 @@ typedef struct listkind {
   size_t (*remove_all)(list *, int (*)(void *), int (*)(void *, size_t));
 } listkind;
 
+extern FLYAPI listkind *LISTKIND_ARRAY;
 extern FLYAPI listkind *LISTKIND_DLINK;
 extern FLYAPI listkind *LISTKIND_SLINK;
 
@@ -96,6 +103,14 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *));
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
 FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+
+FLYAPI void arlist_init(arlist *l);
+FLYAPI void arlist_del(arlist *l);
+FLYAPI void arlist_push(arlist *l, void *data);
+FLYAPI void arlist_unshift(arlist *l, void *data);
+FLYAPI void *arlist_pop(arlist *l);
+FLYAPI void *arlist_shift(arlist *l);
+FLYAPI void arlist_concat(arlist *l1, arlist *l2);
 
 FLYAPI void dllist_init(dllist *l);
 FLYAPI void dllist_del(dllist *l);
