@@ -30,11 +30,6 @@
 #define IS32BIT
 #endif
 
-#ifdef IS32BIT
-#define ONE 1
-#else
-#define ONE 1ULL
-#endif
 #endif
 
 #if defined(_MSC_VER) && !defined(FLYAPI)

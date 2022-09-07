@@ -341,7 +341,7 @@ void do_test_list_concat() {
 
   while (i > 0) {
     assert_int_equal(l1->size, i);
-    assert_ptr_equal(list_shift(l1), data[--i]);
+    assert_ptr_equal(list_shift(l1), (void *) data[--i]);
   }
 
   assert_int_equal(l1->size, 0);
@@ -373,7 +373,7 @@ void do_test_list_concat_from_empty() {
 
   while (i > 0) {
     assert_int_equal(l1->size, i);
-    assert_ptr_equal(list_shift(l1), data[--i]);
+    assert_ptr_equal(list_shift(l1), (void *) data[--i]);
   }
 
   assert_int_equal(l1->size, 0);
@@ -405,7 +405,7 @@ void do_test_list_concat_into_empty() {
 
   while (i > 0) {
     assert_int_equal(l1->size, i);
-    assert_ptr_equal(list_shift(l1), data[--i]);
+    assert_ptr_equal(list_shift(l1), (void *) data[--i]);
   }
 
   assert_int_equal(l1->size, 0);
@@ -717,8 +717,8 @@ int multiply_prime(void *data, size_t index) {
 }
 
 int record_order(void *data, size_t index) {
-  order[index] = (uintptr_t) data + '0';
-  indices[index] = index + '0';
+  order[index] = (char) data + '0';
+  indices[index] = (char) index + '0';
   return 0;
 }
 
@@ -799,8 +799,8 @@ int value_is_even(void *value) {
 static size_t count = 0;
 
 int record_order_by_count(void *data, size_t index) {
-  order[count] = (uintptr_t) data + '0';
-  indices[count] = index + '0';
+  order[count] = (char) data + '0';
+  indices[count] = (char) index + '0';
   ++count;
   return 0;
 }

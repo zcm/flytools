@@ -139,7 +139,7 @@ void do_test_hash_xorshift64s_ptr_no_pattern() {
   size_t s;
 
   for (uintptr_t i = 4; i <= 6; ++i) {
-    const size_t max_value = 1 << i,
+    const size_t max_value = (size_t) 1 << i,
                  bitmask = max_value - 1;
     uintptr_t last = 0;
 

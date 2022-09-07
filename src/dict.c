@@ -247,7 +247,7 @@ FLYAPI dict *dict_new() {
 FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
   if (d != NULL) {
     register size_t i = 0;
-    const size_t capacity = ONE << d->exponent;
+    const size_t capacity = (size_t) 1 << d->exponent;
 
     FLY_ERR_CLEAR;
 
@@ -317,7 +317,7 @@ static int _dict_resize(dict *d) {
   int ret;
   struct dbucket * restrict buckets;
   struct dictnode ** restrict items;
-  const size_t og_capacity = _curr_bitmask = ONE << d->exponent;
+  const size_t og_capacity = _curr_bitmask = (size_t) 1 << d->exponent;
   const size_t og_item_capacity = og_capacity * LOAD_FACTOR / 100;
 
   _curr_dict = d;
@@ -325,7 +325,8 @@ static int _dict_resize(dict *d) {
 
   if (d->alloc == &malloc) {
     buckets = d->buckets =
-      realloc(d->buckets, (ONE << ++(d->exponent)) * sizeof (struct dbucket));
+      realloc(d->buckets,
+          ((size_t) 1 << ++(d->exponent)) * sizeof (struct dbucket));
 
     if (!buckets) {
       return 0;
@@ -338,7 +339,8 @@ static int _dict_resize(dict *d) {
       return 0;
     }
   } else {
-    buckets = d->alloc((ONE << ++(d->exponent)) * sizeof (struct dbucket));
+    buckets = d->alloc(
+        ((size_t) 1 << ++(d->exponent)) * sizeof (struct dbucket));
 
     if (!buckets) {
       return 0;
@@ -433,7 +435,7 @@ static void _dict_set_bucket_atomic(
   dictnode *node;  /* Also used implicitly in macro expansion */
 
 start:
-  bucket = d->buckets + (hash & (ONE << d->exponent) - 1);
+  bucket = d->buckets + (hash & ((size_t) 1 << d->exponent) - 1);
 
   if (!bucket->data) {
     RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, 1);
@@ -566,9 +568,9 @@ static dictnode *_dict_remove_from_bucket(
 }
 
 #define BUCKET_PTR_INDEX(d, key) \
-  (hash_xorshift64s((uint64_t) key) & (ONE << d->exponent) - 1)
+  (hash_xorshift64s((uint64_t) key) & ((size_t) 1 << d->exponent) - 1)
 #define BUCKET_STR_INDEX(d, key) \
-  (hash_string(key) & (ONE << d->exponent) - 1)
+  (hash_string(key) & ((size_t) 1 << d->exponent) - 1)
 
 static dictnode *_dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return _dict_remove_from_bucket(
