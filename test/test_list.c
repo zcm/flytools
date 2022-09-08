@@ -27,12 +27,12 @@ TEST(test_list_new, {
 })
 
 #ifndef METHODS_ONLY
-void do_test_list_push_pop() {
+void do_test_list_push_pop(listkind *kind) {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
 
-  list *l = list_new();
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   list_push(l, data[0]);
@@ -76,12 +76,12 @@ void do_test_list_push_pop() {
   list_del(l);
 }
 
-void do_test_list_unshift_shift() {
+void do_test_list_unshift_shift(listkind *kind) {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
 
-  list *l = list_new();
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   list_unshift(l, data[0]);
@@ -125,12 +125,12 @@ void do_test_list_unshift_shift() {
   list_del(l);
 }
 
-void do_test_list_push_shift() {
+void do_test_list_push_shift(listkind *kind) {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
 
-  list *l = list_new();
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   list_push(l, data[0]);
@@ -174,12 +174,12 @@ void do_test_list_push_shift() {
   list_del(l);
 }
 
-void do_test_list_unshift_pop() {
+void do_test_list_unshift_pop(listkind *kind) {
   static char *data[] = {
     "first", "second", "third", "fourth", "fifth"
   };
 
-  list *l = list_new();
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   list_unshift(l, data[0]);
@@ -224,34 +224,24 @@ void do_test_list_unshift_pop() {
 }
 #endif
 
-TEST(test_list_push_shift, {
-  (void) state;
+TESTCALL(test_arlist_push_pop, do_test_list_push_pop(LISTKIND_ARRAY))
+TESTCALL(test_arlist_unshift_shift, do_test_list_unshift_shift(LISTKIND_ARRAY))
+TESTCALL(test_arlist_push_shift, do_test_list_push_shift(LISTKIND_ARRAY))
+TESTCALL(test_arlist_unshift_pop, do_test_list_unshift_pop(LISTKIND_ARRAY))
 
-  do_test_list_push_shift();
-})
+TESTCALL(test_dllist_push_pop, do_test_list_push_pop(LISTKIND_DLINK))
+TESTCALL(test_dllist_unshift_shift, do_test_list_unshift_shift(LISTKIND_DLINK))
+TESTCALL(test_dllist_push_shift, do_test_list_push_shift(LISTKIND_DLINK))
+TESTCALL(test_dllist_unshift_pop, do_test_list_unshift_pop(LISTKIND_DLINK))
 
-TEST(test_list_unshift_pop, {
-  (void) state;
+TESTCALL(test_sllist_push_pop, do_test_list_push_pop(LISTKIND_SLINK))
+TESTCALL(test_sllist_unshift_shift, do_test_list_unshift_shift(LISTKIND_SLINK))
+TESTCALL(test_sllist_push_shift, do_test_list_push_shift(LISTKIND_SLINK))
+TESTCALL(test_sllist_unshift_pop, do_test_list_unshift_pop(LISTKIND_SLINK))
 
-  do_test_list_unshift_pop();
-})
-
-TEST(test_list_push_pop, {
-  (void) state;
-
-  do_test_list_push_pop();
-})
-
-TEST(test_list_unshift_shift, {
-  (void) state;
-
-  do_test_list_unshift_shift();
-})
-
-TEST(test_list_pop_from_empty, {
-  (void) state;
-
-  list *l = list_new();
+#ifndef METHODS_ONLY
+void do_test_list_pop_empty(listkind *kind) {
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   assert_int_equal(l->size, 0);
@@ -271,12 +261,10 @@ TEST(test_list_pop_from_empty, {
   assert_null(list_pop(l));
 
   list_del(l);
-})
+}
 
-TEST(test_list_shift_from_empty, {
-  (void) state;
-
-  list *l = list_new();
+void do_test_list_shift_empty(listkind *kind) {
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   assert_int_equal(l->size, 0);
@@ -296,12 +284,10 @@ TEST(test_list_shift_from_empty, {
   assert_null(list_shift(l));
 
   list_del(l);
-})
+}
 
-TEST(test_list_del_nonempty, {
-  (void) state;
-
-  list *l = list_new();
+void do_test_list_del_nonempty(listkind *kind) {
+  list *l = list_new_kind(kind);
   assert_non_null(l);
 
   list_push(l, l);
@@ -311,7 +297,20 @@ TEST(test_list_del_nonempty, {
   assert_int_equal(l->size, 3);
 
   list_del(l);
-})
+}
+#endif
+
+TESTCALL(test_arlist_pop_empty, do_test_list_pop_empty(LISTKIND_ARRAY))
+TESTCALL(test_arlist_shift_empty, do_test_list_shift_empty(LISTKIND_ARRAY))
+TESTCALL(test_arlist_del_nonempty, do_test_list_del_nonempty(LISTKIND_ARRAY))
+
+TESTCALL(test_dllist_pop_empty, do_test_list_pop_empty(LISTKIND_DLINK))
+TESTCALL(test_dllist_shift_empty, do_test_list_shift_empty(LISTKIND_DLINK))
+TESTCALL(test_dllist_del_nonempty, do_test_list_del_nonempty(LISTKIND_DLINK))
+
+TESTCALL(test_sllist_pop_empty, do_test_list_pop_empty(LISTKIND_SLINK))
+TESTCALL(test_sllist_shift_empty, do_test_list_shift_empty(LISTKIND_SLINK))
+TESTCALL(test_sllist_del_nonempty, do_test_list_del_nonempty(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
 void do_test_list_concat() {
@@ -950,13 +949,27 @@ TEST(test_list_remove_all_sl, {
 int main(void) {
   const struct CMUnitTest tests[] = {
       cmocka_unit_test(test_list_new),
-      cmocka_unit_test(test_list_push_pop),
-      cmocka_unit_test(test_list_unshift_shift),
-      cmocka_unit_test(test_list_push_shift),
-      cmocka_unit_test(test_list_unshift_pop),
-      cmocka_unit_test(test_list_pop_from_empty),
-      cmocka_unit_test(test_list_shift_from_empty),
-      cmocka_unit_test(test_list_del_nonempty),
+      cmocka_unit_test(test_arlist_push_pop),
+      cmocka_unit_test(test_arlist_unshift_shift),
+      cmocka_unit_test(test_arlist_push_shift),
+      cmocka_unit_test(test_arlist_unshift_pop),
+      cmocka_unit_test(test_arlist_pop_empty),
+      cmocka_unit_test(test_arlist_shift_empty),
+      cmocka_unit_test(test_arlist_del_nonempty),
+      cmocka_unit_test(test_dllist_push_pop),
+      cmocka_unit_test(test_dllist_unshift_shift),
+      cmocka_unit_test(test_dllist_push_shift),
+      cmocka_unit_test(test_dllist_unshift_pop),
+      cmocka_unit_test(test_dllist_pop_empty),
+      cmocka_unit_test(test_dllist_shift_empty),
+      cmocka_unit_test(test_dllist_del_nonempty),
+      cmocka_unit_test(test_sllist_push_pop),
+      cmocka_unit_test(test_sllist_unshift_shift),
+      cmocka_unit_test(test_sllist_push_shift),
+      cmocka_unit_test(test_sllist_unshift_pop),
+      cmocka_unit_test(test_sllist_pop_empty),
+      cmocka_unit_test(test_sllist_shift_empty),
+      cmocka_unit_test(test_sllist_del_nonempty),
       cmocka_unit_test(test_list_concat),
       cmocka_unit_test(test_list_concat_from_empty),
       cmocka_unit_test(test_list_concat_into_empty),

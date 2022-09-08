@@ -1,5 +1,6 @@
 #ifndef _WINDLL
 #define TEST(name, def) void name(void **state) def
+#define TESTCALL(name, call) TEST(name, { (void) state; call; });
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -10,6 +11,8 @@
 #include <string.h>
 
 #else
+
+#define TESTCALL(name, call) TEST(name, { call; });
 
 #ifndef TEST
 #include <stdio.h>
