@@ -89,7 +89,6 @@ FLYAPI list *list_new_with(
 FLYAPI list *list_new_kind_with(
     listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *));
 FLYAPI void list_del(list *l);
-FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *));
 FLYAPI void *list_pop(list *l);
 FLYAPI void list_push(list *l, void *data);
 FLYAPI void *list_shift(list *l);

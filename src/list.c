@@ -140,15 +140,6 @@ FLYAPI void list_del(list *l) {
   }
 }
 
-FLYAPI void list_set_freeproc(list *l, void (*freeproc)(void *)) {
-  FLY_ERR_CLEAR;
-  if (l != NULL) {
-    flyobj_set_freeproc((struct flyobj *) l, freeproc);
-  } else {
-    FLY_ERR(EFLYBADARG);
-  }
-}
-
 // struct member interaction
 
 FLYAPI void *list_pop(list *l) {
