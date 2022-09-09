@@ -33,6 +33,13 @@ static size_t dllist_remove_all(
 static size_t sllist_remove_all(
     sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
+static void _unsafe_arlist_init(arlist *l);
+static void _unsafe_arlist_del(arlist *l);
+static void _unsafe_arlist_push(arlist *l, void *data);
+static void _unsafe_arlist_unshift(arlist *l, void *data);
+static void *_unsafe_arlist_pop(arlist *l);
+static void *_unsafe_arlist_shift(arlist *l);
+
 #ifdef __TURBOC__
 #define ASSIGN_STATIC_PTR(KIND) \
   static listkind KIND##_IMPL; \
@@ -45,12 +52,12 @@ static size_t sllist_remove_all(
 
 ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   sizeof (arlist),
-  (void *) &arlist_init,
-  (void *) &arlist_del,
-  (void *) &arlist_push,
-  (void *) &arlist_unshift,
-  (void *) &arlist_pop,
-  (void *) &arlist_shift,
+  (void *) &_unsafe_arlist_init,
+  (void *) &_unsafe_arlist_del,
+  (void *) &_unsafe_arlist_push,
+  (void *) &_unsafe_arlist_unshift,
+  (void *) &_unsafe_arlist_pop,
+  (void *) &_unsafe_arlist_shift,
   (void *) &arlist_concat,
   NULL, //(void *) &arlist_remove_first,
   NULL, //(void *) &arlist_remove_all,
@@ -142,11 +149,13 @@ FLYAPI void list_del(list *l) {
 
 // struct member interaction
 
-FLYAPI void *list_pop(list *l) {
+static void *list_end_remove_op(void * restrict vl, void *(*remove)(void *)) {
+  list *l = (list *) vl;
+
   if (l != NULL) {
     if (l->size > 0) {
       FLY_ERR_CLEAR;
-      return l->kind->pop(l);
+      return remove(l);
     } else {
       FLY_ERR(EFLYEMPTY);
     }
@@ -157,37 +166,31 @@ FLYAPI void *list_pop(list *l) {
   return NULL;
 }
 
-FLYAPI void list_push(list *l, void *data) {
+FLYAPI void *list_pop(list *l) {
+  return list_end_remove_op(l, l->kind->pop);
+}
+
+FLYAPI void *list_shift(list *l) {
+  return list_end_remove_op(l, l->kind->shift);
+}
+
+static void list_end_add_op(void *vl, void *data, void (*add)(void *, void *)) {
+  list *l = (list *) vl;
+
   if (l != NULL) {
     FLY_ERR_CLEAR;
-    l->kind->push(l, data);
+    add(l, data);
   } else {
     FLY_ERR(EFLYBADFN);
   }
 }
 
-FLYAPI void *list_shift(list *l) {
-  if (l != NULL) {
-    if (l->size > 0) {
-      FLY_ERR_CLEAR;
-      return l->kind->shift(l);
-    } else {
-      FLY_ERR(EFLYEMPTY);
-    }
-  } else {
-    FLY_ERR(EFLYBADARG);
-  }
-
-  return NULL;
+FLYAPI void list_push(list *l, void *data) {
+  list_end_add_op(l, data, l->kind->push);
 }
 
 FLYAPI void list_unshift(list *l, void *data) {
-  if (l != NULL) {
-    FLY_ERR_CLEAR;
-    l->kind->unshift(l, data);
-  } else {
-    FLY_ERR(EFLYBADARG);
-  }
+  list_end_add_op(l, data, l->kind->unshift);
 }
 
 FLYAPI void list_concat(list *l1, list *l2) {
@@ -445,14 +448,22 @@ FLYAPI size_t list_remove_all(
 
 #define ARLIST_DEFAULT_CAPACITY 8
 
-FLYAPI void arlist_init(arlist *l) {
+static void _unsafe_arlist_init(arlist *l) {
   l->size = 0;
   l->capacity = 0;
   l->elements = NULL;
 }
 
-FLYAPI void arlist_del(arlist *l) {
+FLYAPI void arlist_init(arlist *l) {
+  _unsafe_arlist_init(l);
+}
+
+static void _unsafe_arlist_del(arlist *l) {
   l->del(l->elements);
+}
+
+FLYAPI void arlist_del(arlist *l) {
+  _unsafe_arlist_del(l);
 }
 
 static bool arlist_grow(arlist *l, size_t new_elements) {
@@ -493,7 +504,7 @@ static inline bool arlist_ensure_capacity(arlist *l, size_t new_elements) {
     return;                                          \
   }
 
-FLYAPI void arlist_push(arlist *l, void *data) {
+static void _unsafe_arlist_push(arlist *l, void *data) {
   ARLIST_HAS_CAPACITY_OR_DIE(l, 1)
 
   memmove(l->elements + 1, l->elements, l->size * sizeof (void *));
@@ -504,40 +515,40 @@ FLYAPI void arlist_push(arlist *l, void *data) {
   FLY_ERR_CLEAR;
 }
 
-FLYAPI void arlist_unshift(arlist *l, void *data) {
+FLYAPI void arlist_push(arlist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_arlist_push);
+}
+
+static void _unsafe_arlist_unshift(arlist *l, void *data) {
   ARLIST_HAS_CAPACITY_OR_DIE(l, 1);
 
   l->elements[l->size++] = data;
-
-  FLY_ERR_CLEAR;
 }
 
-FLYAPI void *arlist_pop(arlist *l) {
-  void *ret;
+FLYAPI void arlist_unshift(arlist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_arlist_unshift);
+}
 
-  if (!l->size) {
-    FLY_ERR(EFLYEMPTY);
-    return NULL;
-  }
+static void *_unsafe_arlist_pop(arlist *l) {
+  void *ret;
 
   ret = l->elements[0];
 
   memmove(l->elements, l->elements + 1, --(l->size) * sizeof (void *));
 
-  FLY_ERR_CLEAR;
-
   return ret;
 }
 
-FLYAPI void *arlist_shift(arlist *l) {
-  if (!l->size) {
-    FLY_ERR(EFLYEMPTY);
-    return NULL;
-  }
+FLYAPI void *arlist_pop(arlist *l) {
+  return list_end_remove_op(l, &_unsafe_arlist_pop);
+}
 
-  FLY_ERR_CLEAR;
-
+static void *_unsafe_arlist_shift(arlist *l) {
   return l->elements[--(l->size)];
+}
+
+FLYAPI void *arlist_shift(arlist *l) {
+  return list_end_remove_op(l, &_unsafe_arlist_shift);
 }
 
 FLYAPI void arlist_concat(arlist * restrict l1, arlist * restrict l2) {
