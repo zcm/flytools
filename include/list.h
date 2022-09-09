@@ -103,24 +103,18 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
 FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
-FLYAPI void arlist_init(arlist *l);
-FLYAPI void arlist_del(arlist *l);
 FLYAPI void arlist_push(arlist *l, void *data);
 FLYAPI void arlist_unshift(arlist *l, void *data);
 FLYAPI void *arlist_pop(arlist *l);
 FLYAPI void *arlist_shift(arlist *l);
 FLYAPI void arlist_concat(arlist *l1, arlist *l2);
 
-FLYAPI void dllist_init(dllist *l);
-FLYAPI void dllist_del(dllist *l);
 FLYAPI void dllist_push(dllist *l, void *data);
 FLYAPI void dllist_unshift(dllist *l, void *data);
 FLYAPI void *dllist_pop(dllist *l);
 FLYAPI void *dllist_shift(dllist *l);
 FLYAPI void dllist_concat(dllist *l1, dllist *l2);
 
-FLYAPI void sllist_init(sllist *l);
-FLYAPI void sllist_del(sllist *l);
 FLYAPI void sllist_push(sllist *l, void *data);
 FLYAPI void sllist_unshift(sllist *l, void *data);
 FLYAPI void *sllist_pop(sllist *l);

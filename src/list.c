@@ -33,12 +33,26 @@ static size_t dllist_remove_all(
 static size_t sllist_remove_all(
     sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
-static void _unsafe_arlist_init(arlist *l);
-static void _unsafe_arlist_del(arlist *l);
+static void arlist_init(arlist *l);
+static void arlist_del(arlist *l);
 static void _unsafe_arlist_push(arlist *l, void *data);
 static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
 static void *_unsafe_arlist_shift(arlist *l);
+
+static void dllist_init(dllist *l);
+static void dllist_del(dllist *l);
+static void _unsafe_dllist_push(dllist *l, void *data);
+static void _unsafe_dllist_unshift(dllist *l, void *data);
+static void *_unsafe_dllist_pop(dllist *l);
+static void *_unsafe_dllist_shift(dllist *l);
+
+static void sllist_init(sllist *l);
+static void sllist_del(sllist *l);
+static void _unsafe_sllist_push(sllist *l, void *data);
+static void _unsafe_sllist_unshift(sllist *l, void *data);
+static void *_unsafe_sllist_pop(sllist *l);
+static void *_unsafe_sllist_shift(sllist *l);
 
 #ifdef __TURBOC__
 #define ASSIGN_STATIC_PTR(KIND) \
@@ -52,8 +66,8 @@ static void *_unsafe_arlist_shift(arlist *l);
 
 ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   sizeof (arlist),
-  (void *) &_unsafe_arlist_init,
-  (void *) &_unsafe_arlist_del,
+  (void *) &arlist_init,
+  (void *) &arlist_del,
   (void *) &_unsafe_arlist_push,
   (void *) &_unsafe_arlist_unshift,
   (void *) &_unsafe_arlist_pop,
@@ -67,10 +81,10 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   sizeof (dllist),
   (void *) &dllist_init,
   (void *) &dllist_del,
-  (void *) &dllist_push,
-  (void *) &dllist_unshift,
-  (void *) &dllist_pop,
-  (void *) &dllist_shift,
+  (void *) &_unsafe_dllist_push,
+  (void *) &_unsafe_dllist_unshift,
+  (void *) &_unsafe_dllist_pop,
+  (void *) &_unsafe_dllist_shift,
   (void *) &dllist_concat,
   (void *) &dllist_remove_first,
   (void *) &dllist_remove_all,
@@ -80,10 +94,10 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   sizeof (sllist),
   (void *) &sllist_init,
   (void *) &sllist_del,
-  (void *) &sllist_push,
-  (void *) &sllist_unshift,
-  (void *) &sllist_pop,
-  (void *) &sllist_shift,
+  (void *) &_unsafe_sllist_push,
+  (void *) &_unsafe_sllist_unshift,
+  (void *) &_unsafe_sllist_pop,
+  (void *) &_unsafe_sllist_shift,
   (void *) &sllist_concat,
   (void *) &sllist_remove_first,
   (void *) &sllist_remove_all,
@@ -448,22 +462,14 @@ FLYAPI size_t list_remove_all(
 
 #define ARLIST_DEFAULT_CAPACITY 8
 
-static void _unsafe_arlist_init(arlist *l) {
+static void arlist_init(arlist *l) {
   l->size = 0;
   l->capacity = 0;
   l->elements = NULL;
 }
 
-FLYAPI void arlist_init(arlist *l) {
-  _unsafe_arlist_init(l);
-}
-
-static void _unsafe_arlist_del(arlist *l) {
+static void arlist_del(arlist *l) {
   l->del(l->elements);
-}
-
-FLYAPI void arlist_del(arlist *l) {
-  _unsafe_arlist_del(l);
 }
 
 static bool arlist_grow(arlist *l, size_t new_elements) {
@@ -584,7 +590,7 @@ static inline void *listnode_alloc(void * restrict l, size_t node_size) {
   return node;
 }
 
-FLYAPI void dllist_init(dllist *l) {
+static void dllist_init(dllist *l) {
   l->size = 0;
 
   if ((l->head = l->alloc(sizeof (dllistnode)))) {
@@ -594,7 +600,7 @@ FLYAPI void dllist_init(dllist *l) {
   }
 }
 
-FLYAPI void dllist_del(dllist *l) {
+static void dllist_del(dllist *l) {
   while (l->size > 0) {
     dllist_pop(l);
   }
@@ -602,7 +608,7 @@ FLYAPI void dllist_del(dllist *l) {
   l->del(l->head);
 }
 
-FLYAPI void dllist_push(dllist *l, void *data) {
+static void _unsafe_dllist_push(dllist *l, void *data) {
   dllistnode *node;
 
   if (!(node = listnode_alloc(l, sizeof (dllistnode)))) {
@@ -617,7 +623,11 @@ FLYAPI void dllist_push(dllist *l, void *data) {
   l->size++;
 }
 
-FLYAPI void dllist_unshift(dllist *l, void *data) {
+FLYAPI void dllist_push(dllist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_dllist_push);
+}
+
+static void _unsafe_dllist_unshift(dllist *l, void *data) {
   dllistnode *node;
 
   if (!(node = listnode_alloc(l, sizeof (dllistnode)))) {
@@ -632,7 +642,11 @@ FLYAPI void dllist_unshift(dllist *l, void *data) {
   l->size++;
 }
 
-FLYAPI void *dllist_pop(dllist *l) {
+FLYAPI void dllist_unshift(dllist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_dllist_unshift);
+}
+
+static void *_unsafe_dllist_pop(dllist *l) {
   void *ret = NULL;
   dllistnode *node = l->head->next;
   node->next->prev = l->head;
@@ -643,7 +657,11 @@ FLYAPI void *dllist_pop(dllist *l) {
   return ret;
 }
 
-FLYAPI void *dllist_shift(dllist *l) {
+FLYAPI void *dllist_pop(dllist *l) {
+  return list_end_remove_op(l, &_unsafe_dllist_pop);
+}
+
+static void *_unsafe_dllist_shift(dllist *l) {
   void *ret = NULL;
   dllistnode *node = l->head->prev;
   node->prev->next = l->head;
@@ -652,6 +670,10 @@ FLYAPI void *dllist_shift(dllist *l) {
   ret = node->data;
   l->del(node);
   return ret;
+}
+
+FLYAPI void *dllist_shift(dllist *l) {
+  return list_end_remove_op(l, _unsafe_dllist_shift);
 }
 
 FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
@@ -669,7 +691,7 @@ FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
   list_del((list *) l2);
 }
 
-FLYAPI void sllist_init(sllist *l) {
+static void sllist_init(sllist *l) {
   l->size = 0;
 
   if ((l->head = l->last = l->alloc(sizeof (dllistnode)))) {
@@ -679,7 +701,7 @@ FLYAPI void sllist_init(sllist *l) {
   }
 }
 
-FLYAPI void sllist_del(sllist *l) {
+void sllist_del(sllist *l) {
   while (l->size > 0) {
     sllist_pop(l);
   }
@@ -687,7 +709,7 @@ FLYAPI void sllist_del(sllist *l) {
   l->del(l->head);
 }
 
-FLYAPI void sllist_push(sllist *l, void *data) {
+static void _unsafe_sllist_push(sllist *l, void *data) {
   sllistnode *node;
 
   if (!(node = listnode_alloc(l, sizeof (sllistnode)))) {
@@ -705,7 +727,11 @@ FLYAPI void sllist_push(sllist *l, void *data) {
   l->size++;
 }
 
-FLYAPI void sllist_unshift(sllist *l, void *data) {
+FLYAPI void sllist_push(sllist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_sllist_push);
+}
+
+static void _unsafe_sllist_unshift(sllist *l, void *data) {
   sllistnode *node;
 
   if (!(node = listnode_alloc(l, sizeof (sllistnode)))) {
@@ -719,7 +745,11 @@ FLYAPI void sllist_unshift(sllist *l, void *data) {
   l->size++;
 }
 
-FLYAPI void *sllist_pop(sllist *l) {
+FLYAPI void sllist_unshift(sllist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_sllist_unshift);
+}
+
+static void *_unsafe_sllist_pop(sllist *l) {
   void *ret = NULL;
   sllistnode *node = l->head->next;
   l->head->next = node->next;
@@ -735,7 +765,11 @@ FLYAPI void *sllist_pop(sllist *l) {
   return ret;
 }
 
-FLYAPI void *sllist_shift(sllist *l) {
+FLYAPI void *sllist_pop(sllist *l) {
+  return list_end_remove_op(l, &_unsafe_sllist_pop);
+}
+
+static void *_unsafe_sllist_shift(sllist *l) {
   void *ret = NULL;
   /* This'll unfortunately run in O(n) time, but we have no way to find what the
    * new last pointer will become unless we iterate all the way to the end.
@@ -755,6 +789,10 @@ FLYAPI void *sllist_shift(sllist *l) {
   ret = last->data;
   l->del(last);
   return ret;
+}
+
+FLYAPI void *sllist_shift(sllist *l) {
+  return list_end_remove_op(l, &_unsafe_sllist_shift);
 }
 
 FLYAPI void sllist_concat(sllist *l1, sllist *l2) {
