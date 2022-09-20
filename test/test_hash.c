@@ -43,7 +43,7 @@ void do_test_hash_xorshift64s() {
   };
 
   for (int i = 0; i < ANSWERS; ++i) {
-    assert_int_equal(hash_xorshift64s(answers[i][INPUT]), answers[i][EXPECTED]);
+    assert_int_equal(answers[i][EXPECTED], hash_xorshift64s(answers[i][INPUT]));
   }
 }
 
@@ -150,7 +150,7 @@ void do_test_hash_xorshift64s_ptr_no_pattern() {
       ++totals[hash_xorshift64s_ptr(EXAMPLE_PTR + p * 0x10) & bitmask];
     }
 
-    assert_int_not_equal(totals[0], 0);
+    assert_int_not_equal(0, totals[0]);
     last = totals[0];
 
     for (s = 1; s < max_value; ++s) {
@@ -161,7 +161,7 @@ void do_test_hash_xorshift64s_ptr_no_pattern() {
       ++totals[hash_xorshift64s_ptr(EXAMPLE_PTR + p * 0x10) & bitmask];
     }
 
-    assert_int_not_equal(totals[0], last);
+    assert_int_not_equal(last, totals[0]);
     last = totals[0];
 
     for (s = 1; s < max_value; ++s) {
@@ -183,7 +183,7 @@ void do_test_hash_xorshift64s_ptr_no_pattern() {
 
     dump_totals(totals, max_value);
 
-    assert_int_not_equal(totals[0], 0);
+    assert_int_not_equal(0, totals[0]);
 
     for (s = 0; s < max_value; ++s) {
       assert_in_range(totals[s], iterations / 4, iterations * 2);
@@ -202,7 +202,7 @@ void do_test_hash_xorshift64s_ptr_no_pattern() {
 
     dump_totals(totals, max_value);
 
-    assert_int_not_equal(totals[0], 0);
+    assert_int_not_equal(0, totals[0]);
 
     for (s = 0; s < max_value; ++s) {
       assert_in_range(totals[s], iterations / 4, iterations * 2);

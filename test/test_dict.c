@@ -43,7 +43,7 @@ TEST(test_dict_new, {
 
   dict *d = dict_new();
   assert_non_null(d);
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   dict_del(d);
 })
 
@@ -54,7 +54,7 @@ TEST(test_dict_new_of_size, {
 
   d = dict_new_of_size(16);
   assert_non_null(d);
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_fly_error(EFLYOK);
   dict_del(d);
 
@@ -64,7 +64,7 @@ TEST(test_dict_new_of_size, {
 
   d = dict_new_of_size(2);
   assert_non_null(d);
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_fly_error(EFLYOK);
   dict_del(d);
 
@@ -74,7 +74,7 @@ TEST(test_dict_new_of_size, {
 
   d = dict_new_of_size(32);
   assert_non_null(d);
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_fly_error(EFLYOK);
   dict_del(d);
 
@@ -105,32 +105,32 @@ TEST(test_dict_set_then_get, {
   assert_fly_error(EFLYOK);
 
   dict_set(d, &cat_cj, "purr");
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &cat_donna, "chirp");
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &dog_wahwa, "yip");
-  assert_int_equal(d->size, 3);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   char *value;
 
   assert_non_null(value = dict_get(d, &dog_wahwa));
-  assert_string_equal(value, "yip");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("yip", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_get(d, &cat_donna));
-  assert_string_equal(value, "chirp");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("chirp", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_get(d, &cat_cj));
-  assert_string_equal(value, "purr");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("purr", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -144,32 +144,32 @@ TEST(test_dict_sets_then_gets, {
   assert_fly_error(EFLYOK);
 
   dict_sets(d, "cats", "meow");
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "dogs", "bark");
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "birds", "chirp");
-  assert_int_equal(d->size, 3);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   char *value;
 
   assert_non_null(value = dict_gets(d, "dogs"));
-  assert_string_equal(value, "bark");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("bark", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "cats"));
-  assert_string_equal(value, "meow");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("meow", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "birds"));
-  assert_string_equal(value, "chirp");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("chirp", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -193,36 +193,36 @@ TEST(test_dict_set_then_remove, {
   assert_fly_error(EFLYOK);
 
   dict_set(d, &coke, "$2");
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &energy, "$3");
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &fruit, "$1");
-  assert_int_equal(d->size, 3);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   char *value;
 
   assert_non_null(value = dict_remove(d, &fruit));
-  assert_string_equal(value, "$1");
-  assert_int_equal(d->size, 2);
+  assert_string_equal("$1", value);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &coke));
-  assert_string_equal(value, "$2");
-  assert_int_equal(d->size, 1);
+  assert_string_equal("$2", value);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &energy));
-  assert_string_equal(value, "$3");
-  assert_int_equal(d->size, 0);
+  assert_string_equal("$3", value);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   assert_null(dict_remove(d, &fruit));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -236,36 +236,36 @@ TEST(test_dict_sets_then_removes, {
   assert_fly_error(EFLYOK);
 
   dict_sets(d, "apple", "red");
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "banana", "yellow");
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "lime", "green");
-  assert_int_equal(d->size, 3);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   char *value;
 
   assert_non_null(value = dict_removes(d, "apple"));
-  assert_string_equal(value, "red");
-  assert_int_equal(d->size, 2);
+  assert_string_equal("red", value);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "lime"));
-  assert_string_equal(value, "green");
-  assert_int_equal(d->size, 1);
+  assert_string_equal("green", value);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "banana"));
-  assert_string_equal(value, "yellow");
-  assert_int_equal(d->size, 0);
+  assert_string_equal("yellow", value);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   assert_null(dict_removes(d, "apple"));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -279,68 +279,68 @@ TEST(test_dict_set_sets_get_gets_remove_removes_combo, {
   assert_fly_error(EFLYOK);
 
   dict_set(d, &test_dict_new, "it's new");
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "banana", "it's yellow");
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &printf, "it's printing");
-  assert_int_equal(d->size, 3);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "dreamcast", "it's thinking");
-  assert_int_equal(d->size, 4);
+  assert_int_equal(4, d->size);
   assert_true(verify_dict_size(d));
 
   char *value;
 
   assert_non_null(value = dict_get(d, &printf));
-  assert_string_equal(value, "it's printing");
-  assert_int_equal(d->size, 4);
+  assert_string_equal("it's printing", value);
+  assert_int_equal(4, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "dreamcast"));
-  assert_string_equal(value, "it's thinking");
-  assert_int_equal(d->size, 4);
+  assert_string_equal("it's thinking", value);
+  assert_int_equal(4, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_get(d, &test_dict_new));
-  assert_string_equal(value, "it's new");
-  assert_int_equal(d->size, 4);
+  assert_string_equal("it's new", value);
+  assert_int_equal(4, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "banana"));
-  assert_string_equal(value, "it's yellow");
-  assert_int_equal(d->size, 4);
+  assert_string_equal("it's yellow", value);
+  assert_int_equal(4, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &printf));
-  assert_string_equal(value, "it's printing");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("it's printing", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "dreamcast"));
-  assert_string_equal(value, "it's thinking");
-  assert_int_equal(d->size, 2);
+  assert_string_equal("it's thinking", value);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &test_dict_new));
-  assert_string_equal(value, "it's new");
-  assert_int_equal(d->size, 1);
+  assert_string_equal("it's new", value);
+  assert_int_equal(1, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "banana"));
-  assert_string_equal(value, "it's yellow");
-  assert_int_equal(d->size, 0);
+  assert_string_equal("it's yellow", value);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   assert_null(dict_remove(d, &test_dict_new));
   assert_null(dict_remove(d, &printf));
   assert_null(dict_removes(d, "dreamcast"));
   assert_null(dict_removes(d, "banana"));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -354,7 +354,7 @@ TEST(test_dict_get_from_empty, {
   assert_fly_error(EFLYOK);
 
   assert_null(dict_get(d, &test_dict_new));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -368,7 +368,7 @@ TEST(test_dict_remove_from_empty, {
   assert_fly_error(EFLYOK);
 
   assert_null(dict_remove(d, &test_dict_new));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -382,7 +382,7 @@ TEST(test_dict_gets_from_empty, {
   assert_fly_error(EFLYOK);
 
   assert_null(dict_get(d, "nothing"));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -396,7 +396,7 @@ TEST(test_dict_removes_from_empty, {
   assert_fly_error(EFLYOK);
 
   assert_null(dict_remove(d, "nothing"));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -411,40 +411,40 @@ void do_test_dict_null_as_key() {
   char *two = "second";
 
   dict_set(d, one, "uno");
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
   dict_set(d, NULL, "cero");
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
   dict_set(d, two, "dos");
-  assert_int_equal(d->size, 3);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   char *value;
 
   assert_non_null(value = dict_get(d, one));
-  assert_string_equal(value, "uno");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("uno", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
   assert_non_null(value = dict_get(d, NULL));
-  assert_string_equal(value, "cero");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("cero", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
   assert_non_null(value = dict_get(d, two));
-  assert_string_equal(value, "dos");
-  assert_int_equal(d->size, 3);
+  assert_string_equal("dos", value);
+  assert_int_equal(3, d->size);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, NULL));
-  assert_string_equal(value, "cero");
-  assert_int_equal(d->size, 2);
+  assert_string_equal("cero", value);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   assert_null(value = dict_get(d, NULL));
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
   value = dict_remove(d, NULL);
   assert_null(value);
-  assert_int_equal(d->size, 2);
+  assert_int_equal(2, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
@@ -476,38 +476,38 @@ void do_test_dict_remove_after_collision() {
   dict *d = dict_new_of_size(4);
 
   dict_set(d, one, first);
-  assert_int_equal(1, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 1);
+  assert_int_equal(d->exponent, 2);
 
   dict_set(d, two, second);
-  assert_int_equal(2, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 2);
+  assert_int_equal(d->exponent, 2);
 
   char *value;
 
   assert_non_null(value = (char *) dict_get(d, one));
   assert_string_equal(first, value);
-  assert_int_equal(2, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 2);
+  assert_int_equal(d->exponent, 2);
 
   assert_non_null(value = (char *) dict_get(d, two));
   assert_string_equal(second, value);
-  assert_int_equal(2, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 2);
+  assert_int_equal(d->exponent, 2);
 
   assert_non_null(value = (char *) dict_remove(d, one));
   assert_string_equal(first, value);
-  assert_int_equal(1, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 1);
+  assert_int_equal(d->exponent, 2);
 
   assert_null(value = (char *) dict_remove(d, one));
-  assert_int_equal(1, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 1);
+  assert_int_equal(d->exponent, 2);
 
   assert_non_null(value = (char *) dict_get(d, two));
   assert_string_equal(second, value);
-  assert_int_equal(1, d->size);
-  assert_int_equal(2, d->exponent);
+  assert_int_equal(d->size, 1);
+  assert_int_equal(d->exponent, 2);
 
   dict_del(d);
 }
@@ -527,30 +527,30 @@ TEST(test_dict_set_overwrites, {
   assert_fly_error(EFLYOK);
 
   dict_set(d, (void *) 1, "one");
-  assert_int_equal(d->size, 1);
-  assert_string_equal(dict_get(d, (void *) 1), "one");
+  assert_int_equal(1, d->size);
+  assert_string_equal("one", dict_get(d, (void *) 1));
 
   dict_set(d, (void *) 1, "uno");
-  assert_int_equal(d->size, 1);
-  assert_string_equal(dict_get(d, (void *) 1), "uno");
+  assert_int_equal(1, d->size);
+  assert_string_equal("uno", dict_get(d, (void *) 1));
 
   dict_set(d, (void *) 10, "ten");
-  assert_int_equal(d->size, 2);
-  assert_string_equal(dict_get(d, (void *) 10), "ten");
+  assert_int_equal(2, d->size);
+  assert_string_equal("ten", dict_get(d, (void *) 10));
 
   dict_set(d, (void *) 10, "cien");
-  assert_int_equal(d->size, 2);
-  assert_string_equal(dict_get(d, (void *) 10), "cien");
+  assert_int_equal(2, d->size);
+  assert_string_equal("cien", dict_get(d, (void *) 10));
 
-  assert_string_equal(dict_remove(d, (void *) 1), "uno");
-  assert_int_equal(d->size, 1);
+  assert_string_equal("uno", dict_remove(d, (void *) 1));
+  assert_int_equal(1, d->size);
   assert_null(dict_get(d, (void *) 1));
-  assert_int_equal(d->size, 1);
+  assert_int_equal(1, d->size);
 
-  assert_string_equal(dict_remove(d, (void *) 10), "cien");
-  assert_int_equal(d->size, 0);
+  assert_string_equal("cien", dict_remove(d, (void *) 10));
+  assert_int_equal(0, d->size);
   assert_null(dict_get(d, (void *) 10));
-  assert_int_equal(d->size, 0);
+  assert_int_equal(0, d->size);
 
   dict_del(d);
 })
@@ -569,8 +569,8 @@ void passthrough_free(void *ptr) {
 
 void _test_dict_resize(dict *d) {
   assert_non_null(d);
-  assert_int_equal(d->size, 0);
-  assert_int_equal(d->exponent, 2);
+  assert_int_equal(0, d->size);
+  assert_int_equal(2, d->exponent);
 
   char *word_assoc[32] = {
     "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
@@ -591,18 +591,18 @@ void _test_dict_resize(dict *d) {
 
   for (i = 0; i < 32; i++) {
     dict_set(d, (void *) i, word_assoc[i]);
-    assert_int_equal(d->size, i + 1);
-    assert_int_equal(d->exponent, expected_exponents[i]);
+    assert_int_equal(i + 1, d->size);
+    assert_int_equal(expected_exponents[i], d->exponent);
     if (last_x != d->exponent) {
       last_x = d->exponent;
       for (j = 0; j < i; j++) {
-        assert_string_equal(dict_get(d, (void *) j), word_assoc[j]);
+        assert_string_equal(word_assoc[j], dict_get(d, (void *) j));
       }
     }
   }
 
   for (i = 0; i < 32; i++) {
-    assert_string_equal(dict_get(d, (void *) i), word_assoc[i]);
+    assert_string_equal(word_assoc[i], dict_get(d, (void *) i));
   }
 
   dict_del(d);
@@ -637,7 +637,7 @@ static int verify_order(char *lptr, size_t i) {
   char letter[2] = { *lptr },
        answer[2] = { answer_key[i] };
 
-  assert_string_equal(letter, answer);
+  assert_string_equal(answer, letter);
   return 0;
 }
 
