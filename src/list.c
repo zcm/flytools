@@ -26,8 +26,6 @@
 typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
 
-static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *));
-static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *));
 static size_t dllist_remove_all(
     dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static size_t sllist_remove_all(
@@ -40,6 +38,7 @@ static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
 static void *_unsafe_arlist_shift(arlist *l);
 static void _unsafe_arlist_foreach(arlist *l, int (*)(void *, size_t));
+static void *arlist_remove_first(arlist *l, int (*matcher)(void *));
 
 static void dllist_init(dllist *l);
 static void dllist_del(dllist *l);
@@ -47,6 +46,7 @@ static void _unsafe_dllist_push(dllist *l, void *data);
 static void _unsafe_dllist_unshift(dllist *l, void *data);
 static void *_unsafe_dllist_pop(dllist *l);
 static void *_unsafe_dllist_shift(dllist *l);
+static void *dllist_remove_first(dllist *l, int (*matcher)(void *));
 
 static void sllist_init(sllist *l);
 static void sllist_del(sllist *l);
@@ -55,6 +55,7 @@ static void _unsafe_sllist_unshift(sllist *l, void *data);
 static void *_unsafe_sllist_pop(sllist *l);
 static void *_unsafe_sllist_shift(sllist *l);
 static void _unsafe_sllist_foreach(sllist *l, int (*)(void *, size_t));
+static void *sllist_remove_first(sllist *l, int (*matcher)(void *));
 
 #ifdef __TURBOC__
 #define ASSIGN_STATIC_PTR(KIND) \
@@ -76,7 +77,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &_unsafe_arlist_shift,
   (void *) &arlist_concat,
   (void *) &_unsafe_arlist_foreach,
-  NULL, //(void *) &arlist_remove_first,
+  (void *) &arlist_remove_first,
   NULL, //(void *) &arlist_remove_all,
 };
 
@@ -279,6 +280,26 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
   return NULL;
 }
 
+static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
+  size_t i = 0;
+
+  while (i < l->size) {
+    if (matcher(l->elements[i++])) {
+      void *ret = l->elements[i - 1];
+
+      memmove(
+          l->elements + i - 1, l->elements + i,
+          (l->size - i) * sizeof (void *));
+
+      l->size--;
+
+      return ret;
+    }
+  }
+
+  return NULL;
+}
+
 static inline void dllist_stitch(dllistnode *current) {
   current->prev->next = current->next;
   current->next->prev = current->prev;
@@ -293,7 +314,7 @@ static inline void sllist_stitch(
   prev->next = current->next;
 }
 
-static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *)) {
+static void *dllist_remove_first(dllist *l, int (*matcher)(void *)) {
   dllistnode *head = l->head,
              *current = head->next;
 
@@ -304,41 +325,41 @@ static uintptr_t dllist_remove_first(dllist *l, int (*matcher)(void *)) {
       dllist_stitch(current);
 
       l->del(current);
+      l->size--;
 
-      return (uintptr_t) data ^ (uintptr_t) 0x1;
+      return data;
     }
 
     current = current->next;
   }
 
-  return 0x0;
+  return NULL;
 }
 
-static uintptr_t sllist_remove_first(sllist *l, int (*matcher)(void *)) {
+static void *sllist_remove_first(sllist *l, int (*matcher)(void *)) {
   sllistnode *head = l->head,
              *prev = head,
              *current = head->next;
 
   while (current != head) {
     if (matcher(current->data)) {
-      uintptr_t data = (uintptr_t) current->data;
+      void *data = current->data;
 
       sllist_stitch(current, prev, l);
 
       l->del(current);
+      l->size--;
 
-      return data ^ 0x1;
+      return data;
     }
 
     current = (prev = current)->next;
   }
 
-  return 0x0;
+  return NULL;
 }
 
 FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
-  uintptr_t data;
-
   if (!(l && matcher)) {
     FLY_ERR(EFLYBADARG);
     return NULL;
@@ -350,14 +371,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
 
   FLY_ERR_CLEAR;
 
-  data = l->kind->remove_first(l, matcher);
-
-  if (data) {
-    l->size--;
-    return (void *) (data ^ 0x1);
-  }
-
-  return NULL;
+  return l->kind->remove_first(l, matcher);
 }
 
 static void _unsafe_arlist_foreach(arlist *l, int (*fn)(void *, size_t)) {
