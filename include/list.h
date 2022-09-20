@@ -74,6 +74,7 @@ typedef struct listkind {
   void *(*pop)(list *l);
   void *(*shift)(list *l);
   void (*concat)(list *l1, list *l2);
+  void (*foreach)(list *l, int (*)(void *, size_t));
   uintptr_t (*remove_first)(list *, int (*)(void *));
   size_t (*remove_all)(list *, int (*)(void *), int (*)(void *, size_t));
 } listkind;

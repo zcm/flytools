@@ -39,6 +39,7 @@ static void _unsafe_arlist_push(arlist *l, void *data);
 static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
 static void *_unsafe_arlist_shift(arlist *l);
+static void _unsafe_arlist_foreach(arlist *l, int (*)(void *, size_t));
 
 static void dllist_init(dllist *l);
 static void dllist_del(dllist *l);
@@ -53,6 +54,7 @@ static void _unsafe_sllist_push(sllist *l, void *data);
 static void _unsafe_sllist_unshift(sllist *l, void *data);
 static void *_unsafe_sllist_pop(sllist *l);
 static void *_unsafe_sllist_shift(sllist *l);
+static void _unsafe_sllist_foreach(sllist *l, int (*)(void *, size_t));
 
 #ifdef __TURBOC__
 #define ASSIGN_STATIC_PTR(KIND) \
@@ -73,6 +75,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &_unsafe_arlist_pop,
   (void *) &_unsafe_arlist_shift,
   (void *) &arlist_concat,
+  (void *) &_unsafe_arlist_foreach,
   NULL, //(void *) &arlist_remove_first,
   NULL, //(void *) &arlist_remove_all,
 };
@@ -86,6 +89,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   (void *) &_unsafe_dllist_pop,
   (void *) &_unsafe_dllist_shift,
   (void *) &dllist_concat,
+  (void *) &_unsafe_sllist_foreach,  /* not a typo */
   (void *) &dllist_remove_first,
   (void *) &dllist_remove_all,
 };
@@ -99,6 +103,7 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   (void *) &_unsafe_sllist_pop,
   (void *) &_unsafe_sllist_shift,
   (void *) &sllist_concat,
+  (void *) &_unsafe_sllist_foreach,
   (void *) &sllist_remove_first,
   (void *) &sllist_remove_all,
 };
@@ -355,10 +360,22 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
   return NULL;
 }
 
-FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
-  size_t i;
+static void _unsafe_arlist_foreach(arlist *l, int (*fn)(void *, size_t)) {
+  size_t i = 0;
+
+  while (i++ < l->size && !fn(l->elements[i - 1], i - 1));
+}
+
+static void _unsafe_sllist_foreach(sllist *l, int (*fn)(void *, size_t)) {
+  size_t i = 0;
   sllistnode *current, *head;
 
+  current = head = l->head;
+
+  while (head != (current = current->next) && !fn(current->data, i++));
+}
+
+FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
   if (!(l && fn)) {
     FLY_ERR(EFLYBADARG);
     return;
@@ -366,10 +383,7 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
 
   FLY_ERR_CLEAR;
 
-  i = 0;
-  current = head = ((sllist *) l)->head;
-
-  while (head != (current = current->next) && !fn(current->data, i++));
+  l->kind->foreach(l, fn);
 }
 
 static size_t dllist_remove_all(

@@ -725,13 +725,10 @@ int record_order_r_stop(void *data, size_t index) {
   record_order(data, 2 - index + 1);
   return index == 2;
 }
-#endif
 
-TEST(test_list_foreach, {
-  (void) state;
-
+void do_test_list_foreach(listkind *kind) {
   list *l;
-  assert_non_null(l = list_new());
+  assert_non_null(l = list_new_kind(kind));
 
   prime = 1;
   index_sum = 0;
@@ -776,7 +773,12 @@ TEST(test_list_foreach, {
   assert_string_equal("x123", indices);
 
   list_del(l);
-})
+}
+#endif
+
+TESTCALL(test_arlist_foreach, do_test_list_foreach(LISTKIND_ARRAY))
+TESTCALL(test_dllist_foreach, do_test_list_foreach(LISTKIND_DLINK))
+TESTCALL(test_sllist_foreach, do_test_list_foreach(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
 int everything(void *unused_value) {
@@ -982,7 +984,9 @@ int main(void) {
       cmocka_unit_test(test_list_remove_first_sl),
       cmocka_unit_test(test_list_remove_first_null_entry_dl),
       cmocka_unit_test(test_list_remove_first_null_entry_sl),
-      cmocka_unit_test(test_list_foreach),
+      cmocka_unit_test(test_arlist_foreach),
+      cmocka_unit_test(test_dllist_foreach),
+      cmocka_unit_test(test_sllist_foreach),
       cmocka_unit_test(test_list_remove_all_dl),
       cmocka_unit_test(test_list_remove_all_sl),
   };
