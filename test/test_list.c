@@ -467,7 +467,7 @@ DEFINE_FUNC_CHAR_IS(2, x);
 DEFINE_FUNC_CHAR_IS(2, v);
 DEFINE_FUNC_CHAR_IS(0, e);
 
-static inline void __test_list_find_first(listkind *kind) {
+static void do_test_list_find_first(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
 
@@ -503,13 +503,9 @@ static inline void __test_list_find_first(listkind *kind) {
 }
 #endif
 
-TEST(test_list_find_first_dl, {
-  __test_list_find_first(LISTKIND_DLINK);
-})
-
-TEST(test_list_find_first_sl, {
-  __test_list_find_first(LISTKIND_SLINK);
-})
+TESTCALL(test_arlist_find_first, do_test_list_find_first(LISTKIND_ARRAY))
+TESTCALL(test_dllist_find_first, do_test_list_find_first(LISTKIND_DLINK))
+TESTCALL(test_sllist_find_first, do_test_list_find_first(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
 DEFINE_FUNC_CHAR_IS(0, t);
@@ -962,8 +958,9 @@ int main(void) {
       cmocka_unit_test(test_list_concat_from_empty),
       cmocka_unit_test(test_list_concat_into_empty),
       cmocka_unit_test(test_list_concat_both_empty),
-      cmocka_unit_test(test_list_find_first_dl),
-      cmocka_unit_test(test_list_find_first_sl),
+      cmocka_unit_test(test_arlist_find_first),
+      cmocka_unit_test(test_dllist_find_first),
+      cmocka_unit_test(test_sllist_find_first),
       cmocka_unit_test(test_list_find_first_null_entry_dl),
       cmocka_unit_test(test_list_find_first_null_entry_sl),
       cmocka_unit_test(test_arlist_remove_first),

@@ -40,6 +40,7 @@ static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
 static void *_unsafe_arlist_shift(arlist *l);
 static void _unsafe_arlist_foreach(arlist *l, int (*)(void *, size_t));
+static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *));
 static void *arlist_remove_first(arlist *l, int (*matcher)(void *));
 
 static void dllist_init(dllist *l);
@@ -57,6 +58,7 @@ static void _unsafe_sllist_unshift(sllist *l, void *data);
 static void *_unsafe_sllist_pop(sllist *l);
 static void *_unsafe_sllist_shift(sllist *l);
 static void _unsafe_sllist_foreach(sllist *l, int (*)(void *, size_t));
+static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *));
 static void *sllist_remove_first(sllist *l, int (*matcher)(void *));
 
 #ifdef __TURBOC__
@@ -79,6 +81,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &_unsafe_arlist_shift,
   (void *) &arlist_concat,
   (void *) &_unsafe_arlist_foreach,
+  (void *) &_unsafe_arlist_find_first,
   (void *) &arlist_remove_first,
   (void *) &arlist_remove_all,
 };
@@ -93,6 +96,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   (void *) &_unsafe_dllist_shift,
   (void *) &dllist_concat,
   (void *) &_unsafe_sllist_foreach,  /* not a typo */
+  (void *) &_unsafe_sllist_find_first,
   (void *) &dllist_remove_first,
   (void *) &dllist_remove_all,
 };
@@ -107,6 +111,7 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   (void *) &_unsafe_sllist_shift,
   (void *) &sllist_concat,
   (void *) &_unsafe_sllist_foreach,
+  (void *) &_unsafe_sllist_find_first,
   (void *) &sllist_remove_first,
   (void *) &sllist_remove_all,
 };
@@ -253,6 +258,33 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
   list_del(l2);
 }
 
+static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
+  size_t i;
+  void **each = l->elements;
+
+  for (i = l->size; i; i--, each++) {
+    if (matcher(*each)) {
+      return *each;
+    }
+  }
+
+  return NULL;
+}
+
+static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *)) {
+  sllistnode *head = l->head,
+             *current = head->next;
+
+  while (current != head) {
+    if (matcher(current->data)) {
+      return current->data;
+    }
+    current = current->next;
+  }
+
+  return NULL;
+}
+
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
   if (!(l && matcher)) {
     FLY_ERR(EFLYBADARG);
@@ -264,22 +296,7 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
     return NULL;
   }
 
-  if (l->kind == LISTKIND_DLINK || l->kind == LISTKIND_SLINK) {
-    sllistnode *head = ((sllist *) l)->head,
-               *current = head->next;
-
-    while (current != head) {
-      if (matcher(current->data)) {
-        return current->data;
-      }
-      current = current->next;
-    }
-
-    return NULL;
-  }
-
-  FLY_ERR(EFLYINTERNAL);
-  return NULL;
+  return l->kind->find_first(l, matcher);
 }
 
 static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
