@@ -800,7 +800,7 @@ int record_order_by_count(void *data, size_t index) {
   return 0;
 }
 
-void __test_list_remove_all(listkind *kind) {
+void do_test_list_remove_all(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
 
@@ -898,7 +898,7 @@ void __test_list_remove_all(listkind *kind) {
 
   list_del(l);
 
-  assert_non_null(l = list_new());
+  assert_non_null(l = list_new_kind(kind));
 
   list_unshift(l, (void *) 1);
   list_unshift(l, (void *) 2);
@@ -929,17 +929,9 @@ void __test_list_remove_all(listkind *kind) {
 }
 #endif
 
-TEST(test_list_remove_all_dl, {
-  (void) state;
-
-  __test_list_remove_all(LISTKIND_DLINK);
-})
-
-TEST(test_list_remove_all_sl, {
-  (void) state;
-
-  __test_list_remove_all(LISTKIND_SLINK);
-})
+TESTCALL(test_arlist_remove_all, do_test_list_remove_all(LISTKIND_ARRAY))
+TESTCALL(test_dllist_remove_all, do_test_list_remove_all(LISTKIND_DLINK))
+TESTCALL(test_sllist_remove_all, do_test_list_remove_all(LISTKIND_SLINK))
 
 #ifndef _WINDLL
 int main(void) {
@@ -974,15 +966,17 @@ int main(void) {
       cmocka_unit_test(test_list_find_first_sl),
       cmocka_unit_test(test_list_find_first_null_entry_dl),
       cmocka_unit_test(test_list_find_first_null_entry_sl),
-      cmocka_unit_test(test_list_remove_first_dl),
-      cmocka_unit_test(test_list_remove_first_sl),
+      cmocka_unit_test(test_arlist_remove_first),
+      cmocka_unit_test(test_dllist_remove_first),
+      cmocka_unit_test(test_sllist_remove_first),
       cmocka_unit_test(test_list_remove_first_null_entry_dl),
       cmocka_unit_test(test_list_remove_first_null_entry_sl),
       cmocka_unit_test(test_arlist_foreach),
       cmocka_unit_test(test_dllist_foreach),
       cmocka_unit_test(test_sllist_foreach),
-      cmocka_unit_test(test_list_remove_all_dl),
-      cmocka_unit_test(test_list_remove_all_sl),
+      cmocka_unit_test(test_arlist_remove_all),
+      cmocka_unit_test(test_dllist_remove_all),
+      cmocka_unit_test(test_sllist_remove_all),
   };
 
   return cmocka_run_group_tests_name(

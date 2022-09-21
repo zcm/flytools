@@ -26,6 +26,8 @@
 typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
 
+static size_t arlist_remove_all(
+    arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static size_t dllist_remove_all(
     dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static size_t sllist_remove_all(
@@ -78,7 +80,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &arlist_concat,
   (void *) &_unsafe_arlist_foreach,
   (void *) &arlist_remove_first,
-  NULL, //(void *) &arlist_remove_all,
+  (void *) &arlist_remove_all,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
@@ -398,6 +400,42 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
   FLY_ERR_CLEAR;
 
   l->kind->foreach(l, fn);
+}
+
+static size_t arlist_remove_all(
+    arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+  size_t total_removed = 0, i = 0;
+  void **left;
+
+  while (i < l->size) {
+    if (matcher(l->elements[i])) {
+      goto mark_removal_start;
+    }
+    i++;
+  }
+
+  /* loop terminated normally - nothing found */
+  return 0;
+
+  while (i < l->size) {
+    if (matcher(l->elements[i])) {
+      memmove(left, left + total_removed,
+          ((l->elements + i) - (left + total_removed)) * sizeof (void *));
+
+mark_removal_start:
+      left = l->elements + i - total_removed++;
+      if (fn(l->elements[i], i)) {
+        break;
+      }
+    }
+    i++;
+  }
+
+  memmove(left, left + total_removed,
+      ((l->elements + l->size) - (left + total_removed)) * sizeof (void *));
+
+  l->size -= total_removed;
+  return total_removed;
 }
 
 static size_t dllist_remove_all(
