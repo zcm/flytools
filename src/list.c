@@ -409,28 +409,34 @@ static size_t arlist_remove_all(
 
   while (i < l->size) {
     if (matcher(l->elements[i])) {
-      goto mark_removal_start;
+      goto removal_start;
     }
     i++;
   }
 
-  /* loop terminated normally - nothing found */
-  return 0;
+  return 0;  /* loop exited normally - nothing found */
 
   while (i < l->size) {
-    if (matcher(l->elements[i])) {
+    if (!matcher(l->elements[i])) {
+      i++;
+    } else {
       memmove(left, left + total_removed,
           ((l->elements + i) - (left + total_removed)) * sizeof (void *));
 
-mark_removal_start:
-      left = l->elements + i - total_removed++;
-      if (fn(l->elements[i], i)) {
-        break;
-      }
+removal_start:
+      left = l->elements + i - total_removed;
+
+      do {
+        total_removed++;
+
+        if (fn(l->elements[i], i)) {
+          goto final_move;
+        }
+      } while (++i < l->size && matcher(l->elements[i]));
     }
-    i++;
   }
 
+final_move:
   memmove(left, left + total_removed,
       ((l->elements + l->size) - (left + total_removed)) * sizeof (void *));
 
