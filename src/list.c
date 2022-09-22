@@ -35,6 +35,7 @@ static size_t sllist_remove_all(
 
 static void arlist_init(arlist *l);
 static void arlist_del(arlist *l);
+static inline void *_unsafe_arlist_get(arlist *l, size_t i);
 static void _unsafe_arlist_push(arlist *l, void *data);
 static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
@@ -53,6 +54,7 @@ static void *dllist_remove_first(dllist *l, int (*matcher)(void *));
 
 static void sllist_init(sllist *l);
 static void sllist_del(sllist *l);
+static inline void *_unsafe_sllist_get(sllist *l, size_t i);
 static void _unsafe_sllist_push(sllist *l, void *data);
 static void _unsafe_sllist_unshift(sllist *l, void *data);
 static void *_unsafe_sllist_pop(sllist *l);
@@ -75,6 +77,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   sizeof (arlist),
   (void *) &arlist_init,
   (void *) &arlist_del,
+  (void *) &_unsafe_arlist_get,
   (void *) &_unsafe_arlist_push,
   (void *) &_unsafe_arlist_unshift,
   (void *) &_unsafe_arlist_pop,
@@ -90,6 +93,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   sizeof (dllist),
   (void *) &dllist_init,
   (void *) &dllist_del,
+  (void *) &_unsafe_sllist_get,
   (void *) &_unsafe_dllist_push,
   (void *) &_unsafe_dllist_unshift,
   (void *) &_unsafe_dllist_pop,
@@ -105,6 +109,7 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   sizeof (sllist),
   (void *) &sllist_init,
   (void *) &sllist_del,
+  (void *) &_unsafe_sllist_get,
   (void *) &_unsafe_sllist_push,
   (void *) &_unsafe_sllist_unshift,
   (void *) &_unsafe_sllist_pop,
@@ -172,6 +177,60 @@ FLYAPI void list_del(list *l) {
   } else {
     FLY_ERR(EFLYBADARG);
   }
+}
+
+static inline void *_unsafe_arlist_get(arlist *l, size_t i) {
+  return l->elements[i];
+}
+
+static inline sllistnode *_unsafe_sllist_get_node(sllist *l, size_t i) {
+  sllistnode *current = l->head->next;
+
+  while (i) {
+    current = current->next;
+    i--;
+  }
+
+  return current;
+}
+
+static inline void *_unsafe_sllist_get(sllist *l, size_t i) {
+  return _unsafe_sllist_get_node(l, i)->data;
+}
+
+#define CHECK_LIST_BOUNDS(l, i) \
+  if (!l) {                     \
+    FLY_ERR(EFLYBADARG);        \
+    return NULL;                \
+  }                             \
+  if (!l->size) {               \
+    FLY_ERR(EFLYEMPTY);         \
+    return NULL;                \
+  }                             \
+  if (i >= l->size) {           \
+    /* TODO: better error */    \
+    FLY_ERR(EFLYBADARG);        \
+    return NULL;                \
+  }
+
+FLYAPI void *list_get(list *l, size_t i) {
+  CHECK_LIST_BOUNDS(l, i);
+  return l->kind->get(l, i);
+}
+
+FLYAPI void *arlist_get(arlist *l, size_t i) {
+  CHECK_LIST_BOUNDS(l, i);
+  return l->elements[i];
+}
+
+FLYAPI void *dllist_get(dllist *l, size_t i) {
+  CHECK_LIST_BOUNDS(l, i);
+  return _unsafe_sllist_get((sllist *) l, i);
+}
+
+FLYAPI void *sllist_get(sllist *l, size_t i) {
+  CHECK_LIST_BOUNDS(l, i);
+  return _unsafe_sllist_get(l, i);
 }
 
 // struct member interaction

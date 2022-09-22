@@ -313,6 +313,82 @@ TESTCALL(test_sllist_shift_empty, do_test_list_shift_empty(LISTKIND_SLINK))
 TESTCALL(test_sllist_del_nonempty, do_test_list_del_nonempty(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
+void do_test_list_get(listkind *kind) {
+  list *l;
+  size_t i = 0;
+
+  assert_non_null(l = list_new_kind(kind));
+  assert_int_equal(0, l->size);
+
+  assert_null(list_get(l, 0));
+  assert_null(list_get(l, 1));
+  assert_null(list_get(l, SIZE_MAX));
+  assert_null(list_get(l, l->size));
+
+  if (l->kind == LISTKIND_ARRAY) {
+    assert_null(list_get(l, ((arlist *) l)->capacity));
+  }
+
+  list_push(l, (void *) 123);
+  assert_int_equal(1, l->size);
+
+  assert_int_equal(123, (uintptr_t) list_get(l, 0));
+  assert_null(list_get(l, 1));
+  assert_null(list_get(l, SIZE_MAX));
+  assert_null(list_get(l, l->size));
+
+  if (l->kind == LISTKIND_ARRAY) {
+    assert_null(list_get(l, ((arlist *) l)->capacity));
+  }
+
+  list_push(l, (void *) 456);
+  assert_int_equal(2, l->size);
+
+  assert_int_equal(456, (uintptr_t) list_get(l, 0));
+  assert_int_equal(123, (uintptr_t) list_get(l, 1));
+  assert_null(list_get(l, 2));
+  assert_null(list_get(l, SIZE_MAX));
+  assert_null(list_get(l, l->size));
+
+  if (l->kind == LISTKIND_ARRAY) {
+    assert_null(list_get(l, ((arlist *) l)->capacity));
+
+    while (l->size < ((arlist *) l)->capacity) {
+      list_push(l, (void *) 10664);
+    }
+
+    assert_int_equal(10664, (uintptr_t) list_get(l, 0));
+    assert_int_equal(456, (uintptr_t) list_get(l, l->size - 2));
+    assert_int_equal(123, (uintptr_t) list_get(l, l->size - 1));
+    assert_null(list_get(l, SIZE_MAX));
+    assert_null(list_get(l, l->size));
+    assert_null(list_get(l, l->size + 1));
+  }
+
+  while (l->size) {
+    list_pop(l);
+  }
+
+  assert_int_equal(0, l->size);
+
+  assert_null(list_get(l, 0));
+  assert_null(list_get(l, 1));
+  assert_null(list_get(l, SIZE_MAX));
+  assert_null(list_get(l, l->size));
+
+  if (l->kind == LISTKIND_ARRAY) {
+    assert_null(list_get(l, ((arlist *) l)->capacity));
+  }
+
+  list_del(l);
+}
+#endif
+
+TESTCALL(test_arlist_get, do_test_list_get(LISTKIND_ARRAY))
+TESTCALL(test_dllist_get, do_test_list_get(LISTKIND_DLINK))
+TESTCALL(test_sllist_get, do_test_list_get(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
 void do_test_list_concat() {
   static size_t data[] = {
     0x101, 0x102, 0x103, 0x201, 0x202, 0x203, 0x204

@@ -69,6 +69,7 @@ typedef struct listkind {
   size_t size;
   void (*init)(list *l);
   void (*destroy)(list *l);
+  void *(*get)(list *l, size_t i);
   void (*push)(list *l, void *data);
   void (*unshift)(list *l, void *data);
   void *(*pop)(list *l);
@@ -91,6 +92,7 @@ FLYAPI list *list_new_with(
 FLYAPI list *list_new_kind_with(
     listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *));
 FLYAPI void list_del(list *l);
+FLYAPI void *list_get(list *l, size_t i);
 FLYAPI void *list_pop(list *l);
 FLYAPI void list_push(list *l, void *data);
 FLYAPI void *list_shift(list *l);
@@ -105,18 +107,21 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
 FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
+FLYAPI void *arlist_get(arlist *l, size_t i);
 FLYAPI void arlist_push(arlist *l, void *data);
 FLYAPI void arlist_unshift(arlist *l, void *data);
 FLYAPI void *arlist_pop(arlist *l);
 FLYAPI void *arlist_shift(arlist *l);
 FLYAPI void arlist_concat(arlist *l1, arlist *l2);
 
+FLYAPI void *dllist_get(dllist *l, size_t i);
 FLYAPI void dllist_push(dllist *l, void *data);
 FLYAPI void dllist_unshift(dllist *l, void *data);
 FLYAPI void *dllist_pop(dllist *l);
 FLYAPI void *dllist_shift(dllist *l);
 FLYAPI void dllist_concat(dllist *l1, dllist *l2);
 
+FLYAPI void *sllist_get(sllist *l, size_t i);
 FLYAPI void sllist_push(sllist *l, void *data);
 FLYAPI void sllist_unshift(sllist *l, void *data);
 FLYAPI void *sllist_pop(sllist *l);
