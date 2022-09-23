@@ -918,24 +918,13 @@ FLYAPI void *sllist_pop(sllist *l) {
 }
 
 static void *_unsafe_sllist_shift(sllist *l) {
-  void *ret = NULL;
-  /* This'll unfortunately run in O(n) time, but we have no way to find what the
-   * new last pointer will become unless we iterate all the way to the end.
-   * TODO: Do not iterate here; use direct access (like, list_get_at or
-   * something) or use an implementation of the iterator pattern. -zack
-   */
-  sllistnode *new_last = NULL;
-  sllistnode *current = l->head;
-  sllistnode *last = l->last;
-  while(current != last) {
-    new_last = current;
-    current = current->next;
-  }
-  new_last->next = l->head;
-  l->last = new_last;
+  void *ret = l->last->data;
+
+  l->del(l->last);  // Do not call if l is empty! You'll free the head node!
+  l->last = _unsafe_sllist_get_node(l, (l->size - 2) % l->size);
+  l->last->next = l->head;
   l->size--;
-  ret = last->data;
-  l->del(last);
+
   return ret;
 }
 
