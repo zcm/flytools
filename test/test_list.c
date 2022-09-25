@@ -341,7 +341,7 @@ void do_test_list_get(listkind *kind) {
     assert_null(list_get(l, ((arlist *) l)->capacity));
   }
 
-  list_push(l, (void *) 456);
+  list_unshift(l, (void *) 456);
   assert_int_equal(2, l->size);
 
   assert_int_equal(456, (uintptr_t) list_get(l, 0));
@@ -354,7 +354,7 @@ void do_test_list_get(listkind *kind) {
     assert_null(list_get(l, ((arlist *) l)->capacity));
 
     while (l->size < ((arlist *) l)->capacity) {
-      list_push(l, (void *) 10664);
+      list_unshift(l, (void *) 10664);
     }
 
     assert_int_equal(10664, (uintptr_t) list_get(l, 0));
@@ -368,8 +368,6 @@ void do_test_list_get(listkind *kind) {
   while (l->size) {
     list_pop(l);
   }
-
-  assert_int_equal(0, l->size);
 
   assert_null(list_get(l, 0));
   assert_null(list_get(l, 1));
@@ -403,10 +401,10 @@ void do_test_list_concat() {
   int i;
 
   for (i = 0; i < len_data / 2; i++) {
-    list_unshift(l1, (void *) data[i]);
+    list_push(l1, (void *) data[i]);
   }
   for (; i < len_data; i++) {
-    list_unshift(l2, (void *) data[i]);
+    list_push(l2, (void *) data[i]);
   }
 
   assert_int_equal(3, l1->size);
@@ -416,7 +414,7 @@ void do_test_list_concat() {
 
   while (i > 0) {
     assert_int_equal(i, l1->size);
-    assert_ptr_equal((void *) data[--i], list_shift(l1));
+    assert_ptr_equal((void *) data[--i], list_pop(l1));
   }
 
   assert_int_equal(0, l1->size);
@@ -550,13 +548,13 @@ static void do_test_list_find_first(listkind *kind) {
   assert_null(list_find_first(l, &char0_is_f));
   assert_int_equal(0, l->size);
 
-  list_unshift(l, "first");
-  list_unshift(l, "second");
-  list_unshift(l, "third");
-  list_unshift(l, "fourth");
-  list_unshift(l, "fifth");
-  list_unshift(l, "sixth");
-  list_unshift(l, "seventh");
+  list_push(l, "first");
+  list_push(l, "second");
+  list_push(l, "third");
+  list_push(l, "fourth");
+  list_push(l, "fifth");
+  list_push(l, "sixth");
+  list_push(l, "seventh");
 
   assert_int_equal(7, l->size);
 
@@ -606,14 +604,14 @@ int value_after_null(void *value) {
 #endif
 
 #ifndef METHODS_ONLY
-static inline void __test_list_find_first_null_entry(listkind *kind) {
+static void do_test_list_find_first_null(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
 
-  list_push(l, "three");
-  list_push(l, "two");
-  list_push(l, NULL);
-  list_push(l, "one");
+  list_unshift(l, "three");
+  list_unshift(l, "two");
+  list_unshift(l, NULL);
+  list_unshift(l, "one");
 
   assert_int_equal(4, l->size);
 
@@ -635,9 +633,9 @@ static inline void __test_list_find_first_null_entry(listkind *kind) {
   assert_string_equal("two", value);
   assert_int_equal(4, l->size);
 
-  list_pop(l);
-  list_pop(l);
-  list_push(l, "one");
+  list_shift(l);
+  list_shift(l);
+  list_unshift(l, "one");
   assert_int_equal(3, l->size);
 
   assert_null(list_find_first(l, &value_after_null));
@@ -647,15 +645,12 @@ static inline void __test_list_find_first_null_entry(listkind *kind) {
 }
 #endif
 
-TEST(test_list_find_first_null_entry_dl, {
-  (void) state;
-  __test_list_find_first_null_entry(LISTKIND_DLINK);
-})
-
-TEST(test_list_find_first_null_entry_sl, {
-  (void) state;
-  __test_list_find_first_null_entry(LISTKIND_SLINK);
-})
+TESTCALL(test_arlist_find_first_null,
+    do_test_list_find_first_null(LISTKIND_ARRAY))
+TESTCALL(test_dllist_find_first_null,
+    do_test_list_find_first_null(LISTKIND_DLINK))
+TESTCALL(test_sllist_find_first_null,
+    do_test_list_find_first_null(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
 static void do_test_list_remove_first(listkind *kind) {
@@ -665,13 +660,13 @@ static void do_test_list_remove_first(listkind *kind) {
   assert_null(list_remove_first(l, &char0_is_f));
   assert_int_equal(0, l->size);
 
-  list_unshift(l, "first");
-  list_unshift(l, "second");
-  list_unshift(l, "third");
-  list_unshift(l, "fourth");
-  list_unshift(l, "fifth");
-  list_unshift(l, "sixth");
-  list_unshift(l, "seventh");
+  list_push(l, "first");
+  list_push(l, "second");
+  list_push(l, "third");
+  list_push(l, "fourth");
+  list_push(l, "fifth");
+  list_push(l, "sixth");
+  list_push(l, "seventh");
 
   assert_int_equal(7, l->size);
 
@@ -713,14 +708,14 @@ TESTCALL(test_dllist_remove_first, do_test_list_remove_first(LISTKIND_DLINK))
 TESTCALL(test_sllist_remove_first, do_test_list_remove_first(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
-static inline void __test_list_remove_first_null_entry(listkind *kind) {
+static void do_test_list_remove_first_null(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
 
-  list_push(l, "three");
-  list_push(l, "two");
-  list_push(l, NULL);
-  list_push(l, "one");
+  list_unshift(l, "three");
+  list_unshift(l, "two");
+  list_unshift(l, NULL);
+  list_unshift(l, "one");
 
   assert_int_equal(4, l->size);
 
@@ -739,17 +734,17 @@ static inline void __test_list_remove_first_null_entry(listkind *kind) {
   assert_string_equal("three", value);
   assert_int_equal(1, l->size);
 
-  list_push(l, "one 2.0");
-  list_unshift(l, "three 2.0");
+  list_unshift(l, "one 2.0");
+  list_push(l, "three 2.0");
   assert_int_equal(3, l->size);
 
   assert_null(list_remove_first(l, &value_is_null));
   assert_int_equal(2, l->size);
 
-  assert_non_null(value = list_pop(l));
+  assert_non_null(value = list_shift(l));
   assert_string_equal("one 2.0", value);
   assert_int_equal(1, l->size);
-  assert_non_null(value = list_pop(l));
+  assert_non_null(value = list_shift(l));
   assert_string_equal("three 2.0", value);
   assert_int_equal(0, l->size);
 
@@ -760,15 +755,12 @@ static inline void __test_list_remove_first_null_entry(listkind *kind) {
 }
 #endif
 
-TEST(test_list_remove_first_null_entry_dl, {
-  (void) state;
-  __test_list_remove_first_null_entry(LISTKIND_DLINK);
-})
-
-TEST(test_list_remove_first_null_entry_sl, {
-  (void) state;
-  __test_list_remove_first_null_entry(LISTKIND_SLINK);
-})
+TESTCALL(test_arlist_remove_first_null,
+    do_test_list_remove_first_null(LISTKIND_ARRAY))
+TESTCALL(test_dllist_remove_first_null,
+    do_test_list_remove_first_null(LISTKIND_DLINK))
+TESTCALL(test_sllist_remove_first_null,
+    do_test_list_remove_first_null(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
 static uintptr_t prime = 0;
@@ -805,11 +797,11 @@ void do_test_list_foreach(listkind *kind) {
   assert_int_equal(0, index_sum);
   assert_int_equal(0, l->size);
 
-  list_unshift(l, (void *) 1);
-  list_unshift(l, (void *) 2);
-  list_unshift(l, (void *) 3);
-  list_unshift(l, (void *) 5);
-  list_unshift(l, (void *) 7);
+  list_push(l, (void *) 1);
+  list_push(l, (void *) 2);
+  list_push(l, (void *) 3);
+  list_push(l, (void *) 5);
+  list_push(l, (void *) 7);
 
   list_foreach(l, &multiply_prime);
 
@@ -822,8 +814,8 @@ void do_test_list_foreach(listkind *kind) {
 
   list_foreach(l, &record_order);
 
-  assert_string_equal(order, "12357");
-  assert_string_equal(indices, "01234");
+  assert_string_equal("12357", order);
+  assert_string_equal("01234", indices);
 
   memset(order, 0, sizeof (order));
   memset(indices, 0, sizeof (indices));
@@ -835,8 +827,8 @@ void do_test_list_foreach(listkind *kind) {
 
   order[0] = indices[0] = 'x';
 
-  assert_string_equal(order, "x321");
-  assert_string_equal(indices, "x123");
+  assert_string_equal("x321", order);
+  assert_string_equal("x123", indices);
 
   list_del(l);
 }
@@ -886,11 +878,11 @@ void do_test_list_remove_all(listkind *kind) {
   assert_int_equal(2, index_sum);
   assert_int_equal(0, l->size);
 
-  list_unshift(l, (void *) 1);
-  list_unshift(l, (void *) 2);
-  list_unshift(l, (void *) 3);
-  list_unshift(l, (void *) 4);
-  list_unshift(l, (void *) 5);
+  list_push(l, (void *) 1);
+  list_push(l, (void *) 2);
+  list_push(l, (void *) 3);
+  list_push(l, (void *) 4);
+  list_push(l, (void *) 5);
 
   assert_int_equal(5, l->size);
 
@@ -972,11 +964,11 @@ void do_test_list_remove_all(listkind *kind) {
 
   assert_non_null(l = list_new_kind(kind));
 
-  list_unshift(l, (void *) 1);
-  list_unshift(l, (void *) 2);
-  list_unshift(l, (void *) 3);
-  list_unshift(l, (void *) 4);
-  list_unshift(l, (void *) 5);
+  list_push(l, (void *) 1);
+  list_push(l, (void *) 2);
+  list_push(l, (void *) 3);
+  list_push(l, (void *) 4);
+  list_push(l, (void *) 5);
 
   assert_int_equal(5, l->size);
 

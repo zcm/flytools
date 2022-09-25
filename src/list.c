@@ -659,6 +659,16 @@ static inline bool arlist_ensure_capacity(arlist *l, size_t new_elements) {
   }
 
 static void _unsafe_arlist_push(arlist *l, void *data) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l, 1);
+
+  l->elements[l->size++] = data;
+}
+
+FLYAPI void arlist_push(arlist *l, void *data) {
+  list_end_add_op(l, data, &_unsafe_arlist_push);
+}
+
+static void _unsafe_arlist_unshift(arlist *l, void *data) {
   ARLIST_HAS_CAPACITY_OR_DIE(l, 1)
 
   memmove(l->elements + 1, l->elements, l->size * sizeof (void *));
@@ -669,28 +679,12 @@ static void _unsafe_arlist_push(arlist *l, void *data) {
   FLY_ERR_CLEAR;
 }
 
-FLYAPI void arlist_push(arlist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_arlist_push);
-}
-
-static void _unsafe_arlist_unshift(arlist *l, void *data) {
-  ARLIST_HAS_CAPACITY_OR_DIE(l, 1);
-
-  l->elements[l->size++] = data;
-}
-
 FLYAPI void arlist_unshift(arlist *l, void *data) {
   list_end_add_op(l, data, &_unsafe_arlist_unshift);
 }
 
 static void *_unsafe_arlist_pop(arlist *l) {
-  void *ret;
-
-  ret = l->elements[0];
-
-  memmove(l->elements, l->elements + 1, --(l->size) * sizeof (void *));
-
-  return ret;
+  return l->elements[--(l->size)];
 }
 
 FLYAPI void *arlist_pop(arlist *l) {
@@ -698,7 +692,13 @@ FLYAPI void *arlist_pop(arlist *l) {
 }
 
 static void *_unsafe_arlist_shift(arlist *l) {
-  return l->elements[--(l->size)];
+  void *ret;
+
+  ret = l->elements[0];
+
+  memmove(l->elements, l->elements + 1, --(l->size) * sizeof (void *));
+
+  return ret;
 }
 
 FLYAPI void *arlist_shift(arlist *l) {
@@ -764,10 +764,10 @@ static void _unsafe_dllist_push(dllist *l, void *data) {
   }
 
   node->data = data;
-  node->next = l->head->next;
-  node->prev = l->head;
-  l->head->next->prev = node;
-  l->head->next = node;
+  node->next = l->head;
+  node->prev = l->head->prev;
+  l->head->prev->next = node;
+  l->head->prev = node;
   l->size++;
 }
 
@@ -783,10 +783,10 @@ static void _unsafe_dllist_unshift(dllist *l, void *data) {
   }
 
   node->data = data;
-  node->next = l->head;
-  node->prev = l->head->prev;
-  l->head->prev->next = node;
-  l->head->prev = node;
+  node->next = l->head->next;
+  node->prev = l->head;
+  l->head->next->prev = node;
+  l->head->next = node;
   l->size++;
 }
 
@@ -795,13 +795,15 @@ FLYAPI void dllist_unshift(dllist *l, void *data) {
 }
 
 static void *_unsafe_dllist_pop(dllist *l) {
-  void *ret = NULL;
-  dllistnode *node = l->head->next;
-  node->next->prev = l->head;
-  l->head->next = node->next;
+  void *ret;
+
+  dllistnode *node = l->head->prev;
+  node->prev->next = l->head;
+  l->head->prev = node->prev;
   l->size--;
   ret = node->data;
   l->del(node);
+
   return ret;
 }
 
@@ -810,13 +812,15 @@ FLYAPI void *dllist_pop(dllist *l) {
 }
 
 static void *_unsafe_dllist_shift(dllist *l) {
-  void *ret = NULL;
-  dllistnode *node = l->head->prev;
-  node->prev->next = l->head;
-  l->head->prev = node->prev;
+  void *ret;
+
+  dllistnode *node = l->head->next;
+  node->next->prev = l->head;
+  l->head->next = node->next;
   l->size--;
   ret = node->data;
   l->del(node);
+
   return ret;
 }
 
@@ -865,12 +869,9 @@ static void _unsafe_sllist_push(sllist *l, void *data) {
   }
 
   node->data = data;
-  node->next = l->head->next;
-  l->head->next = node;
-
-  if (l->size == 0) {
-    l->last = node;
-  }
+  node->next = l->head;
+  l->last->next = node;
+  l->last = node;
 
   l->size++;
 }
@@ -887,9 +888,13 @@ static void _unsafe_sllist_unshift(sllist *l, void *data) {
   }
 
   node->data = data;
-  node->next = l->head;
-  l->last->next = node;
-  l->last = node;
+  node->next = l->head->next;
+  l->head->next = node;
+
+  if (l->size == 0) {
+    l->last = node;
+  }
+
   l->size++;
 }
 
@@ -898,7 +903,23 @@ FLYAPI void sllist_unshift(sllist *l, void *data) {
 }
 
 static void *_unsafe_sllist_pop(sllist *l) {
-  void *ret = NULL;
+  void *ret = l->last->data;
+
+  l->del(l->last);  // Do not call if l is empty! You'll free the head node!
+  l->last = _unsafe_sllist_get_node(l, (l->size - 2) % l->size);
+  l->last->next = l->head;
+  l->size--;
+
+  return ret;
+}
+
+FLYAPI void *sllist_pop(sllist *l) {
+  return list_end_remove_op(l, &_unsafe_sllist_pop);
+}
+
+static void *_unsafe_sllist_shift(sllist *l) {
+  void *ret;
+
   sllistnode *node = l->head->next;
   l->head->next = node->next;
 
@@ -910,20 +931,6 @@ static void *_unsafe_sllist_pop(sllist *l) {
 
   ret = node->data;
   l->del(node);
-  return ret;
-}
-
-FLYAPI void *sllist_pop(sllist *l) {
-  return list_end_remove_op(l, &_unsafe_sllist_pop);
-}
-
-static void *_unsafe_sllist_shift(sllist *l) {
-  void *ret = l->last->data;
-
-  l->del(l->last);  // Do not call if l is empty! You'll free the head node!
-  l->last = _unsafe_sllist_get_node(l, (l->size - 2) % l->size);
-  l->last->next = l->head;
-  l->size--;
 
   return ret;
 }
