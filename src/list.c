@@ -198,19 +198,16 @@ static inline void *_unsafe_sllist_get(sllist *l, size_t i) {
   return _unsafe_sllist_get_node(l, i)->data;
 }
 
-#define CHECK_LIST_BOUNDS(l, i) \
-  if (!l) {                     \
-    fly_status = FLY_E_NULL_PTR;    \
-    return NULL;                \
-  }                             \
-  if (!l->size) {               \
-    fly_status = FLY_EMPTY;         \
-    return NULL;                \
-  }                             \
-  if (i >= l->size) {           \
-    fly_status = FLY_E_OUT_OF_RANGE;\
-    return NULL;                \
-  }
+#define CHECK_LIST_BOUNDS(l, i)       \
+  if (!l) {                           \
+    fly_status = FLY_E_NULL_PTR;      \
+    return NULL;                      \
+  }                                   \
+  if (i >= l->size) {                 \
+    fly_status = FLY_E_OUT_OF_RANGE;  \
+    return NULL;                      \
+  }                                   \
+  fly_status = FLY_OK;                \
 
 FLYAPI void *list_get(list *l, size_t i) {
   CHECK_LIST_BOUNDS(l, i);

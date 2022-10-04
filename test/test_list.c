@@ -393,63 +393,95 @@ void do_test_list_get(listkind *kind) {
 
   assert_non_null(l = list_new_kind(kind));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   assert_null(list_get(l, 0));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, 1));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, SIZE_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, l->size));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
 
   if (l->kind == LISTKIND_ARRAY) {
     assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
   }
 
   list_push(l, (void *) 123);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
 
   assert_int_equal(123, (uintptr_t) list_get(l, 0));
+  assert_fly_status(FLY_OK);
   assert_null(list_get(l, 1));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, SIZE_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, l->size));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
 
   if (l->kind == LISTKIND_ARRAY) {
     assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
   }
 
   list_unshift(l, (void *) 456);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
 
-  assert_int_equal(456, (uintptr_t) list_get(l, 0));
-  assert_int_equal(123, (uintptr_t) list_get(l, 1));
   assert_null(list_get(l, 2));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  assert_int_equal(456, (uintptr_t) list_get(l, 0));
+  assert_fly_status(FLY_OK);
   assert_null(list_get(l, SIZE_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  assert_int_equal(123, (uintptr_t) list_get(l, 1));
+  assert_fly_status(FLY_OK);
   assert_null(list_get(l, l->size));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
 
   if (l->kind == LISTKIND_ARRAY) {
     assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
 
     while (l->size < ((arlist *) l)->capacity) {
       list_unshift(l, (void *) 10664);
+      assert_fly_status(FLY_OK);
     }
 
     assert_int_equal(10664, (uintptr_t) list_get(l, 0));
+    assert_fly_status(FLY_OK);
     assert_int_equal(456, (uintptr_t) list_get(l, l->size - 2));
+    assert_fly_status(FLY_OK);
     assert_int_equal(123, (uintptr_t) list_get(l, l->size - 1));
+    assert_fly_status(FLY_OK);
     assert_null(list_get(l, SIZE_MAX));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
     assert_null(list_get(l, l->size));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
     assert_null(list_get(l, l->size + 1));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
   }
 
   while (l->size) {
     list_pop(l);
+    assert_fly_status(FLY_OK);
   }
 
   assert_null(list_get(l, 0));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, 1));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, SIZE_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
   assert_null(list_get(l, l->size));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
 
   if (l->kind == LISTKIND_ARRAY) {
     assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
   }
 
   list_del(l);
