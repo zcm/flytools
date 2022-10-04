@@ -32,7 +32,9 @@ static void **state;
 #endif
 #endif
 
-#ifndef assert_fly_error
-#define assert_fly_error(err) \
-  assert_int_equal(flytools_last_error(), err)
+#ifndef assert_fly_status
+#define assert_fly_status(err) \
+  assert_string_equal( \
+      (char *) FLY_STATUS_STR[err], \
+      (char *) FLY_STATUS_STR[fly_status])
 #endif

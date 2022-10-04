@@ -23,6 +23,7 @@ TEST(test_list_new, {
   list *l = list_new();
   assert_non_null(l);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
   list_del(l);
 })
 
@@ -34,17 +35,23 @@ void do_test_list_push_pop(listkind *kind) {
 
   list *l = list_new_kind(kind);
   assert_non_null(l);
+  assert_fly_status(FLY_OK);
 
   list_push(l, data[0]);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[1]);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[2]);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[3]);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[4]);
   assert_int_equal(5, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
@@ -52,26 +59,31 @@ void do_test_list_push_pop(listkind *kind) {
   assert_non_null(l);
   assert_string_equal("fifth", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("fourth", value);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("third", value);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("second", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("first", value);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   list_del(l);
 }
@@ -83,17 +95,23 @@ void do_test_list_unshift_shift(listkind *kind) {
 
   list *l = list_new_kind(kind);
   assert_non_null(l);
+  assert_fly_status(FLY_OK);
 
   list_unshift(l, data[0]);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[1]);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[2]);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[3]);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[4]);
   assert_int_equal(5, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
@@ -101,26 +119,31 @@ void do_test_list_unshift_shift(listkind *kind) {
   assert_non_null(l);
   assert_string_equal("fifth", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("fourth", value);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("third", value);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("second", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("first", value);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   list_del(l);
 }
@@ -132,17 +155,23 @@ void do_test_list_push_shift(listkind *kind) {
 
   list *l = list_new_kind(kind);
   assert_non_null(l);
+  assert_fly_status(FLY_OK);
 
   list_push(l, data[0]);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[1]);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[2]);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[3]);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
   list_push(l, data[4]);
   assert_int_equal(5, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
@@ -150,26 +179,31 @@ void do_test_list_push_shift(listkind *kind) {
   assert_non_null(l);
   assert_string_equal("first", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("second", value);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("third", value);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("fourth", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_shift(l);
   assert_non_null(l);
   assert_string_equal("fifth", value);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   list_del(l);
 }
@@ -181,17 +215,23 @@ void do_test_list_unshift_pop(listkind *kind) {
 
   list *l = list_new_kind(kind);
   assert_non_null(l);
+  assert_fly_status(FLY_OK);
 
   list_unshift(l, data[0]);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[1]);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[2]);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[3]);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
   list_unshift(l, data[4]);
   assert_int_equal(5, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
@@ -199,26 +239,31 @@ void do_test_list_unshift_pop(listkind *kind) {
   assert_non_null(l);
   assert_string_equal("first", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("second", value);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("third", value);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("fourth", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
 
   value = list_pop(l);
   assert_non_null(l);
   assert_string_equal("fifth", value);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   list_del(l);
 }
@@ -243,22 +288,36 @@ TESTCALL(test_sllist_unshift_pop, do_test_list_unshift_pop(LISTKIND_SLINK))
 void do_test_list_pop_empty(listkind *kind) {
   list *l = list_new_kind(kind);
   assert_non_null(l);
+  assert_fly_status(FLY_OK);
 
   assert_int_equal(0, l->size);
   assert_null(list_pop(l));
   assert_int_equal(0, l->size);
-
-  list_push(l, l);
-  assert_int_equal(1, l->size);
-  assert_ptr_equal(l, list_pop(l));
-  assert_int_equal(0, l->size);
-  assert_null(list_pop(l));
+  assert_fly_status(FLY_EMPTY);
 
   list_push(l, l);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
   assert_ptr_equal(l, list_pop(l));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
+
   assert_null(list_pop(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_EMPTY);
+
+  list_push(l, l);
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_ptr_equal(l, list_pop(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_pop(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_EMPTY);
 
   list_del(l);
 }
@@ -266,22 +325,36 @@ void do_test_list_pop_empty(listkind *kind) {
 void do_test_list_shift_empty(listkind *kind) {
   list *l = list_new_kind(kind);
   assert_non_null(l);
+  assert_fly_status(FLY_OK);
 
   assert_int_equal(0, l->size);
   assert_null(list_shift(l));
   assert_int_equal(0, l->size);
-
-  list_unshift(l, l);
-  assert_int_equal(1, l->size);
-  assert_ptr_equal(l, list_shift(l));
-  assert_int_equal(0, l->size);
-  assert_null(list_shift(l));
+  assert_fly_status(FLY_EMPTY);
 
   list_unshift(l, l);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
   assert_ptr_equal(l, list_shift(l));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
+
   assert_null(list_shift(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_EMPTY);
+
+  list_unshift(l, l);
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_ptr_equal(l, list_shift(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_shift(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_EMPTY);
 
   list_del(l);
 }
@@ -295,6 +368,7 @@ void do_test_list_del_nonempty(listkind *kind) {
   list_push(l, l);
 
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
 
   list_del(l);
 }

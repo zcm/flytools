@@ -34,13 +34,6 @@ int verify_dict_size(dict * restrict d) {
   return d->size == bucket_sum;
 }
 
-#ifndef assert_fly_status
-#define assert_fly_status(err) \
-  assert_string_equal( \
-      (char *) FLY_STATUS_STR[err], \
-      (char *) FLY_STATUS_STR[fly_status])
-#endif
-
 void do_test_dict_new() {
   dict *d = dict_new();
   assert_non_null(d);
