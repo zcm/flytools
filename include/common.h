@@ -49,33 +49,29 @@
  
 #ifdef FLYAPIBUILD
 #define FLY_ERR(errcode) \
-  flytools_error(errcode, FLYERRMSG[errcode], __func__, __FILE__, __LINE__)
+  fly_status = errcode
 #define FLY_ERR_CLEAR \
-  flytools_error(EFLYOK, NULL, NULL, NULL, -1)
+  fly_status = FLY_OK
 #endif
 
-enum FLYERRCODE {
-  EFLYOK = 0,
-  EFLYNOMEM,
-  EFLYBADFN,
-  EFLYBADFNONLY1,
-  EFLYBADFNONLY2,
-  EFLYBADFNBOTH,
-  EFLYBADCAST,
-  EFLYEMPTY,
-  EFLYBADARG,
-  EFLYINTERNAL,
-  FLYERRCODE_LENGTH /* not an errorcode -- do not use */
-};
+#define FLY_STATUSES(DEFINITION)   \
+  DEFINITION(FLY_OK)               \
+  DEFINITION(FLY_EMPTY)            \
+  DEFINITION(FLY_NOT_FOUND)        \
+  DEFINITION(FLY_E_NULL_PTR)       \
+  DEFINITION(FLY_E_INVALID_ARG)    \
+  DEFINITION(FLY_E_OUT_OF_RANGE)   \
+  DEFINITION(FLY_E_OUT_OF_MEMORY)  \
 
-extern const char * const FLYERRMSG[FLYERRCODE_LENGTH];
+#define AS_ENUM_DEFINITION(ENUM_NAME) ENUM_NAME,
 
-FLYAPI void flytools_onerror(void (*h)(int, const char * const, const char * const, const char * const, int));
+extern FLYAPI enum FLY_STATUS {
+  FLY_STATUSES(AS_ENUM_DEFINITION)
+  FLY_STATUS_LEN
+} fly_status;
 
-FLYAPI void flytools_onerror_detach();
+#undef AS_ENUM_DEFINITION
 
-FLYAPI void flytools_error(int err, const char * const msg, const char * const fn, const char * const file, int line);
-
-FLYAPI int flytools_last_error();
+extern FLYAPI const char * const FLY_STATUS_STR[FLY_STATUS_LEN];
 
 #endif
