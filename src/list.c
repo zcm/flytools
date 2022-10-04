@@ -157,25 +157,25 @@ FLYAPI list *list_new_kind_with(
   list *ret = allocproc(kind->size);
 
   if(ret != NULL) {
-    FLY_ERR_CLEAR;
+    fly_status = FLY_OK;
 
     flyobj_init((struct flyobj *) ret, allocproc, freeproc);
     ret->kind = kind;
     kind->init(ret);
   } else {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
   }
   return ret;
 }
 
 FLYAPI void list_del(list *l) {
   if (l != NULL) {
-    FLY_ERR_CLEAR;
+    fly_status = FLY_OK;
 
     l->kind->destroy(l);
     flyobj_del((struct flyobj *) l);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
@@ -200,15 +200,15 @@ static inline void *_unsafe_sllist_get(sllist *l, size_t i) {
 
 #define CHECK_LIST_BOUNDS(l, i) \
   if (!l) {                     \
-    FLY_ERR(FLY_E_NULL_PTR);    \
+    fly_status = FLY_E_NULL_PTR;    \
     return NULL;                \
   }                             \
   if (!l->size) {               \
-    FLY_ERR(FLY_EMPTY);         \
+    fly_status = FLY_EMPTY;         \
     return NULL;                \
   }                             \
   if (i >= l->size) {           \
-    FLY_ERR(FLY_E_OUT_OF_RANGE);\
+    fly_status = FLY_E_OUT_OF_RANGE;\
     return NULL;                \
   }
 
@@ -239,13 +239,13 @@ static void *list_end_remove_op(void * restrict vl, void *(*remove)(void *)) {
 
   if (l != NULL) {
     if (l->size > 0) {
-      FLY_ERR_CLEAR;
+      fly_status = FLY_OK;
       return remove(l);
     } else {
-      FLY_ERR(FLY_EMPTY);
+      fly_status = FLY_EMPTY;
     }
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 
   return NULL;
@@ -263,10 +263,10 @@ static void list_end_add_op(void *vl, void *data, void (*add)(void *, void *)) {
   list *l = (list *) vl;
 
   if (l != NULL) {
-    FLY_ERR_CLEAR;
+    fly_status = FLY_OK;
     add(l, data);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
@@ -280,11 +280,11 @@ FLYAPI void list_unshift(list *l, void *data) {
 
 FLYAPI void list_concat(list *l1, list *l2) {
   if (!(l1 && l2)) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return;
   }
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 
   if (l1->kind == l2->kind) {
     l1->kind->concat(l1, l2);
@@ -297,7 +297,7 @@ FLYAPI void list_concat(list *l1, list *l2) {
 
 FLYAPI void list_concat_into(list *l1, list *l2) {
   if (l1 == NULL || l2 == NULL) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return;
   }
 
@@ -307,7 +307,7 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
     return;
   }
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 
   while (l2->size > 0) {
     list_unshift(l1, list_pop(l2));
@@ -345,12 +345,12 @@ static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *)) {
 
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
   if (!(l && matcher)) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
 
   if (!l->size) {
-    FLY_ERR(FLY_EMPTY);
+    fly_status = FLY_EMPTY;
     return NULL;
   }
 
@@ -438,7 +438,7 @@ static void *sllist_remove_first(sllist *l, int (*matcher)(void *)) {
 
 FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
   if (!(l && matcher)) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
 
@@ -446,7 +446,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
     return NULL;
   }
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 
   return l->kind->remove_first(l, matcher);
 }
@@ -468,11 +468,11 @@ static void _unsafe_sllist_foreach(sllist *l, int (*fn)(void *, size_t)) {
 
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
   if (!(l && fn)) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return;
   }
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 
   l->kind->foreach(l, fn);
 }
@@ -600,7 +600,7 @@ static int do_nothing(void *unused_data, size_t unused_i) {
 FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   if (!(l && matcher)) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return 0;
   }
 
@@ -653,7 +653,7 @@ static inline bool arlist_ensure_capacity(arlist *l, size_t new_elements) {
 
 #define ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements)  \
   if (!arlist_ensure_capacity(l, new_elements)) {    \
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);                    \
+    fly_status = FLY_E_OUT_OF_MEMORY;                    \
     return;                                          \
   }
 
@@ -675,7 +675,7 @@ static void _unsafe_arlist_unshift(arlist *l, void *data) {
   l->size++;
   l->elements[0] = data;
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 }
 
 FLYAPI void arlist_unshift(arlist *l, void *data) {
@@ -711,7 +711,7 @@ FLYAPI void arlist_concat(arlist * restrict l1, arlist * restrict l2) {
 
   l1->size += l2->size;
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 }
 
 #undef ARLIST_HAS_CAPACITY_OR_DIE
@@ -731,7 +731,7 @@ static inline void *listnode_alloc(void * restrict l, size_t node_size) {
   void *node;
 
   if (!(node = ((struct flyobj *) l)->alloc(node_size))) {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
   }
 
   return node;
@@ -743,7 +743,7 @@ static void dllist_init(dllist *l) {
   if ((l->head = l->alloc(sizeof (dllistnode)))) {
     dllistnode_head_init(l->head);
   } else {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
   }
 }
 
@@ -848,7 +848,7 @@ static void sllist_init(sllist *l) {
   if ((l->head = l->last = l->alloc(sizeof (dllistnode)))) {
     sllistnode_head_init(l->head);
   } else {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
   }
 }
 

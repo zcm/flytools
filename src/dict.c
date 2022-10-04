@@ -91,9 +91,9 @@ static int _generic_key_matcher(void *node) {
 
 dictnode *dictnode_alloc_with(void *(*alloc)(size_t)) {
 	void *ret = (*alloc)(sizeof(dictnode));
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 	if(ret == NULL) {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
 	}
 	return (dictnode *)ret;
 }
@@ -107,9 +107,9 @@ dictnode *dictnode_new(
     int (*key_matcher)(const void *, const void *, const void *),
     void *(*alloc)(size_t)) {
   dictnode *ret = dictnode_alloc_with(alloc);
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
   if(ret == NULL) {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
   } else {
     ret->key = key;
     ret->value = value;
@@ -120,22 +120,22 @@ dictnode *dictnode_new(
 }
 
 void dictnode_del(dictnode *dnode, void (*del)(void *)) {
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
   if (dnode != NULL) {
     if (dnode->key_matcher == &_str_key_matcher) {
       free(dnode->key);
     }
     (*del)(dnode);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
 FLYAPI dict *dict_alloc_with(void *(*alloc)(size_t)) {
 	void *ret = (*alloc)(sizeof(dict));
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 	if(ret == NULL) {
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
 	}
 	return (dict *)ret;
 }
@@ -148,20 +148,20 @@ static dict *_dict_init_with(
     dict *d, const size_t size,
     void *(*alloc)(size_t), void (*del)(void *)) {
   if (!d) {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
 
   if (alloc == &malloc) {
     if (!(d->buckets = (struct dbucket *)
           calloc(size, sizeof (struct dbucket)))) {
-      FLY_ERR(FLY_E_OUT_OF_MEMORY);
+      fly_status = FLY_E_OUT_OF_MEMORY;
       return NULL;
     }
     if (!(d->items = (struct dictnode **)
           calloc(size * LOAD_FACTOR / 100, sizeof (struct dictnode *)))) {
       free(d->buckets);  /* supposedly this succeeded so don't leak it */
-      FLY_ERR(FLY_E_OUT_OF_MEMORY);
+      fly_status = FLY_E_OUT_OF_MEMORY;
       return NULL;
     }
   } else {
@@ -169,7 +169,7 @@ static dict *_dict_init_with(
           memset(
             alloc(size * sizeof (struct dbucket)),
             0, size * sizeof (struct dbucket)))) {
-      FLY_ERR(FLY_E_OUT_OF_MEMORY);
+      fly_status = FLY_E_OUT_OF_MEMORY;
       return NULL;
     }
     if (!(d->items = (struct dictnode **)
@@ -177,7 +177,7 @@ static dict *_dict_init_with(
             alloc(size * LOAD_FACTOR / 100 * sizeof (struct dictnode *)),
             0, size * LOAD_FACTOR / 100 * sizeof (struct dictnode *)))) {
       del(d->buckets);  /* supposedly this succeeded so don't leak it */
-      FLY_ERR(FLY_E_OUT_OF_MEMORY);
+      fly_status = FLY_E_OUT_OF_MEMORY;
       return NULL;
     }
   }
@@ -187,14 +187,14 @@ static dict *_dict_init_with(
   d->alloc = alloc;
   d->del = del;
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 
   return d;
 }
 
 static inline int _check_power_of_two(const size_t size) {
   if (size <= 1 || (size & size - 1)) {
-    FLY_ERR(FLY_E_INVALID_ARG);
+    fly_status = FLY_E_INVALID_ARG;
     return 0;
   }
 
@@ -223,7 +223,7 @@ FLYAPI dict *dict_new_with(
       return _dict_init_with(d, size, alloc, del);
     }
 
-    FLY_ERR(FLY_E_OUT_OF_MEMORY);
+    fly_status = FLY_E_OUT_OF_MEMORY;
   }
 
 	return NULL;
@@ -240,7 +240,7 @@ FLYAPI dict *dict_new() {
     return _dict_init_with(d, DEFAULT_SIZE, &malloc, &free);
   }
 
-  FLY_ERR(FLY_E_OUT_OF_MEMORY);
+  fly_status = FLY_E_OUT_OF_MEMORY;
   return d;
 }
 
@@ -249,7 +249,7 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
     register size_t i = 0;
     const size_t capacity = (size_t) 1 << d->exponent;
 
-    FLY_ERR_CLEAR;
+    fly_status = FLY_OK;
 
     while (i < capacity) {
       if (d->buckets[i].flags & 0x1) {
@@ -269,7 +269,7 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
     d->del(d->items);
     d->del(d);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
@@ -291,7 +291,7 @@ static int _relocate_node(void *node, size_t unused_size) {
       } else if (!(bucket_list =
             list_new_kind_with(
               LISTKIND_SLINK, _curr_dict->alloc, _curr_dict->del))) {
-        FLY_ERR(FLY_E_OUT_OF_MEMORY);
+        fly_status = FLY_E_OUT_OF_MEMORY;
         return 1;
       }
 
@@ -366,7 +366,7 @@ static int _dict_resize(dict *d) {
   memset(items + og_item_capacity, 0,
       og_item_capacity * sizeof (struct dictnode *));
 
-  FLY_ERR_CLEAR;
+  fly_status = FLY_OK;
 
   for (i = 0; i < og_capacity; ++i) {
     if (buckets[i].data) {
@@ -422,7 +422,7 @@ static int _dict_resize(dict *d) {
 #define RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, amount) \
   if (100 * (d->size + amount) >> d->exponent > LOAD_FACTOR) { \
     if (_dict_resize(d)) { \
-      FLY_ERR(FLY_E_OUT_OF_MEMORY); \
+      fly_status = FLY_E_OUT_OF_MEMORY; \
       return; \
     } \
     goto start; \
@@ -476,7 +476,7 @@ start:
       _recycle_bin = NULL;
     } else if (!(bucket_list =
           list_new_kind_with(LISTKIND_SLINK, d->alloc, d->del))) {
-      FLY_ERR(FLY_E_OUT_OF_MEMORY);
+      fly_status = FLY_E_OUT_OF_MEMORY;
       return;
     }
 
@@ -497,23 +497,23 @@ ensure_updated:
 
 FLYAPI void dict_set(dict * restrict d, void *key, void *value) {
   if (d) {
-    FLY_ERR_CLEAR;
+    fly_status = FLY_OK;
 
     _dict_set_bucket_atomic(
         d, key, value, hash_xorshift64s((uint64_t) key), &_ptr_key_matcher);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
 FLYAPI void dict_sets(dict * restrict d, char *key, void *value) {
   if (d && key) {
-    FLY_ERR_CLEAR;
+    fly_status = FLY_OK;
 
     _dict_set_bucket_atomic(
         d, key, value, hash_string(key), &_str_key_matcher);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
@@ -522,11 +522,11 @@ static inline dictnode *_dict_lookup_using(
     dictnode *(*lookup_proc)(dict * restrict, void *)) {
   dictnode *found;
 
-  FLY_ERR_CLEAR;
-
-  if (!d) {
-    FLY_ERR(FLY_E_NULL_PTR);
+  if (!d || !lookup_proc) {
+    fly_status = FLY_E_NULL_PTR;
     return NULL;
+  } else {
+    fly_status = FLY_OK;
   }
 
   _match_key = key;

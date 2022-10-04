@@ -46,13 +46,6 @@
 #ifndef FLYAPI
 #define FLYAPI
 #endif
- 
-#ifdef FLYAPIBUILD
-#define FLY_ERR(errcode) \
-  fly_status = errcode
-#define FLY_ERR_CLEAR \
-  fly_status = FLY_OK
-#endif
 
 #define FLY_STATUSES(DEFINITION)   \
   DEFINITION(FLY_OK)               \

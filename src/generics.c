@@ -23,7 +23,7 @@ FLYAPI void flyobj_del(struct flyobj *obj) {
   if (obj != NULL) {
     obj->del(obj);
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
@@ -33,7 +33,7 @@ FLYAPI void flyobj_init(
     obj->alloc = alloc;
     obj->del = del;
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
@@ -41,7 +41,7 @@ FLYAPI void flyobj_set_freeproc(struct flyobj *obj, void (*proc)(void *)) {
   if (obj != NULL) {
     obj->del = proc == NULL ? flyobj_get_default_freeproc() : proc;
   } else {
-    FLY_ERR(FLY_E_NULL_PTR);
+    fly_status = FLY_E_NULL_PTR;
   }
 }
 
