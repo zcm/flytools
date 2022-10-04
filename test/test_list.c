@@ -650,9 +650,11 @@ DEFINE_FUNC_CHAR_IS(0, e);
 static void do_test_list_find_first(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
+  assert_fly_status(FLY_OK);
 
   assert_null(list_find_first(l, &char0_is_f));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_push(l, "first");
   list_push(l, "second");
@@ -663,21 +665,39 @@ static void do_test_list_find_first(listkind *kind) {
   list_push(l, "seventh");
 
   assert_int_equal(7, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_find_first(l, &char0_is_f));
   assert_string_equal("first", value);
+  assert_fly_status(FLY_OK);
   assert_non_null(value = list_find_first(l, &char1_is_e));
   assert_string_equal("second", value);
-  assert_non_null(value = list_find_first(l, &char3_is_r));
-  assert_string_equal("third", value);
-  assert_non_null(value = list_find_first(l, &char2_is_x));
-  assert_string_equal("sixth", value);
-  assert_non_null(value = list_find_first(l, &char2_is_v));
-  assert_string_equal("seventh", value);
+  assert_fly_status(FLY_OK);
 
   assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
+
+  assert_non_null(value = list_find_first(l, &char3_is_r));
+  assert_string_equal("third", value);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
+
+  assert_non_null(value = list_find_first(l, &char2_is_x));
+  assert_string_equal("sixth", value);
+  assert_fly_status(FLY_OK);
+  assert_non_null(value = list_find_first(l, &char2_is_v));
+  assert_string_equal("seventh", value);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_del(l);
 }
@@ -707,12 +727,11 @@ int value_after_null(void *value) {
   value_was_null = value == NULL;
   return 0;
 }
-#endif
 
-#ifndef METHODS_ONLY
 static void do_test_list_find_first_null(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
+  assert_fly_status(FLY_OK);
 
   list_unshift(l, "three");
   list_unshift(l, "two");
@@ -720,32 +739,55 @@ static void do_test_list_find_first_null(listkind *kind) {
   list_unshift(l, "one");
 
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
   value_was_null = 0;
 
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_find_first(l, &char0_is_t));
   assert_string_equal("two", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_find_first(l, &char0_is_o));
   assert_string_equal("one", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_null(list_find_first(l, &value_is_null));
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_non_null(value = list_find_first(l, &value_after_null));
   assert_string_equal("two", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_find_first(l, &char0_is_e));
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_shift(l);
   list_shift(l);
   list_unshift(l, "one");
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
 
   assert_null(list_find_first(l, &value_after_null));
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_del(l);
 }
@@ -762,9 +804,11 @@ TESTCALL(test_sllist_find_first_null,
 static void do_test_list_remove_first(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
+  assert_fly_status(FLY_OK);
 
   assert_null(list_remove_first(l, &char0_is_f));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_push(l, "first");
   list_push(l, "second");
@@ -775,35 +819,80 @@ static void do_test_list_remove_first(listkind *kind) {
   list_push(l, "seventh");
 
   assert_int_equal(7, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(7, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_non_null(value = list_remove_first(l, &char0_is_f));
   assert_string_equal("first", value);
   assert_int_equal(6, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(6, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char0_is_f));
   assert_string_equal("fourth", value);
   assert_int_equal(5, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(5, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char2_is_v));
   assert_string_equal("seventh", value);
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(4, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char2_is_x));
   assert_string_equal("sixth", value);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(3, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char1_is_e));
   assert_string_equal("second", value);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(2, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char0_is_f));
   assert_string_equal("fifth", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char3_is_r));
   assert_string_equal("third", value);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   assert_null(list_remove_first(l, &char0_is_e));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_null(list_remove_first(l, &char0_is_f));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_del(l);
 }
@@ -817,6 +906,7 @@ TESTCALL(test_sllist_remove_first, do_test_list_remove_first(LISTKIND_SLINK))
 static void do_test_list_remove_first_null(listkind *kind) {
   list *l;
   assert_non_null(l = list_new_kind(kind));
+  assert_fly_status(FLY_OK);
 
   list_unshift(l, "three");
   list_unshift(l, "two");
@@ -824,38 +914,77 @@ static void do_test_list_remove_first_null(listkind *kind) {
   list_unshift(l, "one");
 
   assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
   value_was_null = 0;
 
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(4, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char0_is_t));
   assert_string_equal("two", value);
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(3, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_remove_first(l, &char0_is_o));
   assert_string_equal("one", value);
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(2, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_non_null(value = list_remove_first(l, &value_after_null));
   assert_string_equal("three", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_unshift(l, "one 2.0");
   list_push(l, "three 2.0");
   assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(3, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_null(list_remove_first(l, &value_is_null));
   assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(2, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_non_null(value = list_shift(l));
   assert_string_equal("one 2.0", value);
   assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_remove_first(l, &char0_is_e));
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_non_null(value = list_shift(l));
   assert_string_equal("three 2.0", value);
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
 
   assert_null(list_remove_first(l, &value_after_null));
   assert_int_equal(0, l->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   list_del(l);
 }

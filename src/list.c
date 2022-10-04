@@ -319,10 +319,12 @@ static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
 
   for (i = l->size; i; i--, each++) {
     if (matcher(*each)) {
+      fly_status = FLY_OK;
       return *each;
     }
   }
 
+  fly_status = FLY_NOT_FOUND;
   return NULL;
 }
 
@@ -332,11 +334,13 @@ static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *)) {
 
   while (current != head) {
     if (matcher(current->data)) {
+      fly_status = FLY_OK;
       return current->data;
     }
     current = current->next;
   }
 
+  fly_status = FLY_NOT_FOUND;
   return NULL;
 }
 
@@ -345,9 +349,8 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
-
   if (!l->size) {
-    fly_status = FLY_EMPTY;
+    fly_status = FLY_NOT_FOUND;
     return NULL;
   }
 
@@ -367,10 +370,12 @@ static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
 
       l->size--;
 
+      fly_status = FLY_OK;
       return ret;
     }
   }
 
+  fly_status = FLY_NOT_FOUND;
   return NULL;
 }
 
@@ -401,12 +406,14 @@ static void *dllist_remove_first(dllist *l, int (*matcher)(void *)) {
       l->del(current);
       l->size--;
 
+      fly_status = FLY_OK;
       return data;
     }
 
     current = current->next;
   }
 
+  fly_status = FLY_NOT_FOUND;
   return NULL;
 }
 
@@ -424,12 +431,14 @@ static void *sllist_remove_first(sllist *l, int (*matcher)(void *)) {
       l->del(current);
       l->size--;
 
+      fly_status = FLY_OK;
       return data;
     }
 
     current = (prev = current)->next;
   }
 
+  fly_status = FLY_NOT_FOUND;
   return NULL;
 }
 
@@ -438,12 +447,10 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
-
   if (!l->size) {
+    fly_status = FLY_NOT_FOUND;
     return NULL;
   }
-
-  fly_status = FLY_OK;
 
   return l->kind->remove_first(l, matcher);
 }
