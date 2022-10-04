@@ -98,25 +98,25 @@ struct pet {
 struct pet cat_cj = { "cj", "cat" },
            cat_donna = {"donna", "cat" },
            dog_wahwa = {"wahwa", "dog" };
-#endif
 
-TEST(test_dict_set_then_get, {
-  (void) state;
-
+void do_test_dict_set_then_get() {
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   dict_set(d, &cat_cj, "purr");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &cat_donna, "chirp");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &dog_wahwa, "yip");
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   char *value;
@@ -124,38 +124,42 @@ TEST(test_dict_set_then_get, {
   assert_non_null(value = dict_get(d, &dog_wahwa));
   assert_string_equal("yip", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_get(d, &cat_donna));
   assert_string_equal("chirp", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_get(d, &cat_cj));
   assert_string_equal("purr", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
 
-TEST(test_dict_sets_then_gets, {
-  (void) state;
-
+void do_test_dict_sets_then_gets() {
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   dict_sets(d, "cats", "meow");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "dogs", "bark");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "birds", "chirp");
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   char *value;
@@ -163,20 +167,27 @@ TEST(test_dict_sets_then_gets, {
   assert_non_null(value = dict_gets(d, "dogs"));
   assert_string_equal("bark", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "cats"));
   assert_string_equal("meow", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "birds"));
   assert_string_equal("chirp", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
+#endif
+
+TESTCALL(test_dict_set_then_get, do_test_dict_set_then_get())
+TESTCALL(test_dict_sets_then_gets, do_test_dict_sets_then_gets())
 
 #ifndef METHODS_ONLY
 struct bev {
@@ -186,25 +197,25 @@ struct bev {
 struct bev coke = { "pepsi", "cola" },
            energy = { "monster", "legal stimulant" },
            fruit = { "fanta", "juice substitute" };
-#endif
 
-TEST(test_dict_set_then_remove, {
-  (void) state;
-
+void do_test_dict_set_then_remove() {
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   dict_set(d, &coke, "$2");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &energy, "$3");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &fruit, "$1");
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   char *value;
@@ -212,42 +223,47 @@ TEST(test_dict_set_then_remove, {
   assert_non_null(value = dict_remove(d, &fruit));
   assert_string_equal("$1", value);
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &coke));
   assert_string_equal("$2", value);
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &energy));
   assert_string_equal("$3", value);
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_null(dict_remove(d, &fruit));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
 
-TEST(test_dict_sets_then_removes, {
-  (void) state;
-
+void do_test_dict_sets_then_removes() {
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   dict_sets(d, "apple", "red");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "banana", "yellow");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "lime", "green");
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   char *value;
@@ -255,46 +271,57 @@ TEST(test_dict_sets_then_removes, {
   assert_non_null(value = dict_removes(d, "apple"));
   assert_string_equal("red", value);
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "lime"));
   assert_string_equal("green", value);
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "banana"));
   assert_string_equal("yellow", value);
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_null(dict_removes(d, "apple"));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
+#endif
 
-TEST(test_dict_set_sets_get_gets_remove_removes_combo, {
-  (void) state;
+TESTCALL(test_dict_set_then_remove, do_test_dict_set_then_remove())
+TESTCALL(test_dict_sets_then_removes, do_test_dict_sets_then_removes())
 
+#ifndef METHODS_ONLY
+void do_test_dict_set_sets_get_gets_remove_removes_combo() {
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   dict_set(d, &test_dict_new, "it's new");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "banana", "it's yellow");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_set(d, &printf, "it's printing");
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   dict_sets(d, "dreamcast", "it's thinking");
   assert_int_equal(4, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   char *value;
@@ -302,124 +329,149 @@ TEST(test_dict_set_sets_get_gets_remove_removes_combo, {
   assert_non_null(value = dict_get(d, &printf));
   assert_string_equal("it's printing", value);
   assert_int_equal(4, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "dreamcast"));
   assert_string_equal("it's thinking", value);
   assert_int_equal(4, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_get(d, &test_dict_new));
   assert_string_equal("it's new", value);
   assert_int_equal(4, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_gets(d, "banana"));
   assert_string_equal("it's yellow", value);
   assert_int_equal(4, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &printf));
   assert_string_equal("it's printing", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "dreamcast"));
   assert_string_equal("it's thinking", value);
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, &test_dict_new));
   assert_string_equal("it's new", value);
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_removes(d, "banana"));
   assert_string_equal("it's yellow", value);
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_null(dict_remove(d, &test_dict_new));
+  assert_fly_status(FLY_NOT_FOUND);
   assert_null(dict_remove(d, &printf));
+  assert_fly_status(FLY_NOT_FOUND);
   assert_null(dict_removes(d, "dreamcast"));
+  assert_fly_status(FLY_NOT_FOUND);
   assert_null(dict_removes(d, "banana"));
+  assert_fly_status(FLY_NOT_FOUND);
+
   assert_int_equal(0, d->size);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
+#endif
 
-TEST(test_dict_get_from_empty, {
-  (void) state;
+TESTCALL(
+    test_dict_set_sets_get_gets_remove_removes_combo,
+    do_test_dict_set_sets_get_gets_remove_removes_combo())
 
+#ifndef METHODS_ONLY
+void do_test_dict_get_from_empty() {
   dict *d = dict_new_of_size(2);
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   assert_null(dict_get(d, &test_dict_new));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
 
-TEST(test_dict_remove_from_empty, {
-  (void) state;
-
+void do_test_dict_remove_from_empty() {
   dict *d = dict_new_of_size(2);
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   assert_null(dict_remove(d, &test_dict_new));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
 
-TEST(test_dict_gets_from_empty, {
-  (void) state;
-
+void do_test_dict_gets_from_empty() {
   dict *d = dict_new_of_size(2);
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   assert_null(dict_get(d, "nothing"));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
 
-TEST(test_dict_removes_from_empty, {
-  (void) state;
-
+void do_test_dict_removes_from_empty() {
   dict *d = dict_new_of_size(2);
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   assert_null(dict_remove(d, "nothing"));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
-})
+}
+#endif
+
+TESTCALL(test_dict_get_from_empty, do_test_dict_get_from_empty())
+TESTCALL(test_dict_remove_from_empty, do_test_dict_remove_from_empty())
+TESTCALL(test_dict_gets_from_empty, do_test_dict_gets_from_empty())
+TESTCALL(test_dict_removes_from_empty, do_test_dict_removes_from_empty())
 
 #ifndef METHODS_ONLY
 void do_test_dict_null_as_key() {
   dict *d;
   assert_non_null(d = dict_new_of_size(32));
+  assert_fly_status(FLY_OK);
 
   char *one = "first";
   char *two = "second";
 
   dict_set(d, one, "uno");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   dict_set(d, NULL, "cero");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
   dict_set(d, two, "dos");
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   char *value;
@@ -427,38 +479,43 @@ void do_test_dict_null_as_key() {
   assert_non_null(value = dict_get(d, one));
   assert_string_equal("uno", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
+
   assert_non_null(value = dict_get(d, NULL));
   assert_string_equal("cero", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
+
   assert_non_null(value = dict_get(d, two));
   assert_string_equal("dos", value);
   assert_int_equal(3, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_non_null(value = dict_remove(d, NULL));
   assert_string_equal("cero", value);
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_true(verify_dict_size(d));
 
   assert_null(value = dict_get(d, NULL));
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
+
   value = dict_remove(d, NULL);
   assert_null(value);
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
   assert_true(verify_dict_size(d));
 
   dict_del(d);
 }
 #endif
 
-TEST(test_dict_null_as_key, {
-  (void) state;
-
-  do_test_dict_null_as_key();
-})
+TESTCALL(test_dict_null_as_key, do_test_dict_null_as_key())
 
 #ifndef METHODS_ONLY
 void do_test_dict_remove_after_collision() {
@@ -481,10 +538,12 @@ void do_test_dict_remove_after_collision() {
   dict_set(d, one, first);
   assert_int_equal(d->size, 1);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_OK);
 
   dict_set(d, two, second);
   assert_int_equal(d->size, 2);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_OK);
 
   char *value;
 
@@ -492,71 +551,83 @@ void do_test_dict_remove_after_collision() {
   assert_string_equal(first, value);
   assert_int_equal(d->size, 2);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_OK);
 
   assert_non_null(value = (char *) dict_get(d, two));
   assert_string_equal(second, value);
   assert_int_equal(d->size, 2);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_OK);
 
   assert_non_null(value = (char *) dict_remove(d, one));
   assert_string_equal(first, value);
   assert_int_equal(d->size, 1);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_OK);
 
   assert_null(value = (char *) dict_remove(d, one));
   assert_int_equal(d->size, 1);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_non_null(value = (char *) dict_get(d, two));
   assert_string_equal(second, value);
   assert_int_equal(d->size, 1);
   assert_int_equal(d->exponent, 2);
+  assert_fly_status(FLY_OK);
 
   dict_del(d);
 }
-#endif
 
-TEST(test_dict_remove_after_collision, {
-  (void) state;
-
-  do_test_dict_remove_after_collision();
-})
-
-TEST(test_dict_set_overwrites, {
-  (void) state;
-
+void do_test_dict_set_overwrites() {
   dict *d = dict_new();
   assert_non_null(d);
   assert_fly_status(FLY_OK);
 
   dict_set(d, (void *) 1, "one");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_string_equal("one", dict_get(d, (void *) 1));
+  assert_fly_status(FLY_OK);
 
   dict_set(d, (void *) 1, "uno");
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_string_equal("uno", dict_get(d, (void *) 1));
+  assert_fly_status(FLY_OK);
 
   dict_set(d, (void *) 10, "ten");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_string_equal("ten", dict_get(d, (void *) 10));
+  assert_fly_status(FLY_OK);
 
   dict_set(d, (void *) 10, "cien");
   assert_int_equal(2, d->size);
+  assert_fly_status(FLY_OK);
   assert_string_equal("cien", dict_get(d, (void *) 10));
+  assert_fly_status(FLY_OK);
 
   assert_string_equal("uno", dict_remove(d, (void *) 1));
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_OK);
   assert_null(dict_get(d, (void *) 1));
   assert_int_equal(1, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   assert_string_equal("cien", dict_remove(d, (void *) 10));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_OK);
   assert_null(dict_get(d, (void *) 10));
   assert_int_equal(0, d->size);
+  assert_fly_status(FLY_NOT_FOUND);
 
   dict_del(d);
-})
+}
+#endif
+
+TESTCALL(test_dict_remove_after_collision, do_test_dict_remove_after_collision())
+TESTCALL(test_dict_set_overwrites, do_test_dict_set_overwrites())
 
 #ifndef METHODS_ONLY
 void *(*volatile _passthrough_malloc)(size_t) = &malloc;

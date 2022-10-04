@@ -525,13 +525,13 @@ static inline dictnode *_dict_lookup_using(
   if (!d || !lookup_proc) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
-  } else {
-    fly_status = FLY_OK;
   }
 
   _match_key = key;
-  found = lookup_proc(d, key);
+  fly_status =
+    (found = lookup_proc(d, key)) ? FLY_OK : FLY_NOT_FOUND;
   _match_key = NULL;
+
   return found;
 }
 
