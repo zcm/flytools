@@ -21,22 +21,10 @@
 
 #ifdef _MSC_VER
 #define llogb logb
-#define thread_local __declspec(thread)
-#else
-#ifdef __TURBOC__
-#define thread_local
-#define inline
-#else
-#include <threads.h>
-#endif
 #endif
 
 #include "dict.h"
 #include "internal/dict.h"
-
-#if __STDC_VERSION__ < 199901L
-#define restrict
-#endif
 
 #ifdef __TURBOC__
 // this is here to fix a bug in tlib... I have no idea why

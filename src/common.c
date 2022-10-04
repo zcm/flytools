@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include "common.h"
 
-FLYAPI enum FLY_STATUS fly_status = FLY_OK;
+static thread_local enum FLY_STATUS real_fly_status = FLY_OK;
+
+FLYAPI enum FLY_STATUS *fly_status_addr() {
+  return &real_fly_status;
+}
 
 #define AS_NAME_STRING(ENUM_NAME) #ENUM_NAME,
 

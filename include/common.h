@@ -16,6 +16,27 @@
 #ifndef __FLYTOOLS_COMMON_H__
 #define __FLYTOOLS_COMMON_H__
 
+#if __STDC_VERSION__ < 202311L
+
+#ifndef thread_local
+#if defined(_MSC_VER)
+#define thread_local __declspec(thread)
+#elif defined(__TURBOC__)
+#define thread_local
+#else
+#include <threads.h>
+#endif
+#endif /* thread_local */
+
+#if __STDC_VERSION__ < 199901L
+
+#ifndef restrict
+#define restrict
+#endif
+
+#endif /* 199901L */
+#endif /* 202311L */
+
 #ifdef WIN32
 #define __func__ __FUNCTION__
 #endif
@@ -58,10 +79,13 @@
 
 #define AS_ENUM_DEFINITION(ENUM_NAME) ENUM_NAME,
 
-extern FLYAPI enum FLY_STATUS {
+enum FLY_STATUS {
   FLY_STATUSES(AS_ENUM_DEFINITION)
   FLY_STATUS_LEN
-} fly_status;
+};
+
+FLYAPI enum FLY_STATUS *fly_status_addr();
+#define fly_status (*fly_status_addr())
 
 #undef AS_ENUM_DEFINITION
 
