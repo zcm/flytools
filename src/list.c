@@ -231,48 +231,51 @@ FLYAPI void *sllist_get(sllist *l, size_t i) {
 
 // struct member interaction
 
-static void *list_end_remove_op(void * restrict vl, void *(*remove)(void *)) {
+static inline void *list_end_remove_op(
+    void * restrict vl, void *(*remove)(void *)) {
   list *l = (list *) vl;
 
-  if (l != NULL) {
-    if (l->size > 0) {
-      fly_status = FLY_OK;
-      return remove(l);
-    } else {
-      fly_status = FLY_EMPTY;
-    }
-  } else {
-    fly_status = FLY_E_NULL_PTR;
+  if (l->size > 0) {
+    fly_status = FLY_OK;
+    return remove(l);
   }
 
+  fly_status = FLY_EMPTY;
   return NULL;
 }
 
 FLYAPI void *list_pop(list *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, l->kind->pop);
 }
 
 FLYAPI void *list_shift(list *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, l->kind->shift);
 }
 
-static void list_end_add_op(void *vl, void *data, void (*add)(void *, void *)) {
-  list *l = (list *) vl;
-
-  if (l != NULL) {
-    fly_status = FLY_OK;
-    add(l, data);
-  } else {
-    fly_status = FLY_E_NULL_PTR;
-  }
-}
-
 FLYAPI void list_push(list *l, void *data) {
-  list_end_add_op(l, data, l->kind->push);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  fly_status = FLY_OK;
+  l->kind->push(l, data);
 }
 
 FLYAPI void list_unshift(list *l, void *data) {
-  list_end_add_op(l, data, l->kind->unshift);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  fly_status = FLY_OK;
+  l->kind->unshift(l, data);
 }
 
 FLYAPI void list_concat(list *l1, list *l2) {
@@ -668,7 +671,11 @@ static void _unsafe_arlist_push(arlist *l, void *data) {
 }
 
 FLYAPI void arlist_push(arlist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_arlist_push);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  _unsafe_arlist_push(l, data);
 }
 
 static void _unsafe_arlist_unshift(arlist *l, void *data) {
@@ -683,7 +690,11 @@ static void _unsafe_arlist_unshift(arlist *l, void *data) {
 }
 
 FLYAPI void arlist_unshift(arlist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_arlist_unshift);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  _unsafe_arlist_unshift(l, data);
 }
 
 static void *_unsafe_arlist_pop(arlist *l) {
@@ -691,6 +702,10 @@ static void *_unsafe_arlist_pop(arlist *l) {
 }
 
 FLYAPI void *arlist_pop(arlist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, &_unsafe_arlist_pop);
 }
 
@@ -705,6 +720,10 @@ static void *_unsafe_arlist_shift(arlist *l) {
 }
 
 FLYAPI void *arlist_shift(arlist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, &_unsafe_arlist_shift);
 }
 
@@ -775,7 +794,11 @@ static void _unsafe_dllist_push(dllist *l, void *data) {
 }
 
 FLYAPI void dllist_push(dllist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_dllist_push);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  _unsafe_dllist_push(l, data);
 }
 
 static void _unsafe_dllist_unshift(dllist *l, void *data) {
@@ -794,7 +817,11 @@ static void _unsafe_dllist_unshift(dllist *l, void *data) {
 }
 
 FLYAPI void dllist_unshift(dllist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_dllist_unshift);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  _unsafe_dllist_unshift(l, data);
 }
 
 static void *_unsafe_dllist_pop(dllist *l) {
@@ -811,6 +838,10 @@ static void *_unsafe_dllist_pop(dllist *l) {
 }
 
 FLYAPI void *dllist_pop(dllist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, &_unsafe_dllist_pop);
 }
 
@@ -828,6 +859,10 @@ static void *_unsafe_dllist_shift(dllist *l) {
 }
 
 FLYAPI void *dllist_shift(dllist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, _unsafe_dllist_shift);
 }
 
@@ -880,7 +915,11 @@ static void _unsafe_sllist_push(sllist *l, void *data) {
 }
 
 FLYAPI void sllist_push(sllist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_sllist_push);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  _unsafe_sllist_push(l, data);
 }
 
 static void _unsafe_sllist_unshift(sllist *l, void *data) {
@@ -902,7 +941,11 @@ static void _unsafe_sllist_unshift(sllist *l, void *data) {
 }
 
 FLYAPI void sllist_unshift(sllist *l, void *data) {
-  list_end_add_op(l, data, &_unsafe_sllist_unshift);
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  _unsafe_sllist_unshift(l, data);
 }
 
 static void *_unsafe_sllist_pop(sllist *l) {
@@ -917,6 +960,10 @@ static void *_unsafe_sllist_pop(sllist *l) {
 }
 
 FLYAPI void *sllist_pop(sllist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, &_unsafe_sllist_pop);
 }
 
@@ -939,6 +986,10 @@ static void *_unsafe_sllist_shift(sllist *l) {
 }
 
 FLYAPI void *sllist_shift(sllist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
   return list_end_remove_op(l, &_unsafe_sllist_shift);
 }
 

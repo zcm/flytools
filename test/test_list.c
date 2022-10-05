@@ -1232,6 +1232,60 @@ TESTCALL(test_arlist_remove_all, do_test_list_remove_all(LISTKIND_ARRAY))
 TESTCALL(test_dllist_remove_all, do_test_list_remove_all(LISTKIND_DLINK))
 TESTCALL(test_sllist_remove_all, do_test_list_remove_all(LISTKIND_SLINK))
 
+#ifndef METHODS_ONLY
+void do_test_list_e_null_ptr() {
+  list *l = list_new();
+  assert_non_null(l);
+  assert_fly_status(FLY_OK);
+
+  list_del(NULL);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  list_push(l, (void *) 0x1);
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  list_push(NULL, (void *) 0x2);
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  assert_int_equal(0x1, (uintptr_t) list_get(l, 0));
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_get(NULL, 0));
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  list_unshift(l, (void *) 0x3);
+  assert_int_equal(2, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_pop(NULL));
+  assert_int_equal(2, l->size);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  assert_int_equal(0x1, (uintptr_t) list_pop(l));
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_OK);
+
+  assert_null(list_shift(NULL));
+  assert_int_equal(1, l->size);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  assert_int_equal(0x3, (uintptr_t) list_shift(l));
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_OK);
+
+  list_unshift(NULL, (void *) 0x4);
+  assert_int_equal(0, l->size);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  list_del(l);
+  assert_fly_status(FLY_OK);
+}
+#endif
+
+TESTCALL(test_list_e_null_ptr, do_test_list_e_null_ptr())
+
 #ifndef _WINDLL
 int main(void) {
   const struct CMUnitTest tests[] = {
@@ -1282,6 +1336,7 @@ int main(void) {
       cmocka_unit_test(test_arlist_remove_all),
       cmocka_unit_test(test_dllist_remove_all),
       cmocka_unit_test(test_sllist_remove_all),
+      cmocka_unit_test(test_list_e_null_ptr),
   };
 
   return cmocka_run_group_tests_name(
