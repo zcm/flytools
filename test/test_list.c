@@ -2,6 +2,9 @@
 
 #include "list.h"
 
+#ifndef ARLIST_DEFAULT_CAPACITY
+#define ARLIST_DEFAULT_CAPACITY 8
+#endif
 
 #ifndef _WINDLL
 int list_setup(void **state) {
@@ -274,6 +277,11 @@ TESTCALL(test_arlist_unshift_shift, do_test_list_unshift_shift(LISTKIND_ARRAY))
 TESTCALL(test_arlist_push_shift, do_test_list_push_shift(LISTKIND_ARRAY))
 TESTCALL(test_arlist_unshift_pop, do_test_list_unshift_pop(LISTKIND_ARRAY))
 
+TESTCALL(test_deque_push_pop, do_test_list_push_pop(LISTKIND_DEQUE))
+TESTCALL(test_deque_unshift_shift, do_test_list_unshift_shift(LISTKIND_DEQUE))
+TESTCALL(test_deque_push_shift, do_test_list_push_shift(LISTKIND_DEQUE))
+TESTCALL(test_deque_unshift_pop, do_test_list_unshift_pop(LISTKIND_DEQUE))
+
 TESTCALL(test_dllist_push_pop, do_test_list_push_pop(LISTKIND_DLINK))
 TESTCALL(test_dllist_unshift_shift, do_test_list_unshift_shift(LISTKIND_DLINK))
 TESTCALL(test_dllist_push_shift, do_test_list_push_shift(LISTKIND_DLINK))
@@ -377,6 +385,10 @@ void do_test_list_del_nonempty(listkind *kind) {
 TESTCALL(test_arlist_pop_empty, do_test_list_pop_empty(LISTKIND_ARRAY))
 TESTCALL(test_arlist_shift_empty, do_test_list_shift_empty(LISTKIND_ARRAY))
 TESTCALL(test_arlist_del_nonempty, do_test_list_del_nonempty(LISTKIND_ARRAY))
+
+TESTCALL(test_deque_pop_empty, do_test_list_pop_empty(LISTKIND_DEQUE))
+TESTCALL(test_deque_shift_empty, do_test_list_shift_empty(LISTKIND_DEQUE))
+TESTCALL(test_deque_del_nonempty, do_test_list_del_nonempty(LISTKIND_DEQUE))
 
 TESTCALL(test_dllist_pop_empty, do_test_list_pop_empty(LISTKIND_DLINK))
 TESTCALL(test_dllist_shift_empty, do_test_list_shift_empty(LISTKIND_DLINK))
@@ -489,8 +501,43 @@ void do_test_list_get(listkind *kind) {
 #endif
 
 TESTCALL(test_arlist_get, do_test_list_get(LISTKIND_ARRAY))
+TESTCALL(test_deque_get, do_test_list_get(LISTKIND_DEQUE))
 TESTCALL(test_dllist_get, do_test_list_get(LISTKIND_DLINK))
 TESTCALL(test_sllist_get, do_test_list_get(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
+void do_test_list_capacity(listkind *kind) {
+  list *l;
+  arlist *al;
+  size_t i = 0;
+
+  assert_non_null(l = list_new_kind(kind));
+  al = (arlist *) l;
+
+  while (i < ARLIST_DEFAULT_CAPACITY) {
+    list_push(l, (void *) i++);
+  }
+
+  assert_int_equal(ARLIST_DEFAULT_CAPACITY, l->size);
+
+  for (i = 0; i < ARLIST_DEFAULT_CAPACITY; i++) {
+    assert_int_equal(i, (size_t) al->elements[i]);
+  }
+
+  assert_int_equal(ARLIST_DEFAULT_CAPACITY, al->capacity);
+
+  list_push(l, (void *) i);
+  assert_int_equal(i, (size_t) al->elements[ARLIST_DEFAULT_CAPACITY]);
+  assert_int_equal(
+      ARLIST_DEFAULT_CAPACITY + (ARLIST_DEFAULT_CAPACITY >> 1),
+      al->capacity);
+
+  list_del(l);
+}
+#endif
+
+TESTCALL(test_arlist_capacity, do_test_list_capacity(LISTKIND_ARRAY))
+TESTCALL(test_deque_capacity, do_test_list_capacity(LISTKIND_DEQUE))
 
 #ifndef METHODS_ONLY
 void do_test_list_concat() {
@@ -1286,6 +1333,8 @@ void do_test_list_e_null_ptr() {
 
 TESTCALL(test_list_e_null_ptr, do_test_list_e_null_ptr())
 
+#undef ARLIST_DEFAULT_CAPACITY
+
 #ifndef _WINDLL
 int main(void) {
   const struct CMUnitTest tests[] = {
@@ -1297,6 +1346,13 @@ int main(void) {
       cmocka_unit_test(test_arlist_pop_empty),
       cmocka_unit_test(test_arlist_shift_empty),
       cmocka_unit_test(test_arlist_del_nonempty),
+      cmocka_unit_test(test_deque_push_pop),
+      cmocka_unit_test(test_deque_unshift_shift),
+      cmocka_unit_test(test_deque_push_shift),
+      cmocka_unit_test(test_deque_unshift_pop),
+      cmocka_unit_test(test_deque_pop_empty),
+      cmocka_unit_test(test_deque_shift_empty),
+      cmocka_unit_test(test_deque_del_nonempty),
       cmocka_unit_test(test_dllist_push_pop),
       cmocka_unit_test(test_dllist_unshift_shift),
       cmocka_unit_test(test_dllist_push_shift),
@@ -1312,8 +1368,11 @@ int main(void) {
       cmocka_unit_test(test_sllist_shift_empty),
       cmocka_unit_test(test_sllist_del_nonempty),
       cmocka_unit_test(test_arlist_get),
+      cmocka_unit_test(test_deque_get),
       cmocka_unit_test(test_dllist_get),
       cmocka_unit_test(test_sllist_get),
+      cmocka_unit_test(test_arlist_capacity),
+      cmocka_unit_test(test_deque_capacity),
       cmocka_unit_test(test_list_concat),
       cmocka_unit_test(test_list_concat_from_empty),
       cmocka_unit_test(test_list_concat_into_empty),

@@ -52,6 +52,14 @@ typedef struct arlist {
   void **elements;
 } arlist;
 
+typedef struct deque {
+  UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
+  size_t capacity;
+  void **elements;
+  size_t start;
+  size_t end;
+} deque;
+
 typedef struct dllist {
   UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
   struct dllistnode *head;
@@ -82,6 +90,7 @@ typedef struct listkind {
 } listkind;
 
 extern FLYAPI listkind *LISTKIND_ARRAY;
+extern FLYAPI listkind *LISTKIND_DEQUE;
 extern FLYAPI listkind *LISTKIND_DLINK;
 extern FLYAPI listkind *LISTKIND_SLINK;
 
@@ -113,6 +122,13 @@ FLYAPI void arlist_unshift(arlist *l, void *data);
 FLYAPI void *arlist_pop(arlist *l);
 FLYAPI void *arlist_shift(arlist *l);
 FLYAPI void arlist_concat(arlist *l1, arlist *l2);
+
+FLYAPI void *deque_get(deque *l, size_t i);
+FLYAPI void deque_push(deque *l, void *data);
+FLYAPI void deque_unshift(deque *l, void *data);
+FLYAPI void *deque_pop(deque *l);
+FLYAPI void *deque_shift(deque *l);
+FLYAPI void deque_concat(deque *l1, deque *l2);
 
 FLYAPI void *dllist_get(dllist *l, size_t i);
 FLYAPI void dllist_push(dllist *l, void *data);
