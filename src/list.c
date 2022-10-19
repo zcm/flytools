@@ -206,11 +206,11 @@ FLYAPI void list_del(list *l) {
 }
 
 static inline void *_unsafe_arlist_get(arlist *l, size_t i) {
-  return l->elements[i];
+  return l->items[i];
 }
 
 static inline void *_unsafe_deque_get(deque *l, size_t i) {
-  return l->elements[(l->start + i) % l->capacity];
+  return l->items[(l->start + i) % l->capacity];
 }
 
 static inline sllistnode *_unsafe_sllist_get_node(sllist *l, size_t i) {
@@ -246,7 +246,7 @@ FLYAPI void *list_get(list *l, size_t i) {
 
 FLYAPI void *arlist_get(arlist *l, size_t i) {
   CHECK_LIST_BOUNDS(l, i);
-  return l->elements[i];
+  return l->items[i];
 }
 
 FLYAPI void *dllist_get(dllist *l, size_t i) {
@@ -348,7 +348,7 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
 
 static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
   size_t i;
-  void **each = l->elements;
+  void **each = l->items;
 
   for (i = l->size; i; i--, each++) {
     if (matcher(*each)) {
@@ -394,11 +394,11 @@ static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
   size_t i = 0;
 
   while (i < l->size) {
-    if (matcher(l->elements[i++])) {
-      void *ret = l->elements[i - 1];
+    if (matcher(l->items[i++])) {
+      void *ret = l->items[i - 1];
 
       memmove(
-          l->elements + i - 1, l->elements + i,
+          l->items + i - 1, l->items + i,
           (l->size - i) * sizeof (void *));
 
       l->size--;
@@ -491,7 +491,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
 static void _unsafe_arlist_foreach(arlist *l, int (*fn)(void *, size_t)) {
   size_t i = 0;
 
-  while (i++ < l->size && !fn(l->elements[i - 1], i - 1));
+  while (i++ < l->size && !fn(l->items[i - 1], i - 1));
 }
 
 static void _unsafe_sllist_foreach(sllist *l, int (*fn)(void *, size_t)) {
@@ -520,7 +520,7 @@ static size_t arlist_remove_all(
   void **left;
 
   while (i < l->size) {
-    if (matcher(l->elements[i])) {
+    if (matcher(l->items[i])) {
       goto removal_start;
     }
     i++;
@@ -529,28 +529,28 @@ static size_t arlist_remove_all(
   return 0;  /* loop exited normally - nothing found */
 
   while (i < l->size) {
-    if (!matcher(l->elements[i])) {
+    if (!matcher(l->items[i])) {
       i++;
     } else {
       memmove(left, left + total_removed,
-          ((l->elements + i) - (left + total_removed)) * sizeof (void *));
+          ((l->items + i) - (left + total_removed)) * sizeof (void *));
 
 removal_start:
-      left = l->elements + i - total_removed;
+      left = l->items + i - total_removed;
 
       do {
         total_removed++;
 
-        if (fn(l->elements[i], i)) {
+        if (fn(l->items[i], i)) {
           goto final_move;
         }
-      } while (++i < l->size && matcher(l->elements[i]));
+      } while (++i < l->size && matcher(l->items[i]));
     }
   }
 
 final_move:
   memmove(left, left + total_removed,
-      ((l->elements + l->size) - (left + total_removed)) * sizeof (void *));
+      ((l->items + l->size) - (left + total_removed)) * sizeof (void *));
 
   l->size -= total_removed;
   return total_removed;
@@ -649,7 +649,7 @@ FLYAPI size_t list_remove_all(
 static inline void arlist_init(arlist *l) {
   l->size = 0;
   l->capacity = 0;
-  l->elements = NULL;
+  l->items = NULL;
 }
 
 static void deque_init(deque *l) {
@@ -658,7 +658,7 @@ static void deque_init(deque *l) {
 }
 
 static void arlist_del(arlist *l) {
-  l->del(l->elements);
+  l->del(l->items);
 }
 
 static size_t arlist_grow(arlist *l, size_t new_elements) {
@@ -675,12 +675,12 @@ static size_t arlist_grow(arlist *l, size_t new_elements) {
     l->capacity = ARLIST_DEFAULT_CAPACITY;
   }
 
-  if (!(next_elements = realloc(l->elements, l->capacity * sizeof (void *)))) {
-    // realloc() failed, l->elements unchanged
+  if (!(next_elements = realloc(l->items, l->capacity * sizeof (void *)))) {
+    // realloc() failed, l->items unchanged
     return 0;
   }
 
-  l->elements = next_elements;
+  l->items = next_elements;
   return delta;
 }
 
@@ -695,14 +695,14 @@ static void deque_reorient(deque *l, size_t grew_by) {
   }
 
   if (grew_by >= l->end) {
-    memcpy(l->elements + l->size, l->elements, l->end * sizeof (void *));
+    memcpy(l->items + l->size, l->items, l->end * sizeof (void *));
     l->end = (l->end + l->size) % l->capacity;
   } else {
     memcpy(
-        l->elements + l->size, l->elements,
+        l->items + l->size, l->items,
         grew_by * sizeof (void *));
     memcpy(
-        l->elements, l->elements + grew_by,
+        l->items, l->items + grew_by,
         (l->end - grew_by) * sizeof (void *));
     l->end -= grew_by;
   }
@@ -736,7 +736,7 @@ static inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements) {
 static void _unsafe_arlist_push(arlist *l, void *data) {
   ARLIST_HAS_CAPACITY_OR_DIE(l, 1, );
 
-  l->elements[l->size++] = data;
+  l->items[l->size++] = data;
 }
 
 FLYAPI void arlist_push(arlist *l, void *data) {
@@ -751,7 +751,7 @@ static void _unsafe_deque_push(deque *l, void *data) {
   DEQUE_HAS_CAPACITY_OR_DIE(l, 1)
 
   l->size++;
-  l->elements[l->end] = data;
+  l->items[l->end] = data;
   l->end = (l->end + 1) % l->capacity;
 }
 
@@ -766,10 +766,10 @@ FLYAPI void deque_push(deque *l, void *data) {
 static void _unsafe_arlist_unshift(arlist *l, void *data) {
   ARLIST_HAS_CAPACITY_OR_DIE(l, 1, )
 
-  memmove(l->elements + 1, l->elements, l->size * sizeof (void *));
+  memmove(l->items + 1, l->items, l->size * sizeof (void *));
 
   l->size++;
-  l->elements[0] = data;
+  l->items[0] = data;
 
   fly_status = FLY_OK;
 }
@@ -786,7 +786,7 @@ static void _unsafe_deque_unshift(deque *l, void *data) {
   DEQUE_HAS_CAPACITY_OR_DIE(l, 1)
 
   l->size++;
-  l->elements[l->start = (l->start ? l->start : l->capacity) - 1] = data;
+  l->items[l->start = (l->start ? l->start : l->capacity) - 1] = data;
 }
 
 FLYAPI void deque_unshift(deque *l, void *data) {
@@ -798,7 +798,7 @@ FLYAPI void deque_unshift(deque *l, void *data) {
 }
 
 static void *_unsafe_arlist_pop(arlist *l) {
-  return l->elements[--(l->size)];
+  return l->items[--(l->size)];
 }
 
 FLYAPI void *arlist_pop(arlist *l) {
@@ -811,7 +811,7 @@ FLYAPI void *arlist_pop(arlist *l) {
 
 static void *_unsafe_deque_pop(deque *l) {
   l->size--;
-  return l->elements[l->end = (l->end ? l->end : l->capacity) - 1];
+  return l->items[l->end = (l->end ? l->end : l->capacity) - 1];
 }
 
 FLYAPI void *deque_pop(deque *l) {
@@ -825,9 +825,9 @@ FLYAPI void *deque_pop(deque *l) {
 static void *_unsafe_arlist_shift(arlist *l) {
   void *ret;
 
-  ret = l->elements[0];
+  ret = l->items[0];
 
-  memmove(l->elements, l->elements + 1, --(l->size) * sizeof (void *));
+  memmove(l->items, l->items + 1, --(l->size) * sizeof (void *));
 
   return ret;
 }
@@ -841,7 +841,7 @@ FLYAPI void *arlist_shift(arlist *l) {
 }
 
 static void *_unsafe_deque_shift(deque *l) {
-  void *ret = l->elements[l->start];
+  void *ret = l->items[l->start];
 
   l->size--;
   l->start = (l->start + 1) % l->capacity;
@@ -860,7 +860,7 @@ FLYAPI void *deque_shift(deque *l) {
 FLYAPI void arlist_concat(arlist * restrict l1, arlist * restrict l2) {
   ARLIST_HAS_CAPACITY_OR_DIE(l1, l2->size, )
 
-  memcpy(l1->elements + l1->size, l2->elements, l2->size * sizeof (void *));
+  memcpy(l1->items + l1->size, l2->items, l2->size * sizeof (void *));
 
   l1->size += l2->size;
   fly_status = FLY_OK;
@@ -884,7 +884,7 @@ FLYAPI void deque_concat(deque * restrict l1, deque * restrict l2) {
       segment1 = remaining;
     }
 
-    memcpy(l1->elements + l1->end, l2->start, segment1 * sizeof (void *));
+    memcpy(l1->items + l1->end, l2->start, segment1 * sizeof (void *));
     l1->end = (l1->end + segment1) % l1->capacity;
     remaining -= segment1;
   }

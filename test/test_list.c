@@ -521,7 +521,7 @@ void do_test_list_capacity(listkind *kind) {
   assert_int_equal(ARLIST_DEFAULT_CAPACITY, l->size);
 
   for (i = 0; i < ARLIST_DEFAULT_CAPACITY; i++) {
-    assert_int_equal(i, (size_t) al->elements[i]);
+    assert_int_equal(i, (size_t) al->items[i]);
   }
 
   assert_int_equal(ARLIST_DEFAULT_CAPACITY, al->capacity);
@@ -532,7 +532,7 @@ void do_test_list_capacity(listkind *kind) {
   }
 
   list_push(l, (void *) i);
-  assert_int_equal(i, (size_t) al->elements[ARLIST_DEFAULT_CAPACITY]);
+  assert_int_equal(i, (size_t) al->items[ARLIST_DEFAULT_CAPACITY]);
   assert_int_equal(
       ARLIST_DEFAULT_CAPACITY + (ARLIST_DEFAULT_CAPACITY >> 1),
       al->capacity);

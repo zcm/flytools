@@ -49,13 +49,13 @@ typedef struct list {
 typedef struct arlist {
   UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
   size_t capacity;
-  void **elements;
+  void **items;
 } arlist;
 
 typedef struct deque {
   UNIFY_OBJECT_DEF(list _list, LIST_DEFINITION)
   size_t capacity;
-  void **elements;
+  void **items;
   size_t start;
   size_t end;
 } deque;
