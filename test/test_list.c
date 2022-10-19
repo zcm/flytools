@@ -508,11 +508,11 @@ TESTCALL(test_sllist_get, do_test_list_get(LISTKIND_SLINK))
 #ifndef METHODS_ONLY
 void do_test_list_capacity(listkind *kind) {
   list *l;
-  arlist *al;
   size_t i = 0;
 
   assert_non_null(l = list_new_kind(kind));
-  al = (arlist *) l;
+
+#define al ((arlist *) l)
 
   while (i < ARLIST_DEFAULT_CAPACITY) {
     list_push(l, (void *) i++);
@@ -526,11 +526,59 @@ void do_test_list_capacity(listkind *kind) {
 
   assert_int_equal(ARLIST_DEFAULT_CAPACITY, al->capacity);
 
+  if (kind == LISTKIND_DEQUE) {
+    assert_int_equal(0, ((deque *) l)->start);
+    assert_int_equal(0, ((deque *) l)->end);
+  }
+
   list_push(l, (void *) i);
   assert_int_equal(i, (size_t) al->elements[ARLIST_DEFAULT_CAPACITY]);
   assert_int_equal(
       ARLIST_DEFAULT_CAPACITY + (ARLIST_DEFAULT_CAPACITY >> 1),
       al->capacity);
+
+  if (kind == LISTKIND_DEQUE) {
+    assert_int_equal(0, ((deque *) l)->start);
+    assert_int_equal(9, ((deque *) l)->end);
+  }
+
+  list_del(l);
+  assert_non_null(l = list_new_kind(kind));
+
+  i = 0;
+
+  while (i < ARLIST_DEFAULT_CAPACITY) {
+    list_push(l, (void *) i++);
+  }
+
+  if (kind == LISTKIND_DEQUE) {
+    assert_int_equal(0, ((deque *) l)->start);
+    assert_int_equal(0, ((deque *) l)->end);
+  }
+
+  i >>= 1;
+
+  while (i++ < ARLIST_DEFAULT_CAPACITY) {
+    list_push(l, (void *) ((size_t) list_shift(l) * 10));
+  }
+
+  if (kind == LISTKIND_DEQUE) {
+    assert_int_equal(4, ((deque *) l)->start);
+    assert_int_equal(4, ((deque *) l)->end);
+  }
+
+  list_push(l, (void *) 666);
+
+  assert_int_equal(
+      ARLIST_DEFAULT_CAPACITY + (ARLIST_DEFAULT_CAPACITY >> 1),
+      al->capacity);
+
+  if (kind == LISTKIND_DEQUE) {
+    assert_int_equal(4, ((deque *) l)->start);
+    assert_int_equal(1, ((deque *) l)->end);
+  }
+
+#undef al
 
   list_del(l);
 }

@@ -696,7 +696,7 @@ static void deque_reorient(deque *l, size_t grew_by) {
 
   if (grew_by >= l->end) {
     memcpy(l->elements + l->size, l->elements, l->end * sizeof (void *));
-    l->end += l->size;
+    l->end = (l->end + l->size) % l->capacity;
   } else {
     memcpy(
         l->elements + l->size, l->elements,
