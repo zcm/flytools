@@ -40,6 +40,7 @@ static void _unsafe_arlist_push(arlist *l, void *data);
 static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
 static void *_unsafe_arlist_shift(arlist *l);
+static void _unsafe_arlist_append_array(arlist *l, size_t n, void **items);
 static void _unsafe_arlist_foreach(arlist *l, int (*)(void *, size_t));
 static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *));
 static void *arlist_remove_first(arlist *l, int (*matcher)(void *));
@@ -50,6 +51,7 @@ static void _unsafe_deque_push(deque *l, void *data);
 static void _unsafe_deque_unshift(deque *l, void *data);
 static void *_unsafe_deque_pop(deque *l);
 static void *_unsafe_deque_shift(deque *l);
+static void _unsafe_deque_append_array(deque *l, size_t n, void **items);
 //static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
 //static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
 //static void *deque_remove_first(deque *l, int (*matcher)(void *));
@@ -60,6 +62,7 @@ static void _unsafe_dllist_push(dllist *l, void *data);
 static void _unsafe_dllist_unshift(dllist *l, void *data);
 static void *_unsafe_dllist_pop(dllist *l);
 static void *_unsafe_dllist_shift(dllist *l);
+static void _unsafe_dllist_append_array(dllist *l, size_t n, void **items);
 static void *dllist_remove_first(dllist *l, int (*matcher)(void *));
 
 static void sllist_init(sllist *l);
@@ -69,6 +72,7 @@ static void _unsafe_sllist_push(sllist *l, void *data);
 static void _unsafe_sllist_unshift(sllist *l, void *data);
 static void *_unsafe_sllist_pop(sllist *l);
 static void *_unsafe_sllist_shift(sllist *l);
+static void _unsafe_sllist_append_array(sllist *l, size_t n, void **items);
 static void _unsafe_sllist_foreach(sllist *l, int (*)(void *, size_t));
 static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *));
 static void *sllist_remove_first(sllist *l, int (*matcher)(void *));
@@ -93,6 +97,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &_unsafe_arlist_pop,
   (void *) &_unsafe_arlist_shift,
   (void *) &arlist_concat,
+  (void *) &_unsafe_arlist_append_array,
   (void *) &_unsafe_arlist_foreach,
   (void *) &_unsafe_arlist_find_first,
   (void *) &arlist_remove_first,
@@ -109,6 +114,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &_unsafe_deque_pop,
   (void *) &_unsafe_deque_shift,
   (void *) &deque_concat,
+  (void *) &_unsafe_deque_append_array,
   (void *) NULL, //&_unsafe_deque_foreach,
   (void *) NULL, //&_unsafe_deque_find_first,
   (void *) NULL, //&deque_remove_first,
@@ -125,6 +131,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   (void *) &_unsafe_dllist_pop,
   (void *) &_unsafe_dllist_shift,
   (void *) &dllist_concat,
+  (void *) &_unsafe_dllist_append_array,
   (void *) &_unsafe_sllist_foreach,  /* not a typo */
   (void *) &_unsafe_sllist_find_first,
   (void *) &dllist_remove_first,
@@ -141,6 +148,7 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   (void *) &_unsafe_sllist_pop,
   (void *) &_unsafe_sllist_shift,
   (void *) &sllist_concat,
+  (void *) &_unsafe_sllist_append_array,
   (void *) &_unsafe_sllist_foreach,
   (void *) &_unsafe_sllist_find_first,
   (void *) &sllist_remove_first,
@@ -344,6 +352,21 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
   }
 
   list_del(l2);
+}
+
+FLYAPI void list_append_array(list *l, size_t n, void **items) {
+  if (!(l && items)) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+
+  fly_status = FLY_OK;
+
+  if (!n) {
+    return;
+  }
+
+  l->kind->append_array(l, n, items);
 }
 
 static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
@@ -884,7 +907,11 @@ FLYAPI void deque_concat(deque * restrict l1, deque * restrict l2) {
       segment1 = remaining;
     }
 
-    memcpy(l1->items + l1->end, l2->start, segment1 * sizeof (void *));
+    memcpy(
+        l1->items + l1->end,
+        l2->items + l2->start,
+        segment1 * sizeof (void *));
+
     l1->end = (l1->end + segment1) % l1->capacity;
     remaining -= segment1;
   }
@@ -892,7 +919,31 @@ FLYAPI void deque_concat(deque * restrict l1, deque * restrict l2) {
   fly_status = FLY_OK;
 }
 
+static void _unsafe_arlist_append_array(arlist *l, size_t n, void **suffix) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l, n, )
+
+  memcpy(l->items + l->size, suffix, n * sizeof (void *));
+  l->size += n;
+}
+
+static void _unsafe_deque_append_array(deque *l, size_t n, void **suffix) {
+  size_t right;
+
+  DEQUE_HAS_CAPACITY_OR_DIE(l, n)
+
+  if (l->end < l->start || (right = l->capacity - l->end) > n) {
+    memcpy(l->items + l->end, suffix, n * sizeof (void *));
+    l->end += n;
+  } else {
+    memcpy(l->items + l->end, suffix, right * sizeof (void *));
+    memcpy(l->items, suffix + right, (l->end = n - right) * sizeof (void *));
+  }
+
+  l->size += n;
+}
+
 #undef ARLIST_HAS_CAPACITY_OR_DIE
+#undef DEQUE_HAS_CAPACITY_OR_DIE
 
 static inline void dllistnode_head_init(dllistnode * restrict head) {
   head->data = NULL;
@@ -1036,6 +1087,35 @@ FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
   list_del((list *) l2);
 }
 
+static void _unsafe_dllist_append_array(dllist *l, size_t n, void **items) {
+  const size_t n_save = n;
+  dllistnode *current;
+  dllistnode *last = l->head->prev;
+
+  do {
+    if ((current = l->alloc(sizeof (dllistnode)))) {
+      (last->next = current)->prev = last;
+      (last = current)->data = *items++;
+    } else {
+      goto out_of_memory_unwind;
+    }
+  } while (--n);
+
+  (last->next = l->head)->prev = last;
+  l->size += n_save;
+  return;
+
+out_of_memory_unwind:
+  while (last != l->head->prev) {
+    current = last->prev;
+    l->del(last);
+    last = current;
+  }
+
+  last->next = l->head;
+  fly_status = FLY_E_OUT_OF_MEMORY;
+}
+
 static void sllist_init(sllist *l) {
   l->size = 0;
 
@@ -1161,6 +1241,33 @@ FLYAPI void sllist_concat(sllist *l1, sllist *l2) {
   l2->size = 0;
 
   list_del((list *) l2);
+}
+
+static void _unsafe_sllist_append_array(sllist *l, size_t n, void **items) {
+  const size_t n_save = n;
+  sllistnode *current = l->last;
+
+  do {
+    if ((current->next = l->alloc(sizeof (sllistnode)))) {
+      (current = current->next)->data = *items++;
+    } else {
+      goto out_of_memory_unwind;
+    }
+  } while (--n);
+
+  (l->last = current)->next = l->head;
+  l->size += n_save;
+  return;
+
+out_of_memory_unwind:
+  current = l->last;
+
+  while (current->next) {
+    l->del(current = current->next);
+  }
+
+  l->last = l->head;
+  fly_status = FLY_E_OUT_OF_MEMORY;
 }
 
 #if defined(__STRICT_ANSI__)

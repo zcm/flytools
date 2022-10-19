@@ -730,6 +730,104 @@ TEST(test_list_concat_both_empty, {
 })
 
 #ifndef METHODS_ONLY
+static void do_test_list_append_array(listkind *kind) {
+  list *l;
+  size_t i;
+  void *items[] = { (void *) 1, (void *) 2, (void *) 3, (void *) 4,
+                    (void *) 5, (void *) 6, (void *) 7, (void *) 8 };
+
+  assert_non_null(l = list_new_kind(kind));
+  assert_fly_status(FLY_OK);
+
+  list_append_array(NULL, 666, NULL);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  fly_status = FLY_OK;
+
+  list_append_array(NULL, 666, items);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  list_append_array(l, 0, items);
+  assert_fly_status(FLY_OK);
+  assert_int_equal(0, l->size);
+
+  if (kind == LISTKIND_ARRAY || kind == LISTKIND_DEQUE) {
+    assert_null(((arlist *) l)->items);
+    assert_int_equal(0, ((arlist *) l)->capacity);
+  }
+
+  list_append_array(l, 666, NULL);
+  assert_fly_status(FLY_E_NULL_PTR);
+  assert_int_equal(0, l->size);
+
+  if (kind == LISTKIND_ARRAY || kind == LISTKIND_DEQUE) {
+    assert_null(((arlist *) l)->items);
+    assert_int_equal(0, ((arlist *) l)->capacity);
+  }
+
+  list_append_array(l, 8, items);
+  assert_fly_status(FLY_OK);
+  assert_int_equal(8, l->size);
+
+  if (kind == LISTKIND_ARRAY || kind == LISTKIND_DEQUE) {
+    assert_int_equal(8, ((arlist *) l)->capacity);
+  }
+
+  for (i = 0; i < 8; i++) {
+    assert_int_equal(i + 1, (size_t) list_get(l, i));
+  }
+
+  fly_status = FLY_NOT_FOUND;
+
+  list_append_array(l, 3, items);
+  assert_fly_status(FLY_OK);
+  assert_int_equal(11, l->size);
+
+  if (kind == LISTKIND_ARRAY || kind == LISTKIND_DEQUE) {
+    assert_int_equal(12, ((arlist *) l)->capacity);
+  }
+
+  for (; i < 11; i++) {
+    assert_int_equal(i - 7, (size_t) list_get(l, i));
+  }
+  for (i = 0; i < 8; i++) {
+    assert_int_equal(i + 1, (size_t) list_get(l, i));
+  }
+
+  if (kind == LISTKIND_DEQUE) {
+    assert_int_equal(1, (size_t) list_shift(l));
+    assert_int_equal(10, l->size);
+    assert_fly_status(FLY_OK);
+    assert_int_equal(2, (size_t) list_shift(l));
+    assert_int_equal(9, l->size);
+    assert_fly_status(FLY_OK);
+
+    fly_status = FLY_NOT_FOUND;
+
+    list_append_array(l, 3, items);
+    assert_int_equal(12, l->size);
+    assert_int_equal(12, ((arlist *) l)->capacity);
+    assert_fly_status(FLY_OK);
+
+    for (i = 0; i < 6; i++) {
+      assert_int_equal(i + 3, (size_t) list_get(l, i));
+    }
+    for (; i < 9; i++) {
+      assert_int_equal(i - 5, (size_t) list_get(l, i));
+    }
+    for (; i < 12; i++) {
+      assert_int_equal(i - 8, (size_t) list_get(l, i));
+    }
+  }
+}
+#endif
+
+TESTCALL(test_arlist_append_array, do_test_list_append_array(LISTKIND_ARRAY))
+TESTCALL(test_deque_append_array, do_test_list_append_array(LISTKIND_DEQUE))
+TESTCALL(test_dllist_append_array, do_test_list_append_array(LISTKIND_DLINK))
+TESTCALL(test_sllist_append_array, do_test_list_append_array(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
 #define DEFINE_FUNC_CHAR_IS(i, c) \
   int char##i##_is_##c(void *value) { \
     return value && ((char *) value)[i] == *#c; \

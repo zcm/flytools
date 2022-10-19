@@ -83,6 +83,7 @@ typedef struct listkind {
   void *(*pop)(list *l);
   void *(*shift)(list *l);
   void (*concat)(list *l1, list *l2);
+  void (*append_array)(list *l, size_t n, void **items);
   void (*foreach)(list *l, int (*)(void *, size_t));
   void *(*find_first)(list *, int (*)(void *));
   void *(*remove_first)(list *, int (*)(void *));
@@ -109,6 +110,7 @@ FLYAPI void list_unshift(list *l, void *data);
 
 FLYAPI void list_concat(list *l1, list *l2);
 FLYAPI void list_concat_into(list *l1, list *l2);
+FLYAPI void list_append_array(list *l, size_t n, void **items);
 
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *));
 FLYAPI void *list_remove_first(list *l, int (*matcher)(void *));
