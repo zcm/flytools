@@ -1258,11 +1258,53 @@ void do_test_list_foreach(listkind *kind) {
   assert_string_equal("x321", order);
   assert_string_equal("x123", indices);
 
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  list_push(l, list_shift(l));
+  list_push(l, list_shift(l));
+
+  list_foreach(l, &record_order);
+
+  assert_string_equal("35712", order);
+  assert_string_equal("01234", indices);
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  list_push(l, list_shift(l));
+
+  list_foreach(l, &record_order);
+
+  assert_string_equal("57123", order);
+  assert_string_equal("01234", indices);
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  list_push(l, list_shift(l));
+
+  list_foreach(l, &record_order);
+
+  assert_string_equal("71235", order);
+  assert_string_equal("01234", indices);
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  list_push(l, list_shift(l));
+
+  list_foreach(l, &record_order);
+
+  assert_string_equal("12357", order);
+  assert_string_equal("01234", indices);
+
   list_del(l);
 }
 #endif
 
 TESTCALL(test_arlist_foreach, do_test_list_foreach(LISTKIND_ARRAY))
+TESTCALL(test_deque_foreach, do_test_list_foreach(LISTKIND_DEQUE))
 TESTCALL(test_dllist_foreach, do_test_list_foreach(LISTKIND_DLINK))
 TESTCALL(test_sllist_foreach, do_test_list_foreach(LISTKIND_SLINK))
 
@@ -1523,6 +1565,10 @@ int main(void) {
       cmocka_unit_test(test_list_concat_from_empty),
       cmocka_unit_test(test_list_concat_into_empty),
       cmocka_unit_test(test_list_concat_both_empty),
+      cmocka_unit_test(test_arlist_append_array),
+      cmocka_unit_test(test_deque_append_array),
+      cmocka_unit_test(test_dllist_append_array),
+      cmocka_unit_test(test_sllist_append_array),
       cmocka_unit_test(test_arlist_find_first),
       cmocka_unit_test(test_dllist_find_first),
       cmocka_unit_test(test_sllist_find_first),
@@ -1536,6 +1582,7 @@ int main(void) {
       cmocka_unit_test(test_dllist_remove_first_null),
       cmocka_unit_test(test_sllist_remove_first_null),
       cmocka_unit_test(test_arlist_foreach),
+      cmocka_unit_test(test_deque_foreach),
       cmocka_unit_test(test_dllist_foreach),
       cmocka_unit_test(test_sllist_foreach),
       cmocka_unit_test(test_arlist_remove_all),

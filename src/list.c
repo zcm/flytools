@@ -52,7 +52,7 @@ static void _unsafe_deque_unshift(deque *l, void *data);
 static void *_unsafe_deque_pop(deque *l);
 static void *_unsafe_deque_shift(deque *l);
 static void _unsafe_deque_append_array(deque *l, size_t n, void **items);
-//static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
+static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
 //static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
 //static void *deque_remove_first(deque *l, int (*matcher)(void *));
 
@@ -115,7 +115,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &_unsafe_deque_shift,
   (void *) &deque_concat,
   (void *) &_unsafe_deque_append_array,
-  (void *) NULL, //&_unsafe_deque_foreach,
+  (void *) &_unsafe_deque_foreach,
   (void *) NULL, //&_unsafe_deque_find_first,
   (void *) NULL, //&deque_remove_first,
   (void *) NULL, //&deque_remove_all,
@@ -515,6 +515,12 @@ static void _unsafe_arlist_foreach(arlist *l, int (*fn)(void *, size_t)) {
   size_t i = 0;
 
   while (i++ < l->size && !fn(l->items[i - 1], i - 1));
+}
+
+static void _unsafe_deque_foreach(deque *l, int (*fn)(void *, size_t)) {
+  size_t i = 0;
+
+  for (; i < l->size && !fn(l->items[(l->start + i) % l->capacity], i); i++);
 }
 
 static void _unsafe_sllist_foreach(sllist *l, int (*fn)(void *, size_t)) {
