@@ -892,11 +892,33 @@ static void do_test_list_find_first(listkind *kind) {
   assert_null(list_find_first(l, &char0_is_e));
   assert_fly_status(FLY_NOT_FOUND);
 
+  list_push(l, "eighth");
+
+  assert_non_null(value = list_find_first(l, &char0_is_f));
+  assert_string_equal("first", value);
+  assert_fly_status(FLY_OK);
+
+  list_shift(l);
+  list_push(l, list_shift(l));
+  list_push(l, list_shift(l));
+  list_push(l, list_shift(l));
+
+  assert_non_null(value = list_find_first(l, &char0_is_f));
+  assert_string_equal("fifth", value);
+  assert_fly_status(FLY_OK);
+
+  list_unshift(l, "zeroth");
+
+  assert_non_null(value = list_find_first(l, &char0_is_f));
+  assert_string_equal("fifth", value);
+  assert_fly_status(FLY_OK);
+
   list_del(l);
 }
 #endif
 
 TESTCALL(test_arlist_find_first, do_test_list_find_first(LISTKIND_ARRAY))
+TESTCALL(test_deque_find_first, do_test_list_find_first(LISTKIND_DEQUE))
 TESTCALL(test_dllist_find_first, do_test_list_find_first(LISTKIND_DLINK))
 TESTCALL(test_sllist_find_first, do_test_list_find_first(LISTKIND_SLINK))
 

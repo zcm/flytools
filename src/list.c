@@ -53,7 +53,7 @@ static void *_unsafe_deque_pop(deque *l);
 static void *_unsafe_deque_shift(deque *l);
 static void _unsafe_deque_append_array(deque *l, size_t n, void **items);
 static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
-//static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
+static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
 //static void *deque_remove_first(deque *l, int (*matcher)(void *));
 
 static void dllist_init(dllist *l);
@@ -116,7 +116,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &deque_concat,
   (void *) &_unsafe_deque_append_array,
   (void *) &_unsafe_deque_foreach,
-  (void *) NULL, //&_unsafe_deque_find_first,
+  (void *) &_unsafe_deque_find_first,
   (void *) NULL, //&deque_remove_first,
   (void *) NULL, //&deque_remove_all,
 };
@@ -382,6 +382,25 @@ static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
 
   fly_status = FLY_NOT_FOUND;
   return NULL;
+}
+
+static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *)) {
+  const size_t capacity = l->capacity;
+  void ** const items = l->items;
+
+  size_t i = l->start,
+         n = l->size;
+
+  for (;; i = (i + 1) % capacity) {
+    if (matcher(items[i])) {
+      fly_status = FLY_OK;
+      return items[i];
+    }
+    if (!--n) {
+      fly_status = FLY_NOT_FOUND;
+      return NULL;
+    }
+  }
 }
 
 static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *)) {
