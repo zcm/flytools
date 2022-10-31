@@ -1010,6 +1010,8 @@ static void do_test_list_find_first_null(listkind *kind) {
 
 TESTCALL(test_arlist_find_first_null,
     do_test_list_find_first_null(LISTKIND_ARRAY))
+TESTCALL(test_deque_find_first_null,
+    do_test_list_find_first_null(LISTKIND_DEQUE))
 TESTCALL(test_dllist_find_first_null,
     do_test_list_find_first_null(LISTKIND_DLINK))
 TESTCALL(test_sllist_find_first_null,

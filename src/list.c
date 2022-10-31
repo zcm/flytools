@@ -385,22 +385,30 @@ static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
 }
 
 static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *)) {
-  const size_t capacity = l->capacity;
-  void ** const items = l->items;
+  void ** const boundary = l->items + l->capacity;
+  void ** const segment = l->items + (l->start < l->end ? l->end : l->capacity);
+  void **items = l->items + l->start;
 
-  size_t i = l->start,
-         n = l->size;
-
-  for (;; i = (i + 1) % capacity) {
-    if (matcher(items[i])) {
+  do {
+    if (matcher(*items)) {
       fly_status = FLY_OK;
-      return items[i];
+      return *items;
     }
-    if (!--n) {
-      fly_status = FLY_NOT_FOUND;
-      return NULL;
+  } while (++items < segment);
+
+  if (items == boundary) {
+    void ** const end = (items -= boundary - items) + l->end;
+
+    for (; items < end; items++) {
+      if (matcher(*items)) {
+        fly_status = FLY_OK;
+        return *items;
+      }
     }
   }
+
+  fly_status = FLY_NOT_FOUND;
+  return NULL;
 }
 
 static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *)) {
