@@ -54,7 +54,7 @@ static void *_unsafe_deque_shift(deque *l);
 static void _unsafe_deque_append_array(deque *l, size_t n, void **items);
 static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
 static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
-//static void *deque_remove_first(deque *l, int (*matcher)(void *));
+static void *deque_remove_first(deque *l, int (*matcher)(void *));
 
 static void dllist_init(dllist *l);
 static void dllist_del(dllist *l);
@@ -117,7 +117,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &_unsafe_deque_append_array,
   (void *) &_unsafe_deque_foreach,
   (void *) &_unsafe_deque_find_first,
-  (void *) NULL, //&deque_remove_first,
+  (void *) &deque_remove_first,
   (void *) NULL, //&deque_remove_all,
 };
 
@@ -397,7 +397,7 @@ static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *)) {
   } while (++items < segment);
 
   if (items == boundary) {
-    void ** const end = (items -= boundary - items) + l->end;
+    void ** const end = (items = l->items) + l->end;
 
     for (; items < end; items++) {
       if (matcher(*items)) {
@@ -455,6 +455,65 @@ static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
 
       fly_status = FLY_OK;
       return ret;
+    }
+  }
+
+  fly_status = FLY_NOT_FOUND;
+  return NULL;
+}
+
+static inline void *_deque_overwrite_from_left(void **items, void **start) {
+  if (items == start) {
+    return *items;
+  } else {
+    void *found = *items;
+    memmove(start + 1, start, (items - start) * sizeof (void *));
+    return found;
+  }
+}
+
+static inline void *_deque_overwrite_from_right(void **items, void **end) {
+  if (items == end - 1) {
+    return *items;
+  } else {
+    void *found = *items;
+    memmove(items, items + 1, (end - items) * sizeof (void *));
+    return found;
+  }
+}
+
+static void *deque_remove_first(deque *l, int (*matcher)(void *)) {
+  void ** const boundary = l->items + l->capacity;
+  void ** const segment = l->items + (l->start < l->end ? l->end : l->capacity);
+  void **items = l->items + l->start;
+
+  do {
+    if (matcher(*items)) {
+      l->size--;
+      fly_status = FLY_OK;
+
+      if (segment == boundary && !l->end) {
+        l->end = l->capacity - 1;
+        return *items;
+      } else if (items - (l->items + l->start) < segment - items) {
+        return _deque_overwrite_from_left(items, l->items + l->start++);
+      } else {
+        l->end--;
+        return _deque_overwrite_from_right(items, segment);
+      }
+    }
+  } while (++items < segment);
+
+  if (items == boundary) {
+    void ** const end = (items = l->items) + l->end;
+
+    for (; items < end; items++) {
+      if (matcher(*items)) {
+        l->size--;
+        l->end--;
+        fly_status = FLY_OK;
+        return _deque_overwrite_from_right(items, end);
+      }
     }
   }
 

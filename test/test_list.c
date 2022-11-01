@@ -839,6 +839,7 @@ DEFINE_FUNC_CHAR_IS(3, r);
 DEFINE_FUNC_CHAR_IS(2, x);
 DEFINE_FUNC_CHAR_IS(2, v);
 DEFINE_FUNC_CHAR_IS(0, e);
+DEFINE_FUNC_CHAR_IS(0, z);
 
 static void do_test_list_find_first(listkind *kind) {
   list *l;
@@ -911,6 +912,22 @@ static void do_test_list_find_first(listkind *kind) {
 
   assert_non_null(value = list_find_first(l, &char0_is_f));
   assert_string_equal("fifth", value);
+  assert_fly_status(FLY_OK);
+
+  assert_non_null(value = list_find_first(l, &char0_is_z));
+  assert_string_equal("zeroth", value);
+  assert_fly_status(FLY_OK);
+
+  list_push(l, list_shift(l));
+
+  assert_non_null(value = list_find_first(l, &char0_is_z));
+  assert_string_equal("zeroth", value);
+  assert_fly_status(FLY_OK);
+
+  list_shift(l);
+
+  assert_non_null(value = list_find_first(l, &char0_is_z));
+  assert_string_equal("zeroth", value);
   assert_fly_status(FLY_OK);
 
   list_del(l);
@@ -1111,11 +1128,30 @@ static void do_test_list_remove_first(listkind *kind) {
   assert_int_equal(0, l->size);
   assert_fly_status(FLY_NOT_FOUND);
 
+  list_push(l, "one");
+  list_push(l, "two");
+  list_push(l, "three");
+  list_push(l, "four");
+
+  assert_non_null(value = list_remove_first(l, &char0_is_f));
+  assert_string_equal("four", value);
+  assert_int_equal(3, l->size);
+  assert_fly_status(FLY_OK);
+
+  list_push(l, "not four");
+  list_push(l, "five");
+
+  assert_non_null(value = list_remove_first(l, &char0_is_f));
+  assert_string_equal("five", value);
+  assert_int_equal(4, l->size);
+  assert_fly_status(FLY_OK);
+
   list_del(l);
 }
 #endif
 
 TESTCALL(test_arlist_remove_first, do_test_list_remove_first(LISTKIND_ARRAY))
+TESTCALL(test_deque_remove_first, do_test_list_remove_first(LISTKIND_DEQUE))
 TESTCALL(test_dllist_remove_first, do_test_list_remove_first(LISTKIND_DLINK))
 TESTCALL(test_sllist_remove_first, do_test_list_remove_first(LISTKIND_SLINK))
 
@@ -1209,6 +1245,8 @@ static void do_test_list_remove_first_null(listkind *kind) {
 
 TESTCALL(test_arlist_remove_first_null,
     do_test_list_remove_first_null(LISTKIND_ARRAY))
+TESTCALL(test_deque_remove_first_null,
+    do_test_list_remove_first_null(LISTKIND_DEQUE))
 TESTCALL(test_dllist_remove_first_null,
     do_test_list_remove_first_null(LISTKIND_DLINK))
 TESTCALL(test_sllist_remove_first_null,
