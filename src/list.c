@@ -671,6 +671,104 @@ final_move:
   return total_removed;
 }
 
+static size_t deque_remove_all(
+    deque *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
+  const bool is_wrapped = l->end < l->start;
+  void ** const boundary = l->items + l->capacity;
+  void ** const segment = is_wrapped ? boundary : l->items + l->end;
+
+  void **item;
+  void **start = item = l->items + l->start;
+
+  const size_t left_segment_size = boundary - start;
+
+  size_t total_removed;
+  void **del_start, **end;
+
+  do {
+    if (matcher(*item)) {
+      total_removed = 0;
+      goto removal_start;
+    }
+  } while (++item < segment);
+
+  if (is_wrapped) {
+    end = (start = item = l->items) + l->end;
+
+    for (; item < end; item++) {
+      if (matcher(*item)) {
+        total_removed = 0;
+        goto removal_start_wrap;
+      }
+    };
+  }
+
+  return 0;
+
+  do {
+    while (++item < segment) {
+      if (matcher(*item)) {
+        goto removal_start;
+      }
+    }
+
+    break;
+
+removal_start:
+    del_start = item;
+
+    do {
+      if (fn(*item, item - start)) {
+        goto final_move;
+      }
+    } while (++item < segment && matcher(*item));
+
+    total_removed += item - del_start;
+
+    if (del_start == start) {
+      l->start += (start = item) - del_start;
+    } else if (item == end) {
+      l->end -= item - del_start;
+      l->size -= total_removed;
+      return total_removed;
+    } else {
+      const size_t left_range = del_start - start;
+      size_t right_range;
+
+      if (is_wrapped || left_range < (right_range = end - item)) {
+        memmove(item - left_range, start, left_range * sizeof (void *));
+        l->start += (start = item) - del_start;
+      } else {
+        memmove(del_start, item, right_range * sizeof (void *));
+        l->end -= item - del_start;
+      }
+    }
+  } while (item < segment);
+
+  if (!is_wrapped) {
+    return total_removed;
+  }
+
+  end = (start = item = l->items) + l->end;
+
+  do {
+    for (; item < end; item++) {
+      if (matcher(*item)) {
+        goto removal_start_wrap;
+      }
+    }
+
+    break;
+
+removal_start_wrap:
+    del_start = item;
+
+    do {
+      if (fn(*item, left_boundary_size
+
+  } while (item < end);
+}
+
 static size_t dllist_remove_all(
     dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t i = 0, total_removed = 0;
