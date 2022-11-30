@@ -671,102 +671,113 @@ final_move:
   return total_removed;
 }
 
+static inline void **deque_move_range(
+    void **start, void **next, void ***end, size_t n, unsigned int wrapmode) {
+  switch (wrapmode) {    // wrapmode 0: deque does not wrap
+    case 1: goto left;   // wrapmode 1: deque wraps; range is before wrap point
+    case 2: goto right;  // wrapmode 2: deque wraps; range is after wrap point
+  }
+
+  if (n < end - next) {
+left:
+    return memmove(next - n, start, n * sizeof (void *));
+  }
+right:
+  memmove(start + n, next, (*end - next) * sizeof (void *));
+  *end -= n;
+  return start;
+}
+
 static size_t deque_remove_all(
     deque *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
-  const bool is_wrapped = l->end < l->start;
   void ** const boundary = l->items + l->capacity;
-  void ** const segment = is_wrapped ? boundary : l->items + l->end;
+
+  unsigned int wrapmode = l->end < l->start;
+  void **segment = wrapmode ? boundary : l->items + l->end;
 
   void **item;
   void **start = item = l->items + l->start;
 
-  const size_t left_segment_size = boundary - start;
+  size_t removed;
+  size_t i = 0;
 
-  size_t total_removed;
-  void **del_start, **end;
-
-  do {
-    if (matcher(*item)) {
-      total_removed = 0;
-      goto removal_start;
-    }
-  } while (++item < segment);
-
-  if (is_wrapped) {
-    end = (start = item = l->items) + l->end;
-
-    for (; item < end; item++) {
-      if (matcher(*item)) {
-        total_removed = 0;
-        goto removal_start_wrap;
+  if (matcher(*item)) {
+    do {
+      if (fn(*item++, i++)) {
+        l->start += item - start;
+        l->size -= i;
+        return i;
       }
-    };
+
+      if (item == segment) {
+        if (segment != boundary) {
+          l->start = l->end = l->size = 0;
+          return i;
+        }
+
+        l->start = 0;
+        segment = (start = item = l->items) + l->end;
+      }
+    } while (matcher(*item));
+
+    l->start += item - start;
+    start = item;
+
+    removed = i - 1;
+  } else {
+    removed = 0;
   }
 
-  return 0;
-
-  do {
-    while (++item < segment) {
-      if (matcher(*item)) {
-        goto removal_start;
-      }
-    }
-
-    break;
-
-removal_start:
-    del_start = item;
+  for (;;) {
+    size_t keep_len, i_start;
 
     do {
-      if (fn(*item, item - start)) {
-        goto final_move;
+      if (++item == segment) {
+        if (segment != boundary) {
+          goto done;
+        }
+
+        segment = (start = item = l->items) + l->end;
+        wrapmode = 2;
       }
-    } while (++item < segment && matcher(*item));
+    } while (!matcher(*item));
 
-    total_removed += item - del_start;
+    i_start = (i += keep_len = item - start);
 
-    if (del_start == start) {
-      l->start += (start = item) - del_start;
-    } else if (item == end) {
-      l->end -= item - del_start;
-      l->size -= total_removed;
-      return total_removed;
-    } else {
-      const size_t left_range = del_start - start;
-      size_t right_range;
-
-      if (is_wrapped || left_range < (right_range = end - item)) {
-        memmove(item - left_range, start, left_range * sizeof (void *));
-        l->start += (start = item) - del_start;
-      } else {
-        memmove(del_start, item, right_range * sizeof (void *));
-        l->end -= item - del_start;
+    do {
+      if (fn(*item++, i++)) {
+        start = deque_move_range(start, item, &segment, keep_len, wrapmode);
+        removed += i - i_start;
+        goto done;
       }
-    }
-  } while (item < segment);
 
-  if (!is_wrapped) {
-    return total_removed;
+      if (item == segment) {
+        if (segment != boundary) {
+          const size_t trim_span = i - i_start;
+          removed += trim_span;
+          l->end -= trim_span;
+          goto done;
+        }
+
+        // TODO: Unwrap and move kept items to post-wrap free space if available
+        deque_move_range(start, item, &segment, keep_len, 1);
+        removed += i - i_start;
+        i_start = i;
+        keep_len = 0;
+
+        segment = (start = item = l->items) + l->end;
+        wrapmode = 2;
+      }
+    } while (matcher(*item));
+
+    start = deque_move_range(start, item, &segment, keep_len, wrapmode);
+    removed += i - i_start;
   }
 
-  end = (start = item = l->items) + l->end;
-
-  do {
-    for (; item < end; item++) {
-      if (matcher(*item)) {
-        goto removal_start_wrap;
-      }
-    }
-
-    break;
-
-removal_start_wrap:
-    del_start = item;
-
-    do {
-      if (fn(*item, left_boundary_size
-
-  } while (item < end);
+done:
+  l->start = start - l->items;
+  l->size -= removed;
+  return removed;
 }
 
 static size_t dllist_remove_all(
