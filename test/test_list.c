@@ -1526,6 +1526,7 @@ void do_test_list_remove_all(listkind *kind) {
 #endif
 
 TESTCALL(test_arlist_remove_all, do_test_list_remove_all(LISTKIND_ARRAY))
+TESTCALL(test_deque_remove_all, do_test_list_remove_all(LISTKIND_DEQUE))
 TESTCALL(test_dllist_remove_all, do_test_list_remove_all(LISTKIND_DLINK))
 TESTCALL(test_sllist_remove_all, do_test_list_remove_all(LISTKIND_SLINK))
 

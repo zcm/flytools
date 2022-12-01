@@ -28,6 +28,8 @@ typedef struct dllistnode dllistnode;
 
 static size_t arlist_remove_all(
     arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+static size_t deque_remove_all(
+    deque *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static size_t dllist_remove_all(
     dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static size_t sllist_remove_all(
@@ -118,7 +120,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &_unsafe_deque_foreach,
   (void *) &_unsafe_deque_find_first,
   (void *) &deque_remove_first,
-  (void *) NULL, //&deque_remove_all,
+  (void *) &deque_remove_all,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
@@ -745,7 +747,7 @@ static size_t deque_remove_all(
     l->start += item - start;
     start = item;
 
-    removed = i - 1;
+    removed = i;
   } else {
     removed = 0;
   }
@@ -884,6 +886,10 @@ FLYAPI size_t list_remove_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   if (!(l && matcher)) {
     fly_status = FLY_E_NULL_PTR;
+    return 0;
+  }
+  if (!l->size) {
+    fly_status = FLY_OK;
     return 0;
   }
 
