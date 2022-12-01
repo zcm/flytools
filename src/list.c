@@ -462,57 +462,79 @@ static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
   return NULL;
 }
 
-static inline void *_deque_overwrite_from_left(void **items, void **start) {
-  if (items == start) {
-    return *items;
+static inline size_t _deque_inc_start(deque *l) {
+  if (l->start == l->capacity - 1) {
+    const size_t old_start = l->start;
+    l->start = 0;
+    return old_start;
   } else {
-    void *found = *items;
-    memmove(start + 1, start, (items - start) * sizeof (void *));
-    return found;
+    return l->start++;
   }
 }
 
-static inline void *_deque_overwrite_from_right(void **items, void **end) {
-  if (items == end - 1) {
-    return *items;
+static inline size_t _deque_dec_end(deque *l) {
+  if (l->end) {
+    return l->end--;
   } else {
-    void *found = *items;
-    memmove(items, items + 1, (end - items) * sizeof (void *));
-    return found;
+    l->end = l->capacity - 1;
+    return 0;
   }
+}
+
+static inline void *_deque_nudge_left(void **item, void **start) {
+  void *found = *item;
+  memmove(start + 1, start, (item - start) * sizeof (void *));
+  return found;
+}
+
+static inline void *_deque_nudge_right(void **item, void **end) {
+  void *found = *item;
+  memmove(item, item + 1, (end - item) * sizeof (void *));
+  return found;
 }
 
 static void *deque_remove_first(deque *l, int (*matcher)(void *)) {
   void ** const boundary = l->items + l->capacity;
   void ** const segment = l->items + (l->start < l->end ? l->end : l->capacity);
-  void **items = l->items + l->start;
+  void **item = l->items + l->start;
 
-  do {
-    if (matcher(*items)) {
-      l->size--;
+  if (matcher(*item)) {
+    fly_status = FLY_OK;
+
+    l->size--;
+    _deque_inc_start(l);
+    return *item;
+  }
+
+  while (++item < segment) {
+    if (matcher(*item)) {
       fly_status = FLY_OK;
 
-      if (segment == boundary && !l->end) {
-        l->end = l->capacity - 1;
-        return *items;
-      } else if (items - (l->items + l->start) < segment - items) {
-        return _deque_overwrite_from_left(items, l->items + l->start++);
+      l->size--;
+
+      if (segment == boundary && l->end
+          || item - (l->items + l->start) < segment - item) {
+        return _deque_nudge_left(item, l->items + _deque_inc_start(l));
       } else {
-        l->end--;
-        return _deque_overwrite_from_right(items, segment);
+        _deque_dec_end(l);
+
+        if (item == segment - 1 && segment != boundary) {
+          return *item;
+        }
+        return _deque_nudge_right(item, segment);
       }
     }
-  } while (++items < segment);
+  }
 
-  if (items == boundary) {
-    void ** const end = (items = l->items) + l->end;
+  if (item == boundary) {
+    void ** const end = (item = l->items) + l->end;
 
-    for (; items < end; items++) {
-      if (matcher(*items)) {
+    for (; item < end; item++) {
+      if (matcher(*item)) {
         l->size--;
         l->end--;
         fly_status = FLY_OK;
-        return _deque_overwrite_from_right(items, end);
+        return _deque_nudge_right(item, end);
       }
     }
   }
