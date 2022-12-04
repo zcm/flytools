@@ -702,7 +702,7 @@ static inline void **deque_move_range(
     case 2: goto right;  // wrapmode 2: deque wraps; range is after wrap point
   }
 
-  if (n < end - next) {
+  if (n < (size_t) (*end - next)) {
 left:
     return memmove(next - n, start, n * sizeof (void *));
   }
@@ -744,9 +744,7 @@ static size_t deque_remove_all(
       }
     } while (matcher(*item));
 
-    l->start += item - start;
     start = item;
-
     removed = i;
   } else {
     removed = 0;
@@ -754,6 +752,7 @@ static size_t deque_remove_all(
 
   for (;;) {
     size_t keep_len, i_start;
+    void **item_base = item;
 
     do {
       if (++item == segment) {
@@ -766,7 +765,7 @@ static size_t deque_remove_all(
       }
     } while (!matcher(*item));
 
-    i_start = (i += keep_len = item - start);
+    i_start = (i += keep_len = item - item_base);
 
     do {
       if (fn(*item++, i++)) {
