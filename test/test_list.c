@@ -1531,6 +1531,82 @@ TESTCALL(test_dllist_discard_all, do_test_list_discard_all(LISTKIND_DLINK))
 TESTCALL(test_sllist_discard_all, do_test_list_discard_all(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
+static size_t stop_point = 0;
+
+int record_and_stop(void *data, size_t index) {
+  record_order(data, index);
+  return data == (void *) stop_point;
+}
+
+static void _do_test_list_discard_all_prefix_1(list *l, bool push) {
+  char expected_order[6] = "12345";
+  char expected_indices[6] = "01234";
+
+  memset(order, 0, sizeof (order));
+  memset(indices, 0, sizeof (indices));
+
+  if (push) {
+    list_push(l, (void *) 1);
+    list_push(l, (void *) 2);
+    list_push(l, (void *) 3);
+    list_push(l, (void *) 4);
+    list_push(l, (void *) 5);
+  } else {
+    list_unshift(l, (void *) 5);
+    list_unshift(l, (void *) 4);
+    list_unshift(l, (void *) 3);
+    list_unshift(l, (void *) 2);
+    list_unshift(l, (void *) 1);
+  }
+
+  assert_int_equal(5, l->size);
+
+  assert_int_equal(
+      stop_point, list_discard_all(l, &everything, &record_and_stop));
+
+  assert_int_equal(5 - stop_point, l->size);
+
+  expected_order[stop_point] = '\0';
+  expected_indices[stop_point] = '\0';
+
+  assert_string_equal(expected_order, order);
+  assert_string_equal(expected_indices, indices);
+
+  if (!l->size && l->kind == LISTKIND_DEQUE) {
+    assert_int_equal(((deque *) l)->end, ((deque *) l)->start);
+  }
+}
+
+void do_test_list_discard_all_prefix(listkind *kind) {
+  list *l;
+  stop_point = 1;
+
+  do {
+    assert_non_null(l = list_new_kind(kind));
+    _do_test_list_discard_all_prefix_1(l, 1);
+    list_del(l);
+  } while (++stop_point <= 5);
+
+  stop_point = 1;
+
+  do {
+    assert_non_null(l = list_new_kind(kind));
+    _do_test_list_discard_all_prefix_1(l, 0);
+    list_del(l);
+  } while (++stop_point <= 5);
+}
+#endif
+
+TESTCALL(test_arlist_discard_all_prefix,
+    do_test_list_discard_all_prefix(LISTKIND_ARRAY))
+TESTCALL(test_deque_discard_all_prefix,
+    do_test_list_discard_all_prefix(LISTKIND_DEQUE))
+TESTCALL(test_dllist_discard_all_prefix,
+    do_test_list_discard_all_prefix(LISTKIND_DLINK))
+TESTCALL(test_sllist_discard_all_prefix,
+    do_test_list_discard_all_prefix(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
   list *l = list_new();
   assert_non_null(l);
@@ -1656,6 +1732,10 @@ int main(void) {
       cmocka_unit_test(test_deque_discard_all),
       cmocka_unit_test(test_dllist_discard_all),
       cmocka_unit_test(test_sllist_discard_all),
+      cmocka_unit_test(test_arlist_discard_all_prefix),
+      cmocka_unit_test(test_deque_discard_all_prefix),
+      cmocka_unit_test(test_dllist_discard_all_prefix),
+      cmocka_unit_test(test_sllist_discard_all_prefix),
       cmocka_unit_test(test_list_e_null_ptr),
   };
 

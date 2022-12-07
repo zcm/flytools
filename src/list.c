@@ -716,7 +716,7 @@ static size_t _unsafe_deque_discard_all(
     deque *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   void ** const boundary = l->items + l->capacity;
 
-  unsigned int wrapmode = l->end < l->start;
+  unsigned int wrapmode = l->end && l->end < l->start;
   void **segment = wrapmode ? boundary : l->items + l->end;
 
   void **item;
@@ -728,7 +728,7 @@ static size_t _unsafe_deque_discard_all(
   if (matcher(*item)) {
     do {
       if (fn(*item++, i++)) {
-        l->start += item - start;
+        l->start = (item - l->items) % l->capacity;
         l->size -= i;
         return i;
       }
