@@ -26,14 +26,6 @@
 typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
 
-static size_t arlist_remove_all(
-    arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
-static size_t deque_remove_all(
-    deque *l, int (*matcher)(void *), int (*fn)(void *, size_t));
-static size_t dllist_remove_all(
-    dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
-static size_t sllist_remove_all(
-    sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 static void arlist_init(arlist *l);
 static void arlist_del(arlist *l);
@@ -45,7 +37,9 @@ static void *_unsafe_arlist_shift(arlist *l);
 static void _unsafe_arlist_append_array(arlist *l, size_t n, void **items);
 static void _unsafe_arlist_foreach(arlist *l, int (*)(void *, size_t));
 static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *));
-static void *arlist_remove_first(arlist *l, int (*matcher)(void *));
+static void *_unsafe_arlist_discard(arlist *l, int (*matcher)(void *));
+static size_t _unsafe_arlist_discard_all(
+    arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 static void deque_init(deque *l);
 static inline void *_unsafe_deque_get(deque *l, size_t i);
@@ -56,7 +50,9 @@ static void *_unsafe_deque_shift(deque *l);
 static void _unsafe_deque_append_array(deque *l, size_t n, void **items);
 static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
 static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
-static void *deque_remove_first(deque *l, int (*matcher)(void *));
+static void *_unsafe_deque_discard(deque *l, int (*matcher)(void *));
+static size_t _unsafe_deque_discard_all(
+    deque *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 static void dllist_init(dllist *l);
 static void dllist_del(dllist *l);
@@ -65,7 +61,9 @@ static void _unsafe_dllist_unshift(dllist *l, void *data);
 static void *_unsafe_dllist_pop(dllist *l);
 static void *_unsafe_dllist_shift(dllist *l);
 static void _unsafe_dllist_append_array(dllist *l, size_t n, void **items);
-static void *dllist_remove_first(dllist *l, int (*matcher)(void *));
+static void *_unsafe_dllist_discard(dllist *l, int (*matcher)(void *));
+static size_t _unsafe_dllist_discard_all(
+    dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 static void sllist_init(sllist *l);
 static void sllist_del(sllist *l);
@@ -77,7 +75,9 @@ static void *_unsafe_sllist_shift(sllist *l);
 static void _unsafe_sllist_append_array(sllist *l, size_t n, void **items);
 static void _unsafe_sllist_foreach(sllist *l, int (*)(void *, size_t));
 static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *));
-static void *sllist_remove_first(sllist *l, int (*matcher)(void *));
+static void *_unsafe_sllist_discard(sllist *l, int (*matcher)(void *));
+static size_t _unsafe_sllist_discard_all(
+    sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 #ifdef __TURBOC__
 #define ASSIGN_STATIC_PTR(KIND) \
@@ -102,8 +102,8 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &_unsafe_arlist_append_array,
   (void *) &_unsafe_arlist_foreach,
   (void *) &_unsafe_arlist_find_first,
-  (void *) &arlist_remove_first,
-  (void *) &arlist_remove_all,
+  (void *) &_unsafe_arlist_discard,
+  (void *) &_unsafe_arlist_discard_all,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
@@ -119,8 +119,8 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &_unsafe_deque_append_array,
   (void *) &_unsafe_deque_foreach,
   (void *) &_unsafe_deque_find_first,
-  (void *) &deque_remove_first,
-  (void *) &deque_remove_all,
+  (void *) &_unsafe_deque_discard,
+  (void *) &_unsafe_deque_discard_all,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
@@ -136,8 +136,8 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   (void *) &_unsafe_dllist_append_array,
   (void *) &_unsafe_sllist_foreach,  /* not a typo */
   (void *) &_unsafe_sllist_find_first,
-  (void *) &dllist_remove_first,
-  (void *) &dllist_remove_all,
+  (void *) &_unsafe_dllist_discard,
+  (void *) &_unsafe_dllist_discard_all,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
@@ -153,8 +153,8 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   (void *) &_unsafe_sllist_append_array,
   (void *) &_unsafe_sllist_foreach,
   (void *) &_unsafe_sllist_find_first,
-  (void *) &sllist_remove_first,
-  (void *) &sllist_remove_all,
+  (void *) &_unsafe_sllist_discard,
+  (void *) &_unsafe_sllist_discard_all,
 };
 
 #undef ASSIGN_STATIC_PTR
@@ -442,7 +442,7 @@ FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
   return l->kind->find_first(l, matcher);
 }
 
-static void *arlist_remove_first(arlist *l, int (*matcher)(void *)) {
+static void *_unsafe_arlist_discard(arlist *l, int (*matcher)(void *)) {
   size_t i = 0;
 
   while (i < l->size) {
@@ -495,7 +495,7 @@ static inline void *_deque_nudge_right(void **item, void **end) {
   return found;
 }
 
-static void *deque_remove_first(deque *l, int (*matcher)(void *)) {
+static void *_unsafe_deque_discard(deque *l, int (*matcher)(void *)) {
   void ** const boundary = l->items + l->capacity;
   void ** const segment = l->items + (l->start < l->end ? l->end : l->capacity);
   void **item = l->items + l->start;
@@ -559,7 +559,7 @@ static inline void sllist_stitch(
   prev->next = current->next;
 }
 
-static void *dllist_remove_first(dllist *l, int (*matcher)(void *)) {
+static void *_unsafe_dllist_discard(dllist *l, int (*matcher)(void *)) {
   dllistnode *head = l->head,
              *current = head->next;
 
@@ -583,7 +583,7 @@ static void *dllist_remove_first(dllist *l, int (*matcher)(void *)) {
   return NULL;
 }
 
-static void *sllist_remove_first(sllist *l, int (*matcher)(void *)) {
+static void *_unsafe_sllist_discard(sllist *l, int (*matcher)(void *)) {
   sllistnode *head = l->head,
              *prev = head,
              *current = head->next;
@@ -608,7 +608,7 @@ static void *sllist_remove_first(sllist *l, int (*matcher)(void *)) {
   return NULL;
 }
 
-FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
+FLYAPI void *list_discard(list *l, int (*matcher)(void *)) {
   if (!(l && matcher)) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
@@ -618,7 +618,7 @@ FLYAPI void *list_remove_first(list *l, int (*matcher)(void *)) {
     return NULL;
   }
 
-  return l->kind->remove_first(l, matcher);
+  return l->kind->discard(l, matcher);
 }
 
 static void _unsafe_arlist_foreach(arlist *l, int (*fn)(void *, size_t)) {
@@ -653,7 +653,7 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
   l->kind->foreach(l, fn);
 }
 
-static size_t arlist_remove_all(
+static size_t _unsafe_arlist_discard_all(
     arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t total_removed = 0, i = 0;
   void **left;
@@ -695,7 +695,7 @@ final_move:
   return total_removed;
 }
 
-static inline void **deque_move_range(
+static inline void **_deque_move_range(
     void **start, void **next, void ***end, size_t n, unsigned int wrapmode) {
   switch (wrapmode) {    // wrapmode 0: deque does not wrap
     case 1: goto left;   // wrapmode 1: deque wraps; range is before wrap point
@@ -712,7 +712,7 @@ right:
   return start;
 }
 
-static size_t deque_remove_all(
+static size_t _unsafe_deque_discard_all(
     deque *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   void ** const boundary = l->items + l->capacity;
 
@@ -769,7 +769,7 @@ static size_t deque_remove_all(
 
     do {
       if (fn(*item++, i++)) {
-        start = deque_move_range(start, item, &segment, keep_len, wrapmode);
+        start = _deque_move_range(start, item, &segment, keep_len, wrapmode);
         removed += i - i_start;
         goto done;
       }
@@ -783,7 +783,7 @@ static size_t deque_remove_all(
         }
 
         // TODO: Unwrap and move kept items to post-wrap free space if available
-        deque_move_range(start, item, &segment, keep_len, 1);
+        _deque_move_range(start, item, &segment, keep_len, 1);
         removed += i - i_start;
         i_start = i;
         keep_len = 0;
@@ -793,7 +793,7 @@ static size_t deque_remove_all(
       }
     } while (matcher(*item));
 
-    start = deque_move_range(start, item, &segment, keep_len, wrapmode);
+    start = _deque_move_range(start, item, &segment, keep_len, wrapmode);
     removed += i - i_start;
   }
 
@@ -803,7 +803,7 @@ done:
   return removed;
 }
 
-static size_t dllist_remove_all(
+static size_t _unsafe_dllist_discard_all(
     dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t i = 0, total_removed = 0;
   dllistnode *head = l->head,
@@ -835,7 +835,7 @@ static size_t dllist_remove_all(
   return total_removed;
 }
 
-static size_t sllist_remove_all(
+static size_t _unsafe_sllist_discard_all(
     sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   size_t i = 0, total_removed = 0;
   sllistnode *head = l->head,
@@ -881,7 +881,7 @@ static int do_nothing(void *unused_data, size_t unused_i) {
   return 0;
 }
 
-FLYAPI size_t list_remove_all(
+FLYAPI size_t list_discard_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   if (!(l && matcher)) {
     fly_status = FLY_E_NULL_PTR;
@@ -892,7 +892,7 @@ FLYAPI size_t list_remove_all(
     return 0;
   }
 
-  return l->kind->remove_all(l, matcher, fn ? fn : &do_nothing);
+  return l->kind->discard_all(l, matcher, fn ? fn : &do_nothing);
 }
 
 #define ARLIST_DEFAULT_CAPACITY 8

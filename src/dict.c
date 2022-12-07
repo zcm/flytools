@@ -361,7 +361,7 @@ static int _dict_resize(dict *d) {
       if (buckets[i].flags & 0x1) {
         size_t size;
 
-        list_remove_all(
+        list_discard_all(
             buckets[i].data, &_should_relocate_node, &_relocate_node);
 
         if ((size = ((list *) buckets[i].data)->size) <= 1) {
@@ -533,7 +533,7 @@ static dictnode *_dict_remove_from_bucket(
     if (bucket_list->size > 1) {
       _match_key = key;
       return (dictnode *)
-        list_remove_first((list *) bucket_list, matcher);
+        list_discard((list *) bucket_list, matcher);
     }
 
     if (!matcher(bucket_list->last->data)) {

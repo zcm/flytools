@@ -86,8 +86,8 @@ typedef struct listkind {
   void (*append_array)(list *l, size_t n, void **items);
   void (*foreach)(list *l, int (*)(void *, size_t));
   void *(*find_first)(list *, int (*)(void *));
-  void *(*remove_first)(list *, int (*)(void *));
-  size_t (*remove_all)(list *, int (*)(void *), int (*)(void *, size_t));
+  void *(*discard)(list *, int (*)(void *));
+  size_t (*discard_all)(list *, int (*)(void *), int (*)(void *, size_t));
 } listkind;
 
 extern FLYAPI listkind *LISTKIND_ARRAY;
@@ -113,9 +113,9 @@ FLYAPI void list_concat_into(list *l1, list *l2);
 FLYAPI void list_append_array(list *l, size_t n, void **items);
 
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *));
-FLYAPI void *list_remove_first(list *l, int (*matcher)(void *));
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
-FLYAPI size_t list_remove_all(
+FLYAPI void *list_discard(list *l, int (*matcher)(void *));
+FLYAPI size_t list_discard_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 FLYAPI void *arlist_get(arlist *l, size_t i);
