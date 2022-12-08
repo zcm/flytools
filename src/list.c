@@ -716,8 +716,8 @@ static size_t _unsafe_deque_discard_all(
     deque *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
   void ** const boundary = l->items + l->capacity;
 
-  unsigned int wrapmode = l->end && l->end < l->start;
-  void **segment = wrapmode ? boundary : l->items + l->end;
+  unsigned int wrapmode = l->start > l->capacity - l->size;
+  void **segment = wrapmode ? boundary : l->items + l->start + l->size;
 
   void **item;
   void **start = item = l->items + l->start;
@@ -734,13 +734,14 @@ static size_t _unsafe_deque_discard_all(
       }
 
       if (item == segment) {
-        if (segment != boundary) {
+        if (wrapmode != 1) {
           l->start = l->end = l->size = 0;
           return i;
         }
 
         l->start = 0;
         segment = (start = item = l->items) + l->end;
+        wrapmode = 2;
       }
     } while (matcher(*item));
 
@@ -750,13 +751,13 @@ static size_t _unsafe_deque_discard_all(
     removed = 0;
   }
 
-  for (;;) {
-    size_t keep_len, i_start;
+  do {
+    size_t i_start;
     void **item_base = item;
 
     do {
       if (++item == segment) {
-        if (segment != boundary) {
+        if (wrapmode != 1) {
           goto done;
         }
 
@@ -765,17 +766,17 @@ static size_t _unsafe_deque_discard_all(
       }
     } while (!matcher(*item));
 
-    i_start = (i += keep_len = item - item_base);
+    i_start = (i += item - item_base);
 
     do {
       if (fn(*item++, i++)) {
-        start = _deque_move_range(start, item, &segment, keep_len, wrapmode);
         removed += i - i_start;
+        start = _deque_move_range(start, item, &segment, i - removed, wrapmode);
         goto done;
       }
 
       if (item == segment) {
-        if (segment != boundary) {
+        if (wrapmode != 1) {
           const size_t trim_span = i - i_start;
           removed += trim_span;
           l->end -= trim_span;
@@ -783,23 +784,24 @@ static size_t _unsafe_deque_discard_all(
         }
 
         // TODO: Unwrap and move kept items to post-wrap free space if available
-        _deque_move_range(start, item, &segment, keep_len, 1);
         removed += i - i_start;
+        _deque_move_range(start, item, &segment, i - removed, 1);
         i_start = i;
-        keep_len = 0;
+        //keep_len = 0;
 
         segment = (start = item = l->items) + l->end;
         wrapmode = 2;
       }
     } while (matcher(*item));
 
-    start = _deque_move_range(start, item, &segment, keep_len, wrapmode);
     removed += i - i_start;
-  }
+    start = _deque_move_range(start, item, &segment, i - removed, wrapmode);
+  } while (item < segment);
 
 done:
   l->start = start - l->items;
   l->size -= removed;
+  l->end = (l->start + l->size) % l->capacity;
   return removed;
 }
 

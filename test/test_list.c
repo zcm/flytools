@@ -1255,7 +1255,7 @@ TESTCALL(test_sllist_discard_null,
 #ifndef METHODS_ONLY
 static uintptr_t prime = 0;
 static size_t index_sum = 0;
-static char order[6] = { 0 }, indices[6] = { 0 }, zilch[6] = { 0 };
+static char order[9] = { 0 }, indices[9] = { 0 }, zilch[9] = { 0 };
 
 int multiply_prime(void *data, size_t index) {
   prime *= (uintptr_t) data;
@@ -1538,6 +1538,11 @@ int record_and_stop(void *data, size_t index) {
   return data == (void *) stop_point;
 }
 
+int record_and_istop(void *data, size_t index) {
+  record_order(data, index);
+  return index == stop_point;
+}
+
 static void _do_test_list_discard_all_prefix_1(list *l, bool push) {
   char expected_order[6] = "12345";
   char expected_indices[6] = "01234";
@@ -1605,6 +1610,94 @@ TESTCALL(test_dllist_discard_all_prefix,
     do_test_list_discard_all_prefix(LISTKIND_DLINK))
 TESTCALL(test_sllist_discard_all_prefix,
     do_test_list_discard_all_prefix(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
+size_t match_bits = 0;
+
+int match_by_bits(void *value) {
+  return match_bits & (1ULL << ((size_t) value - 1));
+}
+
+size_t expected_from_bits(
+    size_t input_size, char *expected_value, char *expected_order) {
+  size_t i;
+  size_t expected_removals = 0;
+
+  if (input_size) {
+    for (i = 0; i < input_size; i++) {
+      if (match_bits & (1ULL << i) && i <= stop_point) {
+        // Matching means it will be removed
+        *expected_order++ = (char) i + '1';
+        ++expected_removals;
+      } else {
+        *expected_order++ = 'x';
+        *expected_value++ = (char) i + '1';
+      }
+    }
+  }
+
+  *expected_value = *expected_order = '\0';
+  return expected_removals;
+}
+
+char actual_value[9] = { 0 };
+
+int pointers2digits(void *data, size_t index) {
+  actual_value[index] = (char) data + '0';
+  return 0;
+}
+
+void do_test_deque_discard_all_exhaustive() {
+  char expected_value[9] = { 0 };
+  char expected_order[9] = { 0 };
+
+  deque dq = { 0 };
+  dq.kind = LISTKIND_DEQUE;
+  dq.capacity = 8;
+
+  void *dq_items[8] = { 0 };
+  dq.items = dq_items;
+
+  size_t i, test_start, test_size;
+
+  for (test_start = 0; test_start <= 8; test_start++) {
+    for (test_size = 0; test_size < 8; test_size++) {
+      for (stop_point = 0; stop_point <= dq.size; stop_point++) {
+        for (match_bits = 0; match_bits < 1ULL << stop_point; match_bits++) {
+          size_t expected_removals =
+            expected_from_bits(test_size, expected_value, expected_order);
+
+          for (i = 0; i < test_size; i++) {
+            dq_items[(test_start + i) % dq.capacity] = (void *) (i + 1);
+          }
+
+          dq.start = test_start;
+          dq.end = (test_start + test_size) % dq.capacity;
+          dq.size = test_size;
+
+          memset(actual_value, 0, sizeof (actual_value));
+          memset(order, 'x', test_size * sizeof (char));
+          memset(order + test_size, 0,
+              sizeof (order) - sizeof (char) * (test_size + 1));
+
+          assert_int_equal(expected_removals,
+            list_discard_all((list *) &dq, &match_by_bits, &record_and_istop));
+          assert_int_equal(test_size - expected_removals, dq.size);
+
+          list_foreach((list *) &dq, &pointers2digits);
+
+          assert_string_equal(expected_value, actual_value);
+          assert_string_equal(expected_order, order);
+        }
+      }
+    }
+  }
+}
+#endif
+
+TESTCALL(
+    test_deque_discard_all_exhaustive,
+    do_test_deque_discard_all_exhaustive())
 
 #ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
