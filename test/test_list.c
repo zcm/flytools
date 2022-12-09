@@ -1660,8 +1660,8 @@ void do_test_deque_discard_all_exhaustive() {
 
   size_t i, test_start, test_size;
 
-  for (test_start = 0; test_start <= 8; test_start++) {
-    for (test_size = 0; test_size < 8; test_size++) {
+  for (test_start = 0; test_start < 8; test_start++) {
+    for (test_size = 0; test_size <= 8; test_size++) {
       for (stop_point = 0; stop_point <= dq.size; stop_point++) {
         for (match_bits = 0; match_bits < 1ULL << stop_point; match_bits++) {
           size_t expected_removals =
