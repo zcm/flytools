@@ -388,7 +388,8 @@ static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *)) {
 
 static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *)) {
   void ** const boundary = l->items + l->capacity;
-  void ** const segment = l->items + (l->start < l->end ? l->end : l->capacity);
+  void ** const segment = l->end <= l->start ? boundary : l->items + l->end;
+
   void **items = l->items + l->start;
 
   do {
@@ -497,7 +498,8 @@ static inline void *_deque_nudge_right(void **item, void **end) {
 
 static void *_unsafe_deque_discard(deque *l, int (*matcher)(void *)) {
   void ** const boundary = l->items + l->capacity;
-  void ** const segment = l->items + (l->start < l->end ? l->end : l->capacity);
+  void ** const segment = l->end <= l->start ? boundary : l->items + l->end;
+
   void **item = l->items + l->start;
 
   if (matcher(*item)) {
@@ -697,20 +699,24 @@ final_move:
 
 static inline void **_deque_move_range(
     void **start, void ***next, void ***end,
-    size_t n, size_t left_size, unsigned int wrapmode) {
+    size_t i, size_t left_size, unsigned int wrapmode) {
+  size_t delta;
+
   switch (wrapmode) {    // wrapmode 0: deque does not wrap
     case 1: goto left;   // wrapmode 1: deque wraps; range is before wrap point
     case 2: goto right;  // wrapmode 2: deque wraps; range is after wrap point
   }
 
-  if (n < (size_t) (*end - *next)) {
+  if (i < (size_t) (*end - *next)) {
 left:
-    return memmove(*next - n, start, n * sizeof (void *));
+    // left_size should always be 0 on the left branch
+    return memmove(*next - i, start, i * sizeof (void *));
   }
 right:
-  memmove(start + (n - left_size), *next, (*end - *next) * sizeof (void *));
-  *next -= n;
-  *end -= n;
+  memmove(start + i - left_size, *next, (*end - *next) * sizeof (void *));
+  delta = *next - (start + i - left_size);
+  *next -= delta;
+  *end -= delta;
   return start;
 }
 
@@ -786,16 +792,14 @@ discard_start:
       }
 
       if (item == segment) {
+        removed += i - i_start;
+
         if (wrapmode != 1) {
-          const size_t trim_span = i - i_start;
-          removed += trim_span;
-          l->end -= trim_span;
-          goto done;
+          segment -= i - i_start;
+          goto done_skip;
         }
 
         // TODO: Unwrap and move kept items to post-wrap free space if available
-        removed += i - i_start;
-
         left_size =
           item - _deque_move_range(start, &item, &segment, i - removed, 0, 1);
 
@@ -819,11 +823,14 @@ discard_start:
   } while (item < segment);
 
 done:
+  if (wrapmode != 1) {
+done_skip:
+    l->end = (segment - l->items) % l->capacity;
+  }
   if (wrapmode < 2) {
     l->start = start - l->items;
   }
   l->size -= removed;
-  l->end = (l->start + l->size) % l->capacity;
   return removed;
 }
 

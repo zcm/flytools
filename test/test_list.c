@@ -1688,6 +1688,8 @@ void do_test_deque_discard_all_exhaustive() {
 
           assert_string_equal(expected_value, actual_value);
           assert_string_equal(expected_order, order);
+
+          assert_int_equal((dq.start + dq.size) % dq.capacity, dq.end);
         }
       }
     }
