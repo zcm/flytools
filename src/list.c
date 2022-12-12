@@ -362,6 +362,11 @@ FLYAPI void list_append_array(list *l, size_t n, void **items) {
     return;
   }
 
+  if (n > SIZE_MAX - l->size) {
+    fly_status = FLY_E_TOO_BIG;
+    return;
+  }
+
   fly_status = FLY_OK;
 
   if (!n) {
@@ -979,19 +984,28 @@ static size_t arlist_grow(arlist *l, size_t new_elements) {
     delta = new_elements;
   }
 
-  l->capacity += delta;
+  if (delta > SIZE_MAX - l->capacity) {
+    if (new_elements > SIZE_MAX - l->size) {
+      fly_status = FLY_E_TOO_BIG;
+      return 0;
+    }
+    delta = SIZE_MAX;
+  } else {
+    delta += l->capacity;
 
-  if (l->capacity < ARLIST_DEFAULT_CAPACITY) {
-    l->capacity = ARLIST_DEFAULT_CAPACITY;
+    if (delta < ARLIST_DEFAULT_CAPACITY) {
+      delta = ARLIST_DEFAULT_CAPACITY;
+    }
   }
 
-  if (!(next_elements = realloc(l->items, l->capacity * sizeof (void *)))) {
+  if (!(next_elements = realloc(l->items, delta * sizeof (void *)))) {
     // realloc() failed, l->items unchanged
+    fly_status = FLY_E_OUT_OF_MEMORY;
     return 0;
   }
 
   l->items = next_elements;
-  return delta;
+  return l->capacity = delta;
 }
 
 static void deque_reorient(deque *l, size_t grew_by) {
@@ -1022,7 +1036,7 @@ static void deque_reorient(deque *l, size_t grew_by) {
 
 // 0 means out of memory. SIZE_MAX means no resize happened.
 static inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements) {
-  if (l->size + new_elements > l->capacity) {
+  if (new_elements > l->capacity - l->size) {
     return arlist_grow(l, new_elements);
   }
   return SIZE_MAX;
@@ -1030,7 +1044,6 @@ static inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements) {
 
 #define ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements, capture)            \
   if (!(capture arlist_ensure_capacity((arlist *) l, new_elements))) {  \
-    fly_status = FLY_E_OUT_OF_MEMORY;                    \
     return;                                          \
   }
 

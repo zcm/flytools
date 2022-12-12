@@ -794,6 +794,16 @@ static void do_test_list_append_array(listkind *kind) {
     assert_int_equal(i + 1, (size_t) list_get(l, i));
   }
 
+  for (i = SIZE_MAX; i > SIZE_MAX - l->size; i--) {
+    list_append_array(l, i, items);
+    assert_fly_status(FLY_E_TOO_BIG);
+    assert_int_equal(11, l->size);
+
+    if (kind == LISTKIND_ARRAY || kind == LISTKIND_DEQUE) {
+      assert_int_equal(12, ((arlist *) l)->capacity);
+    }
+  }
+
   if (kind == LISTKIND_DEQUE) {
     assert_int_equal(1, (size_t) list_shift(l));
     assert_int_equal(10, l->size);
