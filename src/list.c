@@ -630,9 +630,33 @@ static void _unsafe_arlist_foreach(arlist *l, int (*fn)(void *, size_t)) {
 }
 
 static void _unsafe_deque_foreach(deque *l, int (*fn)(void *, size_t)) {
-  size_t i = 0;
+  void ** const boundary = l->items + l->capacity;
+  void **segment = l->end <= l->start ? boundary : l->items + l->end;
 
-  for (; i < l->size && !fn(l->items[(l->start + i) % l->capacity], i); i++);
+  size_t i = 0;
+  void **item = l->items + l->start;
+
+  do {
+    if (fn(*item, i)) {
+      return;
+    }
+  } while (++i, ++item != segment);
+
+  if (segment != boundary || !l->end) {
+    return;
+  }
+
+  segment = (item = l->items) + l->end;
+
+  for (;;) {
+    if (fn(*item, i)) {
+      return;
+    } else if (++item == segment) {
+      return;
+    } else {
+      i++;
+    }
+  }
 }
 
 static void _unsafe_sllist_foreach(sllist *l, int (*fn)(void *, size_t)) {
@@ -651,6 +675,10 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
   }
 
   fly_status = FLY_OK;
+
+  if (!l->size) {
+    return;
+  }
 
   l->kind->foreach(l, fn);
 }
