@@ -256,7 +256,12 @@ FLYAPI void *list_get(list *l, size_t i) {
 
 FLYAPI void *arlist_get(arlist *l, size_t i) {
   CHECK_LIST_BOUNDS(l, i);
-  return l->items[i];
+  return _unsafe_arlist_get(l, i);
+}
+
+FLYAPI void *deque_get(deque *l, size_t i) {
+  CHECK_LIST_BOUNDS(l, i);
+  return _unsafe_deque_get(l, i);
 }
 
 FLYAPI void *dllist_get(dllist *l, size_t i) {

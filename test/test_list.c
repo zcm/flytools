@@ -1841,6 +1841,7 @@ int main(void) {
       cmocka_unit_test(test_deque_discard_all_prefix),
       cmocka_unit_test(test_dllist_discard_all_prefix),
       cmocka_unit_test(test_sllist_discard_all_prefix),
+      cmocka_unit_test(test_deque_discard_all_exhaustive),
       cmocka_unit_test(test_list_e_null_ptr),
   };
 
