@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "list.h"
+#include "internal/common.h"
 
 typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
@@ -367,7 +368,7 @@ FLYAPI void list_append_array(list *l, size_t n, void **items) {
     return;
   }
 
-  if (n > SIZE_MAX - l->size) {
+  if (n > PTRINDEX_MAX - l->size) {
     fly_status = FLY_E_TOO_BIG;
     return;
   }
@@ -989,12 +990,12 @@ static size_t arlist_grow(arlist *l, size_t new_elements) {
     delta = new_elements;
   }
 
-  if (delta > SIZE_MAX - l->capacity) {
-    if (new_elements > SIZE_MAX - l->size) {
+  if (delta > PTRINDEX_MAX - l->capacity) {
+    if (new_elements > PTRINDEX_MAX - l->size) {
       fly_status = FLY_E_TOO_BIG;
       return 0;
     }
-    delta = SIZE_MAX;
+    delta = PTRINDEX_MAX;
   } else {
     delta += l->capacity;
 
