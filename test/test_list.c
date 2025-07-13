@@ -416,7 +416,15 @@ void do_test_list_get(listkind *kind) {
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, SIZE_MAX));
+  assert_null(list_get(l, -1));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  fly_status = FLY_OK;
+
+  assert_null(list_get(l, PTRDIFF_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  fly_status = FLY_OK;
+
+  assert_null(list_get(l, PTRDIFF_MIN));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
@@ -444,11 +452,23 @@ void do_test_list_get(listkind *kind) {
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
+  assert_int_equal(123, (uintptr_t) list_get(l, -1));
+  assert_fly_status(FLY_OK);
+  fly_status = FLY_E_TOO_BIG;
+
   assert_null(list_get(l, 1));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, SIZE_MAX));
+  assert_null(list_get(l, -2));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  fly_status = FLY_E_TOO_BIG;
+
+  assert_null(list_get(l, PTRDIFF_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  fly_status = FLY_E_TOO_BIG;
+
+  assert_null(list_get(l, PTRDIFF_MIN));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
@@ -477,15 +497,24 @@ void do_test_list_get(listkind *kind) {
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, SIZE_MAX));
+  assert_int_equal(456, (uintptr_t) list_get(l, -2));
+  assert_fly_status(FLY_OK);
+  fly_status = FLY_E_TOO_BIG;
+
+  assert_null(list_get(l, PTRDIFF_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
+  assert_null(list_get(l, PTRDIFF_MIN));
   assert_null(list_get(l, PTRINDEX_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
   assert_int_equal(123, (uintptr_t) list_get(l, 1));
+  assert_fly_status(FLY_OK);
+  fly_status = FLY_E_TOO_BIG;
+
+  assert_int_equal(123, (uintptr_t) list_get(l, -1));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
@@ -512,11 +541,23 @@ void do_test_list_get(listkind *kind) {
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
+    assert_int_equal(456, (uintptr_t) list_get(l, -2));
+    assert_fly_status(FLY_OK);
+    fly_status = FLY_E_TOO_BIG;
+
     assert_int_equal(123, (uintptr_t) list_get(l, l->size - 1));
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_null(list_get(l, SIZE_MAX));
+    assert_int_equal(123, (uintptr_t) list_get(l, -1));
+    assert_fly_status(FLY_OK);
+    fly_status = FLY_E_TOO_BIG;
+
+    assert_null(list_get(l, PTRDIFF_MAX));
+    assert_fly_status(FLY_E_OUT_OF_RANGE);
+    fly_status = FLY_E_TOO_BIG;
+
+    assert_null(list_get(l, PTRDIFF_MIN));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
@@ -548,7 +589,15 @@ void do_test_list_get(listkind *kind) {
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
+  assert_null(list_get(l, -1));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  fly_status = FLY_E_TOO_BIG;
+
   assert_null(list_get(l, SIZE_MAX));
+  assert_fly_status(FLY_E_OUT_OF_RANGE);
+  fly_status = FLY_E_TOO_BIG;
+
+  assert_null(list_get(l, PTRDIFF_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
@@ -802,7 +851,7 @@ TEST(test_list_concat_both_empty, {
 #ifndef METHODS_ONLY
 static void do_test_list_append_array(listkind *kind) {
   list *l;
-  size_t i;
+  ptrdiff_t i;
   void *items[] = { (void *) 1, (void *) 2, (void *) 3, (void *) 4,
                     (void *) 5, (void *) 6, (void *) 7, (void *) 8 };
 
@@ -846,6 +895,9 @@ static void do_test_list_append_array(listkind *kind) {
   for (i = 0; i < 8; i++) {
     assert_int_equal(i + 1, (size_t) list_get(l, i));
   }
+  for (i = -1; i >= -8; i--) {
+    assert_int_equal(i + 9, (size_t) list_get(l, i));
+  }
 
   fly_status = FLY_NOT_FOUND;
 
@@ -857,7 +909,7 @@ static void do_test_list_append_array(listkind *kind) {
     assert_int_equal(12, ((arlist *) l)->capacity);
   }
 
-  for (; i < 11; i++) {
+  for (i = 8; i < 11; i++) {
     assert_int_equal(i - 7, (size_t) list_get(l, i));
   }
   for (i = 0; i < 8; i++) {

@@ -30,7 +30,7 @@ typedef struct dllistnode dllistnode;
 
 static void arlist_init(arlist *l);
 static void arlist_del(arlist *l);
-static inline void *_unsafe_arlist_get(arlist *l, size_t i);
+static inline void *_unsafe_arlist_get(arlist *l, ptrdiff_t i);
 static void _unsafe_arlist_push(arlist *l, void *data);
 static void _unsafe_arlist_unshift(arlist *l, void *data);
 static void *_unsafe_arlist_pop(arlist *l);
@@ -43,7 +43,7 @@ static size_t _unsafe_arlist_discard_all(
     arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 
 static void deque_init(deque *l);
-static inline void *_unsafe_deque_get(deque *l, size_t i);
+static inline void *_unsafe_deque_get(deque *l, ptrdiff_t i);
 static void _unsafe_deque_push(deque *l, void *data);
 static void _unsafe_deque_unshift(deque *l, void *data);
 static void *_unsafe_deque_pop(deque *l);
@@ -57,6 +57,7 @@ static size_t _unsafe_deque_discard_all(
 
 static void dllist_init(dllist *l);
 static void dllist_del(dllist *l);
+static inline void *_unsafe_dllist_get(dllist *l, ptrdiff_t i);
 static void _unsafe_dllist_push(dllist *l, void *data);
 static void _unsafe_dllist_unshift(dllist *l, void *data);
 static void *_unsafe_dllist_pop(dllist *l);
@@ -68,7 +69,7 @@ static size_t _unsafe_dllist_discard_all(
 
 static void sllist_init(sllist *l);
 static void sllist_del(sllist *l);
-static inline void *_unsafe_sllist_get(sllist *l, size_t i);
+static inline void *_unsafe_sllist_get(sllist *l, ptrdiff_t i);
 static void _unsafe_sllist_push(sllist *l, void *data);
 static void _unsafe_sllist_unshift(sllist *l, void *data);
 static void *_unsafe_sllist_pop(sllist *l);
@@ -128,7 +129,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   sizeof (dllist),
   (void *) &dllist_init,
   (void *) &dllist_del,
-  (void *) &_unsafe_sllist_get,
+  (void *) &_unsafe_dllist_get,
   (void *) &_unsafe_dllist_push,
   (void *) &_unsafe_dllist_unshift,
   (void *) &_unsafe_dllist_pop,
@@ -216,11 +217,19 @@ FLYAPI void list_del(list *l) {
   }
 }
 
-static inline void *_unsafe_arlist_get(arlist *l, size_t i) {
+static inline void *_unsafe_arlist_get(arlist *l, ptrdiff_t i) {
+  if (i < 0) {
+    i += l->size;
+  }
+
   return l->items[i];
 }
 
-static inline void *_unsafe_deque_get(deque *l, size_t i) {
+static inline void *_unsafe_deque_get(deque *l, ptrdiff_t i) {
+  if (i < 0) {
+    i += l->size;
+  }
+
   return l->items[(l->start + i) % l->capacity];
 }
 
@@ -235,43 +244,88 @@ static inline sllistnode *_unsafe_sllist_get_node(sllist *l, size_t i) {
   return current;
 }
 
-static inline void *_unsafe_sllist_get(sllist *l, size_t i) {
+static inline void *_unsafe_sllist_get(sllist *l, ptrdiff_t i) {
+  if (i < 0) {
+    if (i == -1) {
+      return l->last->data;
+    } else {
+      i += l->size;
+    }
+  }
+
   return _unsafe_sllist_get_node(l, i)->data;
 }
 
-#define CHECK_LIST_BOUNDS(l, i)       \
-  if (!l) {                           \
-    fly_status = FLY_E_NULL_PTR;      \
-    return NULL;                      \
-  }                                   \
-  if (i >= l->size) {                 \
-    fly_status = FLY_E_OUT_OF_RANGE;  \
-    return NULL;                      \
-  }                                   \
-  fly_status = FLY_OK;                \
+static inline dllistnode *_unsafe_dllist_get_node_reverse(dllist *l, size_t i) {
+  dllistnode *current = l->head->prev;
 
-FLYAPI void *list_get(list *l, size_t i) {
-  CHECK_LIST_BOUNDS(l, i);
+  while (--i) {
+    current = current->prev;
+  }
+
+  return current;
+}
+
+static inline void *_unsafe_dllist_get(dllist *l, ptrdiff_t i) {
+  if (i < 0) {
+    i += l->size;
+  }
+
+  if ((size_t) i > l->size / 2) {
+    return _unsafe_dllist_get_node_reverse(l, l->size - (size_t) i)->data;
+  }
+
+  return _unsafe_sllist_get_node((sllist *) l, (size_t) i)->data;
+}
+
+static inline enum FLY_STATUS list_check_bounds(list *l, ptrdiff_t i) {
+  ptrdiff_t size;
+
+  if (!l) {
+    return fly_status = FLY_E_NULL_PTR;
+  }
+
+  size = (ptrdiff_t) l->size;
+
+  if (i >= size || i < -size) {
+    return fly_status = FLY_E_OUT_OF_RANGE;
+  }
+
+  return fly_status = FLY_OK;
+}
+
+FLYAPI void *list_get(list *l, ptrdiff_t i) {
+  if (list_check_bounds(l, i)) {
+    return NULL;
+  }
   return l->kind->get(l, i);
 }
 
-FLYAPI void *arlist_get(arlist *l, size_t i) {
-  CHECK_LIST_BOUNDS(l, i);
+FLYAPI void *arlist_get(arlist *l, ptrdiff_t i) {
+  if (list_check_bounds(l, i)) {
+    return NULL;
+  }
   return _unsafe_arlist_get(l, i);
 }
 
-FLYAPI void *deque_get(deque *l, size_t i) {
-  CHECK_LIST_BOUNDS(l, i);
+FLYAPI void *deque_get(deque *l, ptrdiff_t i) {
+  if (list_check_bounds(l, i)) {
+    return NULL;
+  }
   return _unsafe_deque_get(l, i);
 }
 
-FLYAPI void *dllist_get(dllist *l, size_t i) {
-  CHECK_LIST_BOUNDS(l, i);
+FLYAPI void *dllist_get(dllist *l, ptrdiff_t i) {
+  if (list_check_bounds(l, i)) {
+    return NULL;
+  }
   return _unsafe_sllist_get((sllist *) l, i);
 }
 
-FLYAPI void *sllist_get(sllist *l, size_t i) {
-  CHECK_LIST_BOUNDS(l, i);
+FLYAPI void *sllist_get(sllist *l, ptrdiff_t i) {
+  if (list_check_bounds(l, i)) {
+    return NULL;
+  }
   return _unsafe_sllist_get(l, i);
 }
 
