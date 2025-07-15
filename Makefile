@@ -1,7 +1,15 @@
 CC := clang
+
 #OBJ = $(patsubst %.c,%.o,$(wildcard src/*.c))
-OBJ = src/common.o src/generics.o src/dict.o src/hash.o src/list.o
-CFLAGS += -Iinclude -Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
+
+OBJ = \
+	src/common.o src/generics.o src/dict.o src/hash.o src/list.o \
+	src/random.o src/entropy.o
+
+CFLAGS += \
+	-Iinclude -Isrc/pcg-c -Isrc/pcg-c/include -I src/fastrange \
+	-Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
+
 VPATH = src:include:.
 
 # uncomment to enable compilation of scanner code
@@ -19,6 +27,12 @@ all: $(OBJ) build/libflytools.a($(OBJ))
 src/dict.o: hash.h dict.h common.h list.h
 src/hash.o: hash.h common.h
 src/list.o: list.h common.h
+
+src/random.o: random.h common.h src/fastrange/fastrange.h \
+	src/pcg-c/extras/entropy.h src/pcg-c/include/pcg_variants.h
+
+src/entropy.o: src/pcg-c/extras/entropy.c src/pcg-c/extras/entropy.h \
+	src/pcg-c/extras/pcg_spinlock.h src/pcg-c/include/pcg_variants.h
 
 # uncomment to enable compilation of scanner code
 #src/scanner.c: scanner.h

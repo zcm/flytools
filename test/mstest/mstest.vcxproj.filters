@@ -30,6 +30,9 @@
     <ClCompile Include="..\test_hash.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_random.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="adapters.h">

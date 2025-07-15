@@ -58,7 +58,7 @@ void assert_memory_equal(void *p1, void *p2, size_t size) {
 	}
 }
 
-void _fail() {
+void _fail(const char * const file, const int line) {
 	Assert::Fail();
 }
 

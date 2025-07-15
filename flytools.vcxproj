@@ -92,6 +92,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <UseStandardPreprocessor>
       </UseStandardPreprocessor>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\pcg-c;$(ProjectDir)src\pcg-c\include;$(ProjectDir)src\fastrange;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -113,6 +114,7 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <UseStandardPreprocessor>
       </UseStandardPreprocessor>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\pcg-c;$(ProjectDir)src\pcg-c\include;$(ProjectDir)src\fastrange;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -128,6 +130,9 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\pcg-c;$(ProjectDir)src\pcg-c\include;$(ProjectDir)src\fastrange;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
@@ -143,6 +148,9 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\pcg-c;$(ProjectDir)src\pcg-c\include;$(ProjectDir)src\fastrange;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -154,9 +162,11 @@
   <ItemGroup>
     <ClCompile Include="src\common.c" />
     <ClCompile Include="src\dict.c" />
+    <ClCompile Include="src\entropy.c" />
     <ClCompile Include="src\generics.c" />
     <ClCompile Include="src\hash.c" />
     <ClCompile Include="src\list.c" />
+    <ClCompile Include="src\random.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\common.h" />
@@ -165,6 +175,7 @@
     <ClInclude Include="include\flytools.h" />
     <ClInclude Include="include\hash.h" />
     <ClInclude Include="include\list.h" />
+    <ClInclude Include="include\random.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="flytools.rc" />
