@@ -8,3 +8,4 @@ test/mstest/build
 *.tmp
 .vs
 *.vcxproj.user
+UpgradeLog.htm
