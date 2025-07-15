@@ -181,7 +181,7 @@ static dict *_dict_init_with(
 }
 
 static inline int _check_power_of_two(const size_t size) {
-  if (size <= 1 || (size & size - 1)) {
+  if (size <= 1 || (size & (size - 1))) {
     fly_status = FLY_E_INVALID_ARG;
     return 0;
   }
@@ -423,7 +423,7 @@ static void _dict_set_bucket_atomic(
   dictnode *node;  /* Also used implicitly in macro expansion */
 
 start:
-  bucket = d->buckets + (hash & ((size_t) 1 << d->exponent) - 1);
+  bucket = d->buckets + (hash & (((size_t) 1 << d->exponent) - 1));
 
   if (!bucket->data) {
     RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH(d, 1);
@@ -556,9 +556,9 @@ static dictnode *_dict_remove_from_bucket(
 }
 
 #define BUCKET_PTR_INDEX(d, key) \
-  (hash_xorshift64s((uint64_t) key) & ((size_t) 1 << d->exponent) - 1)
+  (hash_xorshift64s((uint64_t) key) & (((size_t) 1 << d->exponent) - 1))
 #define BUCKET_STR_INDEX(d, key) \
-  (hash_string(key) & ((size_t) 1 << d->exponent) - 1)
+  (hash_string(key) & (((size_t) 1 << d->exponent) - 1))
 
 static dictnode *_dict_remove_keyed_ptr(dict * restrict d, void *key) {
   return _dict_remove_from_bucket(

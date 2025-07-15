@@ -79,6 +79,8 @@ void do_test_rng32_next(uint8_t mode, uint32_t bound) {
 
   switch (mode) {
     case DO_NOT_SEED:
+      // AddressSanitizer leaves zeroes on the stack, so use address instead
+      rng.state = rng.inc = (uint64_t) (uintptr_t) &rng;
       break;
     case USE_ENTROPY:
       rng32_seed(&rng);
@@ -114,6 +116,12 @@ void do_test_rng64_next(uint8_t mode, uint64_t bound) {
 
   switch (mode) {
     case DO_NOT_SEED:
+#ifdef __SIZEOF_INT128__
+      rng.state = rng.inc = (__uint128_t) (uintptr_t) &rng;
+#else
+      rng.low.state = rng.low.inc = (uint64_t) (uintptr_t) &rng;
+      rng.high = rng.low;
+#endif
       break;
     case USE_ENTROPY:
       rng64_seed(&rng);

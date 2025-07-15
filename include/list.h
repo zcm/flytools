@@ -17,6 +17,8 @@
 #define __ZCM_LIST_H__
 
 #include <stdlib.h>
+#include <stddef.h>
+
 #include "common.h"
 #include "generics.h"
 

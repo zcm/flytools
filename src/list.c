@@ -278,8 +278,9 @@ static inline void *_unsafe_dllist_get(dllist *l, ptrdiff_t i) {
   return _unsafe_sllist_get_node((sllist *) l, (size_t) i)->data;
 }
 
-static inline enum FLY_STATUS list_check_bounds(list *l, ptrdiff_t i) {
+static inline enum FLY_STATUS list_bad_call(void * restrict lp, ptrdiff_t i) {
   ptrdiff_t size;
+  list *l = (list *) lp;
 
   if (!l) {
     return fly_status = FLY_E_NULL_PTR;
@@ -295,35 +296,35 @@ static inline enum FLY_STATUS list_check_bounds(list *l, ptrdiff_t i) {
 }
 
 FLYAPI void *list_get(list *l, ptrdiff_t i) {
-  if (list_check_bounds(l, i)) {
+  if (list_bad_call(l, i)) {
     return NULL;
   }
   return l->kind->get(l, i);
 }
 
 FLYAPI void *arlist_get(arlist *l, ptrdiff_t i) {
-  if (list_check_bounds(l, i)) {
+  if (list_bad_call(l, i)) {
     return NULL;
   }
   return _unsafe_arlist_get(l, i);
 }
 
 FLYAPI void *deque_get(deque *l, ptrdiff_t i) {
-  if (list_check_bounds(l, i)) {
+  if (list_bad_call(l, i)) {
     return NULL;
   }
   return _unsafe_deque_get(l, i);
 }
 
 FLYAPI void *dllist_get(dllist *l, ptrdiff_t i) {
-  if (list_check_bounds(l, i)) {
+  if (list_bad_call(l, i)) {
     return NULL;
   }
   return _unsafe_sllist_get((sllist *) l, i);
 }
 
 FLYAPI void *sllist_get(sllist *l, ptrdiff_t i) {
-  if (list_check_bounds(l, i)) {
+  if (list_bad_call(l, i)) {
     return NULL;
   }
   return _unsafe_sllist_get(l, i);
@@ -331,7 +332,7 @@ FLYAPI void *sllist_get(sllist *l, ptrdiff_t i) {
 
 // struct member interaction
 
-static inline void *list_end_remove_op(
+static inline void *list_end_remove_op_(
     void * restrict vl, void *(*remove)(void *)) {
   list *l = (list *) vl;
 
@@ -343,6 +344,8 @@ static inline void *list_end_remove_op(
   fly_status = FLY_EMPTY;
   return NULL;
 }
+
+#define list_end_remove_op(vl, remove) list_end_remove_op_(vl, (void *) remove)
 
 FLYAPI void *list_pop(list *l) {
   if (!l) {
@@ -581,16 +584,16 @@ static void *_unsafe_deque_discard(deque *l, int (*matcher)(void *)) {
 
       l->size--;
 
-      if (segment == boundary && l->end
+      if ((segment == boundary && l->end)
           || item - (l->items + l->start) < segment - item) {
         return _deque_nudge_left(item, l->items + _deque_inc_start(l));
       } else {
-        _deque_dec_end(l);
+        const size_t prev_end = _deque_dec_end(l);
 
-        if (item == segment - 1 && segment != boundary) {
+        if (item == segment - 1 && (segment != boundary || prev_end == 0)) {
           return *item;
         }
-        return _deque_nudge_right(item, segment);
+        return _deque_nudge_right(item, segment - 1);
       }
     }
   }
@@ -1546,8 +1549,15 @@ FLYAPI void sllist_unshift(sllist *l, void *data) {
 static void *_unsafe_sllist_pop(sllist *l) {
   void *ret = l->last->data;
 
-  l->del(l->last);  // Do not call if l is empty! You'll free the head node!
-  l->last = _unsafe_sllist_get_node(l, (l->size - 2) % l->size);
+  l->del(l->last);
+
+  if (l->size == 1) {
+    l->size = 0;
+    (l->last = l->head)->next = l->head;
+    return ret;
+  }
+
+  l->last = _unsafe_sllist_get_node(l, l->size - 2);
   l->last->next = l->head;
   l->size--;
 

@@ -402,7 +402,6 @@ TESTCALL(test_sllist_del_nonempty, do_test_list_del_nonempty(LISTKIND_SLINK))
 #ifndef METHODS_ONLY
 void do_test_list_get(listkind *kind) {
   list *l;
-  size_t i = 0;
 
   assert_non_null(l = list_new_kind(kind));
   assert_int_equal(0, l->size);
@@ -916,7 +915,9 @@ static void do_test_list_append_array(listkind *kind) {
     assert_int_equal(i + 1, (size_t) list_get(l, i));
   }
 
-  for (i = PTRINDEX_MAX; i > PTRINDEX_MAX - l->size; i--) {
+  const ptrdiff_t lower_limit = PTRINDEX_MAX - l->size;
+
+  for (i = PTRINDEX_MAX; i > lower_limit; i--) {
     list_append_array(l, i, items);
     assert_fly_status(FLY_E_TOO_BIG);
     assert_int_equal(11, l->size);
@@ -951,6 +952,8 @@ static void do_test_list_append_array(listkind *kind) {
       assert_int_equal(i - 8, (size_t) list_get(l, i));
     }
   }
+
+  list_del(l);
 }
 #endif
 
@@ -1396,7 +1399,7 @@ int multiply_prime(void *data, size_t index) {
 }
 
 int record_order(void *data, size_t index) {
-  order[index] = (char) data + '0';
+  order[index] = (char) (uintptr_t) data + '0';
   indices[index] = (char) index + '0';
   return 0;
 }
@@ -1522,8 +1525,8 @@ int value_is_even(void *value) {
 static size_t count = 0;
 
 int record_order_by_count(void *data, size_t index) {
-  order[count] = (char) data + '0';
-  indices[count] = (char) index + '0';
+  order[count] = (char) (uintptr_t) data + '0';
+  indices[count] = (char) (uintptr_t) index + '0';
   ++count;
   return 0;
 }
@@ -1675,7 +1678,7 @@ int record_and_istop(void *data, size_t index) {
   return index == stop_point;
 }
 
-static void _do_test_list_discard_all_prefix_1(list *l, bool push) {
+static void _do_test_list_discard_all_prefix_1(list *l, int push) {
   char expected_order[6] = "12345";
   char expected_indices[6] = "01234";
 
@@ -1775,7 +1778,7 @@ size_t expected_from_bits(
 char actual_value[9] = { 0 };
 
 int pointers2digits(void *data, size_t index) {
-  actual_value[index] = (char) data + '0';
+  actual_value[index] = (char) (uintptr_t) data + '0';
   return 0;
 }
 

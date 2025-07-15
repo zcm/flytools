@@ -193,7 +193,7 @@ void do_test_hash_xorshift64s_ptr_no_pattern() {
 
     // Repeat the test but with pseudorandom values instead.
 
-    last = hash_xorshift64s(~EXAMPLE_PTR ^ FAR + i);
+    last = hash_xorshift64s(~EXAMPLE_PTR ^ (FAR + i));
 
     for (p = 0; p < max_value * iterations; ++p) {
       last = hash_xorshift64s(last);
