@@ -21,6 +21,7 @@
 
 #include "common.h"
 #include "generics.h"
+#include "random.h"
 
 #if defined(_MSC_VER)
 #define restrict __restrict
@@ -42,7 +43,8 @@ struct listkind;
 #define LIST_DEFINITION             \
   INHERIT_STRUCT_DEF(FLYOBJ_SUPER)  \
   struct listkind *kind;            \
-  size_t size;
+  size_t size;                      \
+  rng64 rng;
 
 typedef struct list {
   INHERIT_STRUCT_DEF(LIST_DEFINITION)
@@ -90,6 +92,7 @@ typedef struct listkind {
   void *(*find_first)(list *, int (*)(void *));
   void *(*discard)(list *, int (*)(void *));
   size_t (*discard_all)(list *, int (*)(void *), int (*)(void *, size_t));
+  void (*shuffle)(list *);
 } listkind;
 
 extern FLYAPI listkind *LISTKIND_ARRAY;
@@ -119,6 +122,7 @@ FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t));
 FLYAPI void *list_discard(list *l, int (*matcher)(void *));
 FLYAPI size_t list_discard_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
+FLYAPI void list_shuffle(list *l);
 
 FLYAPI void *arlist_get(arlist *l, ptrdiff_t i);
 FLYAPI void arlist_push(arlist *l, void *data);
@@ -126,6 +130,7 @@ FLYAPI void arlist_unshift(arlist *l, void *data);
 FLYAPI void *arlist_pop(arlist *l);
 FLYAPI void *arlist_shift(arlist *l);
 FLYAPI void arlist_concat(arlist *l1, arlist *l2);
+FLYAPI void arlist_shuffle(arlist *l);
 
 FLYAPI void *deque_get(deque *l, ptrdiff_t i);
 FLYAPI void deque_push(deque *l, void *data);
@@ -133,6 +138,7 @@ FLYAPI void deque_unshift(deque *l, void *data);
 FLYAPI void *deque_pop(deque *l);
 FLYAPI void *deque_shift(deque *l);
 FLYAPI void deque_concat(deque *l1, deque *l2);
+FLYAPI void deque_shuffle(deque *l);
 
 FLYAPI void *dllist_get(dllist *l, ptrdiff_t i);
 FLYAPI void dllist_push(dllist *l, void *data);
@@ -140,6 +146,7 @@ FLYAPI void dllist_unshift(dllist *l, void *data);
 FLYAPI void *dllist_pop(dllist *l);
 FLYAPI void *dllist_shift(dllist *l);
 FLYAPI void dllist_concat(dllist *l1, dllist *l2);
+FLYAPI void dllist_shuffle(dllist *l);
 
 FLYAPI void *sllist_get(sllist *l, ptrdiff_t i);
 FLYAPI void sllist_push(sllist *l, void *data);
@@ -147,6 +154,7 @@ FLYAPI void sllist_unshift(sllist *l, void *data);
 FLYAPI void *sllist_pop(sllist *l);
 FLYAPI void *sllist_shift(sllist *l);
 FLYAPI void sllist_concat(sllist *l1, sllist *l2);
+FLYAPI void sllist_shuffle(sllist *l);
 
 #if defined(_MSC_VER)
 #undef restrict

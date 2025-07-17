@@ -1837,6 +1837,128 @@ TESTCALL(
     do_test_deque_discard_all_exhaustive())
 
 #ifndef METHODS_ONLY
+static char cards[] = "A23456789XJQK";
+
+int assert_card_not_equal(void *data, size_t i) {
+  char unexpected[2] = { cards[i], '\0' };
+  char actual[2] = { (char) (uintptr_t) data, '\0' };
+
+  assert_string_not_equal(unexpected, actual);
+  return 0;
+}
+
+void do_test_list_shuffle(listkind *kind) {
+  list *l;
+  size_t i, end;
+  struct sllistnode *temp_node = NULL;
+
+  fly_status = FLY_OK;
+  list_shuffle(NULL);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  l = list_new_kind(kind);
+  assert_non_null(l);
+  assert_fly_status(FLY_OK);
+
+  if (kind == LISTKIND_DLINK || kind == LISTKIND_SLINK) {
+    temp_node = ((sllist *) l)->head;
+  }
+
+  // This seed shuffles all cards into different positions
+  rng64_set_seed(&l->rng, rng_seed64_make64(9600, 106, 6, 4));
+
+  for (i = 0; i < sizeof (cards) - 1; ++i) {
+    list_push(l, (void *) (uintptr_t) cards[i]);
+  }
+
+  assert_int_equal(sizeof (cards) - 1, l->size);
+
+  fly_status = FLY_E_TOO_BIG;
+  list_shuffle(l);
+
+  assert_fly_status(FLY_OK);
+  assert_int_equal(sizeof (cards) - 1, l->size);
+
+  if (kind == LISTKIND_DEQUE) {
+    end = ((deque *) l)->end;
+
+    if (!end) {
+      end = l->size;
+    }
+
+    assert_int_equal(0, ((deque *) l)->start);
+    assert_int_equal(l->size, end - ((deque *) l)->start);
+  } else if (kind == LISTKIND_DLINK || kind == LISTKIND_SLINK) {
+    assert_ptr_equal(temp_node, ((sllist *) l)->head);
+  }
+
+  list_foreach((list *) l, &assert_card_not_equal);
+
+  void *first = list_get(l, 0);
+
+  for (i = 0; i < 4; ++i) {
+    list_unshift(l, list_pop(l));
+  }
+
+  list_shuffle(l);
+
+  assert_int_equal(sizeof (cards) - 1, l->size);
+  assert_ptr_not_equal(first, list_get(l, 0));
+
+  first = list_get(l, 0);
+
+  if (kind == LISTKIND_DEQUE) {
+    end = ((deque *) l)->end;
+
+    if (!end) {
+      end = l->size;
+    }
+
+    assert_int_equal(0, ((deque *) l)->start);
+    assert_int_equal(l->size, end - ((deque *) l)->start);
+  } else if (kind == LISTKIND_DLINK || kind == LISTKIND_SLINK) {
+    assert_ptr_equal(temp_node, ((sllist *) l)->head);
+  }
+
+  for (i = 0; i < 9; ++i) {
+    void *p = list_pop(l);
+    assert_non_null(p);
+    assert_fly_status(FLY_OK);
+
+    list_unshift(l, p);
+    assert_fly_status(FLY_OK);
+  }
+
+  list_shuffle(l);
+
+  assert_int_equal(sizeof (cards) - 1, l->size);
+  assert_ptr_not_equal(first, list_get(l, 0));
+
+  first = list_get(l, 0);
+
+  if (kind == LISTKIND_DEQUE) {
+    end = ((deque *) l)->end;
+
+    if (!end) {
+      end = l->size;
+    }
+
+    assert_int_not_equal(0, ((deque *) l)->start);
+    assert_int_equal(l->size, ((deque *) l)->capacity - ((deque *) l)->start);
+  } else if (kind == LISTKIND_DLINK || kind == LISTKIND_SLINK) {
+    assert_ptr_equal(temp_node, ((sllist *) l)->head);
+  }
+
+  list_del(l);
+}
+#endif
+
+TESTCALL(test_arlist_shuffle, do_test_list_shuffle(LISTKIND_ARRAY))
+TESTCALL(test_deque_shuffle, do_test_list_shuffle(LISTKIND_DEQUE))
+TESTCALL(test_dllist_shuffle, do_test_list_shuffle(LISTKIND_DLINK))
+TESTCALL(test_sllist_shuffle, do_test_list_shuffle(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
   list *l = list_new();
   assert_non_null(l);

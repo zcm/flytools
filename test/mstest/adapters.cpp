@@ -39,8 +39,23 @@ void assert_string_equal(char *s, char *t) {
 	Assert::AreEqual(str_s, str_t);
 }
 
+void assert_string_not_equal(char *s, char *t) {
+	if (s == t) {
+		return;
+	}
+
+	std::string str_s(s);
+	std::string str_t(t);
+
+	Assert::AreNotEqual(str_s, str_t);
+}
+
 void assert_ptr_equal(void *p1, void *p2) {
 	Assert::AreEqual(p1, p2);
+}
+
+void assert_ptr_not_equal(void *p1, void *p2) {
+	Assert::AreNotEqual(p1, p2);
 }
 
 void assert_memory_equal(void *p1, void *p2, size_t size) {
