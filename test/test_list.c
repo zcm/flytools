@@ -1837,10 +1837,10 @@ TESTCALL(
     do_test_deque_discard_all_exhaustive())
 
 #ifndef METHODS_ONLY
-static char cards[] = "A23456789XJQK";
+static char alnum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-int assert_card_not_equal(void *data, size_t i) {
-  char unexpected[2] = { cards[i], '\0' };
+int assert_alnum_deranged(void *data, size_t i) {
+  char unexpected[2] = { alnum[i], '\0' };
   char actual[2] = { (char) (uintptr_t) data, '\0' };
 
   assert_string_not_equal(unexpected, actual);
@@ -1864,20 +1864,28 @@ void do_test_list_shuffle(listkind *kind) {
     temp_node = ((sllist *) l)->head;
   }
 
-  // This seed shuffles all cards into different positions
-  rng64_set_seed(&l->rng, rng_seed64_make64(9600, 106, 6, 4));
+  // This seed shuffles all alnum into different positions (derangement)
+#ifdef _MSC_VER
+  if (kind == LISTKIND_ARRAY || kind == LISTKIND_DEQUE) {
+    rng64_set_seed(&l->rng, rng_seed64_make64(893, 1431, 9600, 10664));
+  } else {
+    rng64_set_seed(&l->rng, rng_seed64_make64(9600, 10664, 893, 1431));
+  }
+#else
+  rng64_set_seed(&l->rng, rng_seed64_make64(893, 1431, 9600, 10664));
+#endif
 
-  for (i = 0; i < sizeof (cards) - 1; ++i) {
-    list_push(l, (void *) (uintptr_t) cards[i]);
+  for (i = 0; i < sizeof (alnum) - 1; ++i) {
+    list_push(l, (void *) (uintptr_t) alnum[i]);
   }
 
-  assert_int_equal(sizeof (cards) - 1, l->size);
+  assert_int_equal(sizeof (alnum) - 1, l->size);
 
   fly_status = FLY_E_TOO_BIG;
   list_shuffle(l);
 
   assert_fly_status(FLY_OK);
-  assert_int_equal(sizeof (cards) - 1, l->size);
+  assert_int_equal(sizeof (alnum) - 1, l->size);
 
   if (kind == LISTKIND_DEQUE) {
     end = ((deque *) l)->end;
@@ -1892,7 +1900,7 @@ void do_test_list_shuffle(listkind *kind) {
     assert_ptr_equal(temp_node, ((sllist *) l)->head);
   }
 
-  list_foreach((list *) l, &assert_card_not_equal);
+  list_foreach((list *) l, &assert_alnum_deranged);
 
   void *first = list_get(l, 0);
 
@@ -1902,7 +1910,7 @@ void do_test_list_shuffle(listkind *kind) {
 
   list_shuffle(l);
 
-  assert_int_equal(sizeof (cards) - 1, l->size);
+  assert_int_equal(sizeof (alnum) - 1, l->size);
   assert_ptr_not_equal(first, list_get(l, 0));
 
   first = list_get(l, 0);
@@ -1920,7 +1928,7 @@ void do_test_list_shuffle(listkind *kind) {
     assert_ptr_equal(temp_node, ((sllist *) l)->head);
   }
 
-  for (i = 0; i < 9; ++i) {
+  for (i = 0; i < (sizeof (alnum) >> 1) + (sizeof (alnum) >> 2); ++i) {
     void *p = list_pop(l);
     assert_non_null(p);
     assert_fly_status(FLY_OK);
@@ -1931,7 +1939,7 @@ void do_test_list_shuffle(listkind *kind) {
 
   list_shuffle(l);
 
-  assert_int_equal(sizeof (cards) - 1, l->size);
+  assert_int_equal(sizeof (alnum) - 1, l->size);
   assert_ptr_not_equal(first, list_get(l, 0));
 
   first = list_get(l, 0);
@@ -2089,6 +2097,10 @@ int main(void) {
       cmocka_unit_test(test_dllist_discard_all_prefix),
       cmocka_unit_test(test_sllist_discard_all_prefix),
       cmocka_unit_test(test_deque_discard_all_exhaustive),
+      cmocka_unit_test(test_arlist_shuffle),
+      cmocka_unit_test(test_deque_shuffle),
+      cmocka_unit_test(test_dllist_shuffle),
+      cmocka_unit_test(test_sllist_shuffle),
       cmocka_unit_test(test_list_e_null_ptr),
   };
 
