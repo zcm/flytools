@@ -131,6 +131,7 @@ FLYAPI void *arlist_pop(arlist *l);
 FLYAPI void *arlist_shift(arlist *l);
 FLYAPI void arlist_concat(arlist *l1, arlist *l2);
 FLYAPI void arlist_shuffle(arlist *l);
+FLYAPI void **arlist_draw(arlist * restrict l, void ** restrict cursor);
 
 FLYAPI void *deque_get(deque *l, ptrdiff_t i);
 FLYAPI void deque_push(deque *l, void *data);
@@ -139,6 +140,7 @@ FLYAPI void *deque_pop(deque *l);
 FLYAPI void *deque_shift(deque *l);
 FLYAPI void deque_concat(deque *l1, deque *l2);
 FLYAPI void deque_shuffle(deque *l);
+FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor);
 
 FLYAPI void *dllist_get(dllist *l, ptrdiff_t i);
 FLYAPI void dllist_push(dllist *l, void *data);

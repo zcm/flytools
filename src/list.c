@@ -1396,6 +1396,81 @@ FLYAPI void deque_shuffle(deque *l) {
   }
 }
 
+FLYAPI void **arlist_draw(arlist * restrict l, void ** restrict cursor) {
+  void *temp;
+  size_t j;
+
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+
+  fly_status = FLY_OK;
+
+  if (cursor == NULL) {
+    cursor = l->items + l->size;
+  } else if (cursor <= l->items) {
+    return NULL;
+  }
+
+  j = rng64_next_in(&l->rng, cursor-- - l->items);
+
+  temp        = *cursor;
+  *cursor     = l->items[j];
+  l->items[j] = temp;
+
+  return cursor;
+}
+
+FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
+  void *temp, **next;
+  size_t remaining;
+
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+
+  fly_status = FLY_OK;
+
+  if (cursor > l->items + l->start) {
+    remaining = cursor - (l->items + l->start);
+  } else if (cursor == NULL) {
+    cursor = l->items + (l->end ? l->end : l->capacity);
+    remaining = l->size;
+  } else if (cursor == l->items + l->start || cursor < l->items) {
+    return NULL;
+  } else if (cursor == l->items) {
+    remaining = l->capacity - l->start;
+  } else {
+    remaining = cursor - l->items + l->capacity - l->start;
+  }
+
+  next = l->items + rng64_next_in(&l->rng, remaining) % l->capacity;
+
+  if (cursor != l->items) {
+    --cursor;
+  } else {
+    cursor = l->items + l->capacity - 1;
+  }
+
+  temp    = *cursor;
+  *cursor = *next;
+  *next   = temp;
+
+  return cursor;
+}
+
 #undef ARLIST_HAS_CAPACITY_OR_DIE
 #undef DEQUE_HAS_CAPACITY_OR_DIE
 

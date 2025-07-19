@@ -1839,6 +1839,8 @@ TESTCALL(
 #ifndef METHODS_ONLY
 static char alnum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+#define ALNUM_CHARS (sizeof (alnum) - 1)
+
 int assert_alnum_deranged(void *data, size_t i) {
   char unexpected[2] = { alnum[i], '\0' };
   char actual[2] = { (char) (uintptr_t) data, '\0' };
@@ -1965,6 +1967,89 @@ TESTCALL(test_arlist_shuffle, do_test_list_shuffle(LISTKIND_ARRAY))
 TESTCALL(test_deque_shuffle, do_test_list_shuffle(LISTKIND_DEQUE))
 TESTCALL(test_dllist_shuffle, do_test_list_shuffle(LISTKIND_DLINK))
 TESTCALL(test_sllist_shuffle, do_test_list_shuffle(LISTKIND_SLINK))
+
+#ifndef METHODS_ONLY
+void do_test_list_draw(listkind *kind) {
+  size_t i;
+
+  list *l = list_new_kind(kind);
+  assert_non_null(l);
+
+  rng64_set_seed(&l->rng, rng_seed64_make64(12495, 12195, 12395, 41396));
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    list_push(l, (void *) (uintptr_t) alnum[i]);
+  }
+
+  list_shuffle(l);
+
+  void *expected[ALNUM_CHARS];
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    expected[i] = list_pop(l);
+  }
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    list_push(l, (void *) (uintptr_t) alnum[i]);
+  }
+
+  void **(*draw)(list *, void **);
+
+  if (kind == LISTKIND_ARRAY) {
+    draw = (void *) arlist_draw;
+  } else if (kind == LISTKIND_DEQUE) {
+    draw = (void *) deque_draw;
+  } else {
+    list_del(l);
+    _fail(__FILE__, __LINE__);
+    draw = NULL;  // shouldn't get here but makes MSVC happy
+  }
+
+  // go back in time
+  rng64_set_seed(&l->rng, rng_seed64_make64(12495, 12195, 12395, 41396));
+
+  void **cur;
+  void *actual[ALNUM_CHARS];
+
+  for (i = 0, cur = draw(l, NULL); cur; ++i, cur = draw(l, cur)) {
+    actual[i] = *cur;
+    assert_int_equal(ALNUM_CHARS, l->size);
+    assert_true(cur >= ((arlist *) l)->items);
+  }
+
+  size_t pos['Z' + 1] = { 0 };
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    pos[(size_t) alnum[i]] = i;
+  }
+
+  char expected_str[ALNUM_CHARS + 1], actual_str[ALNUM_CHARS + 1];
+  int seen[ALNUM_CHARS] = { 0 };
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    expected_str[i] = (char) (uintptr_t) expected[i];
+    actual_str[i] = (char) (uintptr_t) actual[i];
+
+    size_t actual_pos = pos[(size_t) actual[i]];
+    assert_true(!seen[actual_pos]);
+    seen[actual_pos] = 1;
+  }
+
+  expected_str[i] = actual_str[i] = 0;
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    assert_true(seen[i]);
+  }
+
+  assert_string_equal(expected_str, actual_str);
+  assert_memory_equal(expected, actual, ALNUM_CHARS);
+
+  list_del(l);
+}
+#endif
+
+TESTCALL(test_arlist_draw, do_test_list_draw(LISTKIND_ARRAY))
+TESTCALL(test_deque_draw, do_test_list_draw(LISTKIND_DEQUE))
 
 #ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
@@ -2101,6 +2186,8 @@ int main(void) {
       cmocka_unit_test(test_deque_shuffle),
       cmocka_unit_test(test_dllist_shuffle),
       cmocka_unit_test(test_sllist_shuffle),
+      cmocka_unit_test(test_arlist_draw),
+      cmocka_unit_test(test_deque_draw),
       cmocka_unit_test(test_list_e_null_ptr),
   };
 
