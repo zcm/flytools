@@ -2076,12 +2076,14 @@ void do_test_list_pick(listkind *kind) {
   rng64_set_seed(&l->rng, rng_seed64_make64(875306, 823230, 776408, 708401));
 
 #ifdef _MSC_VER
+  const uintptr_t last = 13;
   uintptr_t sequence[] = {
        2,  3,  4,  4, 13,  3, 12,  7, 12, 13, 14, 10, 12,  6,
       14,  6,  2,  7,  8, 14, 12,  1, 14,  3, 12,  9, 15,  7,
        7,  4,  2, 16,  3,  3, 11, 15, 11, 12, 10, 10,  5,  0
   };
 #else
+  const uintptr_t last = 8;
   uintptr_t sequence[] = {
       11, 11,  7,  8,  9, 10,  2,  1, 14,  8,  7,  8,  3,  9,
       15, 15,  1,  9, 12,  7,  1,  1,  3, 14, 14, 14, 12, 14,
@@ -2095,7 +2097,7 @@ void do_test_list_pick(listkind *kind) {
   }
 
   assert_int_equal(0, sequence[i]);  // ensure sequence ends correctly
-  assert_int_equal(8, pick(l));
+  assert_int_equal(last, pick(l));
 
   list_del(l);
 }
