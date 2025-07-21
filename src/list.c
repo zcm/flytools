@@ -1471,6 +1471,42 @@ FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
   return cursor;
 }
 
+FLYAPI void *arlist_pick(arlist *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+
+  fly_status = FLY_OK;
+
+  return l->items[rng64_next_in(&l->rng, l->size)];
+}
+
+FLYAPI void *deque_pick(deque *l) {
+  size_t i;
+
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+
+  fly_status = FLY_OK;
+
+  i = (l->start + rng64_next_in(&l->rng, l->size)) % l->capacity;
+
+  return l->items[i];
+}
+
 #undef ARLIST_HAS_CAPACITY_OR_DIE
 #undef DEQUE_HAS_CAPACITY_OR_DIE
 

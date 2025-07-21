@@ -2052,6 +2052,59 @@ TESTCALL(test_arlist_draw, do_test_list_draw(LISTKIND_ARRAY))
 TESTCALL(test_deque_draw, do_test_list_draw(LISTKIND_DEQUE))
 
 #ifndef METHODS_ONLY
+void do_test_list_pick(listkind *kind) {
+  size_t i;
+
+  list *l = list_new_kind(kind);
+  assert_non_null(l);
+
+  uintptr_t (*pick)(void *l);
+
+  if (kind == LISTKIND_ARRAY) {
+    pick = (void *) &arlist_pick;
+  } else if (kind == LISTKIND_DEQUE) {
+    pick = (void *) &deque_pick;
+  } else {
+    _fail(__FILE__, __LINE__);
+    pick = NULL;
+  }
+
+  for (i = 0; i < 16; i++) {
+    list_push(l, (void *) (i + 1));
+  }
+
+  rng64_set_seed(&l->rng, rng_seed64_make64(875306, 823230, 776408, 708401));
+
+#ifdef _MSC_VER
+  uintptr_t sequence[] = {
+       2,  3,  4,  4, 13,  3, 12,  7, 12, 13, 14, 10, 12,  6,
+      14,  6,  2,  7,  8, 14, 12,  1, 14,  3, 12,  9, 15,  7,
+       7,  4,  2, 16,  3,  3, 11, 15, 11, 12, 10, 10,  5,  0
+  };
+#else
+  uintptr_t sequence[] = {
+      11, 11,  7,  8,  9, 10,  2,  1, 14,  8,  7,  8,  3,  9,
+      15, 15,  1,  9, 12,  7,  1,  1,  3, 14, 14, 14, 12, 14,
+      15,  4,  2,  9, 14, 11, 11, 10, 16,  9, 16,  9,  1, 10,
+       5, 14,  3,  5,  9,  7,  1, 12, 16, 13,  6,  7, 14,  0,
+  };
+#endif
+
+  for (i = 0; i < sizeof (sequence) / sizeof (uintptr_t) - 1; ++i) {
+    assert_int_equal(sequence[i], pick(l));
+  }
+
+  assert_int_equal(0, sequence[i]);  // ensure sequence ends correctly
+  assert_int_equal(8, pick(l));
+
+  list_del(l);
+}
+#endif
+
+TESTCALL(test_arlist_pick, do_test_list_pick(LISTKIND_ARRAY))
+TESTCALL(test_deque_pick, do_test_list_pick(LISTKIND_DEQUE))
+
+#ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
   list *l = list_new();
   assert_non_null(l);
@@ -2188,6 +2241,8 @@ int main(void) {
       cmocka_unit_test(test_sllist_shuffle),
       cmocka_unit_test(test_arlist_draw),
       cmocka_unit_test(test_deque_draw),
+      cmocka_unit_test(test_arlist_pick),
+      cmocka_unit_test(test_deque_pick),
       cmocka_unit_test(test_list_e_null_ptr),
   };
 
