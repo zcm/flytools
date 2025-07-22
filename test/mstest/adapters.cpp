@@ -1,4 +1,7 @@
+#include <stdio.h>
+
 #include "CppUnitTest.h"
+#include "adapters.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
@@ -75,6 +78,22 @@ void assert_memory_equal(void *p1, void *p2, size_t size) {
 
 void _fail(const char * const file, const int line) {
 	Assert::Fail();
+}
+
+void testlog(const char *msg, ...) {
+  va_list args;
+  va_start(args, msg);
+
+  vtestlog(msg, args);
+
+  va_end(args);
+}
+
+void vtestlog(const char *msg, va_list args) {
+  char s[1024];
+
+  vsnprintf(s, sizeof (s), msg, args);
+  Logger::WriteMessage((const char *) s);
 }
 
 }

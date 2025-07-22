@@ -1969,31 +1969,51 @@ TESTCALL(test_dllist_shuffle, do_test_list_shuffle(LISTKIND_DLINK))
 TESTCALL(test_sllist_shuffle, do_test_list_shuffle(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
+void assert_sizechar_seen(
+    int *seen, size_t pos, size_t c,
+    size_t iteration, char *expected, char *actual) {
+  size_t i;
+  char ch = (char) c;
+  char markers[128];
+
+  if (seen[pos] != 1) {
+    testlog("'%c' (pos %zu) seen %d times on iteration %zu\n",
+        ch, pos, seen[pos], iteration);
+    testlog("expected %s\n", expected);
+    testlog("actual   %s\n", actual);
+
+    for (i = 0; i < ALNUM_CHARS; ++i) {
+      markers[i] = ch == actual[i] ? '^' : ' ';
+    }
+    markers[i] = 0;
+
+    testlog("         %s\n", markers);
+  }
+
+  assert_int_equal(1, seen[pos]);
+}
+
 void do_test_list_draw(listkind *kind) {
   size_t i;
+  size_t iteration = 0;
+
+  void **cur;
+  void *expected[ALNUM_CHARS];
+  void *actual[ALNUM_CHARS];
+
+  char expected_str[ALNUM_CHARS + 1] = { 0 };
+  char actual_str[ALNUM_CHARS + 1] = { 0 };
+
+  void **(*draw)(list *, void **);
 
   list *l = list_new_kind(kind);
   assert_non_null(l);
 
-  rng64_set_seed(&l->rng, rng_seed64_make64(12495, 12195, 12395, 41396));
+  deque *dq = (deque *) l;  // convenient alias
 
   for (i = 0; i < ALNUM_CHARS; ++i) {
     list_push(l, (void *) (uintptr_t) alnum[i]);
   }
-
-  list_shuffle(l);
-
-  void *expected[ALNUM_CHARS];
-
-  for (i = 0; i < ALNUM_CHARS; ++i) {
-    expected[i] = list_pop(l);
-  }
-
-  for (i = 0; i < ALNUM_CHARS; ++i) {
-    list_push(l, (void *) (uintptr_t) alnum[i]);
-  }
-
-  void **(*draw)(list *, void **);
 
   if (kind == LISTKIND_ARRAY) {
     draw = (void *) arlist_draw;
@@ -2005,14 +2025,46 @@ void do_test_list_draw(listkind *kind) {
     draw = NULL;  // shouldn't get here but makes MSVC happy
   }
 
+repeat_deque:
+  rng64_set_seed(&l->rng, rng_seed64_make64(12495, 12195, 12395, 41396));
+
+  list_shuffle(l);
+
+  i = ALNUM_CHARS;
+
+  do {
+    expected[--i] = list_pop(l);
+  } while (i > 0);
+
+  assert_int_equal(0, l->size);
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    list_push(l, (void *) (uintptr_t) alnum[i]);
+  }
+
   // go back in time
   rng64_set_seed(&l->rng, rng_seed64_make64(12495, 12195, 12395, 41396));
 
-  void **cur;
-  void *actual[ALNUM_CHARS];
+  if (iteration) {
+    if (iteration < 5) {
+      memcpy(dq->items + dq->end, dq->items, iteration * sizeof (void *));
+      dq->start += iteration;
+      dq->end += iteration;
+    } else {
+      dq->start = dq->capacity - (iteration - 4);
+      dq->end = dq->size - (iteration - 4);
 
-  for (i = 0, cur = draw(l, NULL); cur; ++i, cur = draw(l, cur)) {
-    actual[i] = *cur;
+      for (i = 0; i < ALNUM_CHARS; i++) {
+        dq->items[(dq->start + i) % dq->capacity] =
+          (void *) (uintptr_t) alnum[i];
+      }
+    }
+  }
+
+  i = ALNUM_CHARS;
+
+  for (cur = draw(l, NULL); cur; cur = draw(l, cur)) {
+    actual[--i] = *cur;
     assert_int_equal(ALNUM_CHARS, l->size);
     assert_true(cur >= ((arlist *) l)->items);
   }
@@ -2023,27 +2075,51 @@ void do_test_list_draw(listkind *kind) {
     pos[(size_t) alnum[i]] = i;
   }
 
-  char expected_str[ALNUM_CHARS + 1], actual_str[ALNUM_CHARS + 1];
   int seen[ALNUM_CHARS] = { 0 };
 
   for (i = 0; i < ALNUM_CHARS; ++i) {
     expected_str[i] = (char) (uintptr_t) expected[i];
     actual_str[i] = (char) (uintptr_t) actual[i];
 
-    size_t actual_pos = pos[(size_t) actual[i]];
-    assert_true(!seen[actual_pos]);
-    seen[actual_pos] = 1;
+    seen[pos[(size_t) actual[i]]] += 1;
+  }
+
+  for (i = 0; i < ALNUM_CHARS; ++i) {
+    assert_sizechar_seen(
+        seen, pos[(size_t) actual[i]], (size_t) actual[i],
+        iteration, expected_str, actual_str);
   }
 
   expected_str[i] = actual_str[i] = 0;
 
-  for (i = 0; i < ALNUM_CHARS; ++i) {
-    assert_true(seen[i]);
-  }
-
   assert_string_equal(expected_str, actual_str);
   assert_memory_equal(expected, actual, ALNUM_CHARS);
 
+  if (kind == LISTKIND_DEQUE) {
+    if (++iteration >= 5) {
+      if (iteration >= 10) {
+        goto end;
+      } else {
+        dq->start = iteration - 5;
+      }
+    } else {
+      dq->start = dq->capacity - iteration;
+    }
+
+    dq->end = dq->start;
+    dq->size = 0;
+
+    for (i = 0; i < ALNUM_CHARS; ++i) {
+      deque_push(dq, (void *) (uintptr_t) alnum[i]);
+    }
+
+    memset(pos, 0, sizeof (pos));
+    memset(seen, 0, sizeof (seen));
+
+    goto repeat_deque;
+  }
+
+end:
   list_del(l);
 }
 #endif
@@ -2065,6 +2141,7 @@ void do_test_list_pick(listkind *kind) {
   } else if (kind == LISTKIND_DEQUE) {
     pick = (void *) &deque_pick;
   } else {
+    list_del(l);
     _fail(__FILE__, __LINE__);
     pick = NULL;
   }

@@ -3,6 +3,11 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdarg.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void assert_true(bool b);
 void assert_null(void* obj);
@@ -17,5 +22,12 @@ void assert_ptr_not_equal(void *p1, void *p2);
 void assert_memory_equal(void* p1, void* p2, size_t size);
 
 void _fail(const char * const file, const int line);
+
+void testlog(const char *msg, ...);
+void vtestlog(const char *msg, va_list args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

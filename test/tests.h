@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#define testlog print_message
+#define vtestlog vprint_message
+
 #else
 
 #define TESTCALL(name, call) TEST(name, { call; });

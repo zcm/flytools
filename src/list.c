@@ -1430,6 +1430,7 @@ FLYAPI void **arlist_draw(arlist * restrict l, void ** restrict cursor) {
 FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
   void *temp, **next;
   size_t remaining;
+  uint64_t r;
 
   if (!l) {
     fly_status = FLY_E_NULL_PTR;
@@ -1456,7 +1457,8 @@ FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
     remaining = cursor - l->items + l->capacity - l->start;
   }
 
-  next = l->items + rng64_next_in(&l->rng, remaining) % l->capacity;
+  r = rng64_next_in(&l->rng, remaining);
+  next = l->items + (l->start + r) % l->capacity;
 
   if (cursor != l->items) {
     --cursor;
