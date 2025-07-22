@@ -2122,10 +2122,42 @@ repeat_deque:
 end:
   list_del(l);
 }
+
+void do_test_list_draw_empty(listkind *kind) {
+  list *l = list_new_kind(kind);
+  void **p;
+
+  fly_status = FLY_OK;
+
+  if (kind == LISTKIND_ARRAY) {
+    p = arlist_draw((arlist *) l, NULL);
+  } else {
+    p = deque_draw((deque *) l, NULL);
+  }
+
+  assert_null(p);
+  assert_fly_status(FLY_EMPTY);
+
+  p = (void **) &p;
+  fly_status = FLY_OK;
+
+  if (kind == LISTKIND_ARRAY) {
+    p = arlist_draw((arlist *) l, p);
+  } else {
+    p = deque_draw((deque *) l, p);
+  }
+
+  assert_null(p);
+  assert_fly_status(FLY_EMPTY);
+
+  list_del(l);
+}
 #endif
 
 TESTCALL(test_arlist_draw, do_test_list_draw(LISTKIND_ARRAY))
 TESTCALL(test_deque_draw, do_test_list_draw(LISTKIND_DEQUE))
+TESTCALL(test_arlist_draw_empty, do_test_list_draw_empty(LISTKIND_ARRAY))
+TESTCALL(test_deque_draw_empty, do_test_list_draw_empty(LISTKIND_DEQUE))
 
 #ifndef METHODS_ONLY
 void do_test_list_pick(listkind *kind) {
@@ -2320,6 +2352,8 @@ int main(void) {
       cmocka_unit_test(test_sllist_shuffle),
       cmocka_unit_test(test_arlist_draw),
       cmocka_unit_test(test_deque_draw),
+      cmocka_unit_test(test_arlist_draw_empty),
+      cmocka_unit_test(test_deque_draw_empty),
       cmocka_unit_test(test_arlist_pick),
       cmocka_unit_test(test_deque_pick),
       cmocka_unit_test(test_list_e_null_ptr),
