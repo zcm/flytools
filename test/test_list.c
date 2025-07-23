@@ -7,7 +7,7 @@
 #define ARLIST_DEFAULT_CAPACITY 8
 #endif
 
-#ifndef _WINDLL
+#if !defined(_WINDLL) && !defined(METHODS_ONLY)
 int list_setup(void **state) {
   (void) state;
 
@@ -2272,94 +2272,17 @@ TESTCALL(test_list_e_null_ptr, do_test_list_e_null_ptr())
 #undef ARLIST_DEFAULT_CAPACITY
 
 #ifndef _WINDLL
+#ifndef METHODS_ONLY
+#define METHODS_ONLY
+#undef TEST
+#define TEST(name, def) cmocka_unit_test(name),
 int main(void) {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_list_new),
-      cmocka_unit_test(test_arlist_push_pop),
-      cmocka_unit_test(test_arlist_unshift_shift),
-      cmocka_unit_test(test_arlist_push_shift),
-      cmocka_unit_test(test_arlist_unshift_pop),
-      cmocka_unit_test(test_arlist_pop_empty),
-      cmocka_unit_test(test_arlist_shift_empty),
-      cmocka_unit_test(test_arlist_del_nonempty),
-      cmocka_unit_test(test_deque_push_pop),
-      cmocka_unit_test(test_deque_unshift_shift),
-      cmocka_unit_test(test_deque_push_shift),
-      cmocka_unit_test(test_deque_unshift_pop),
-      cmocka_unit_test(test_deque_pop_empty),
-      cmocka_unit_test(test_deque_shift_empty),
-      cmocka_unit_test(test_deque_del_nonempty),
-      cmocka_unit_test(test_dllist_push_pop),
-      cmocka_unit_test(test_dllist_unshift_shift),
-      cmocka_unit_test(test_dllist_push_shift),
-      cmocka_unit_test(test_dllist_unshift_pop),
-      cmocka_unit_test(test_dllist_pop_empty),
-      cmocka_unit_test(test_dllist_shift_empty),
-      cmocka_unit_test(test_dllist_del_nonempty),
-      cmocka_unit_test(test_sllist_push_pop),
-      cmocka_unit_test(test_sllist_unshift_shift),
-      cmocka_unit_test(test_sllist_push_shift),
-      cmocka_unit_test(test_sllist_unshift_pop),
-      cmocka_unit_test(test_sllist_pop_empty),
-      cmocka_unit_test(test_sllist_shift_empty),
-      cmocka_unit_test(test_sllist_del_nonempty),
-      cmocka_unit_test(test_arlist_get),
-      cmocka_unit_test(test_deque_get),
-      cmocka_unit_test(test_dllist_get),
-      cmocka_unit_test(test_sllist_get),
-      cmocka_unit_test(test_arlist_capacity),
-      cmocka_unit_test(test_deque_capacity),
-      cmocka_unit_test(test_list_concat),
-      cmocka_unit_test(test_list_concat_from_empty),
-      cmocka_unit_test(test_list_concat_into_empty),
-      cmocka_unit_test(test_list_concat_both_empty),
-      cmocka_unit_test(test_arlist_append_array),
-      cmocka_unit_test(test_deque_append_array),
-      cmocka_unit_test(test_dllist_append_array),
-      cmocka_unit_test(test_sllist_append_array),
-      cmocka_unit_test(test_arlist_find_first),
-      cmocka_unit_test(test_deque_find_first),
-      cmocka_unit_test(test_dllist_find_first),
-      cmocka_unit_test(test_sllist_find_first),
-      cmocka_unit_test(test_arlist_find_first_null),
-      cmocka_unit_test(test_deque_find_first_null),
-      cmocka_unit_test(test_dllist_find_first_null),
-      cmocka_unit_test(test_sllist_find_first_null),
-      cmocka_unit_test(test_arlist_discard),
-      cmocka_unit_test(test_deque_discard),
-      cmocka_unit_test(test_dllist_discard),
-      cmocka_unit_test(test_sllist_discard),
-      cmocka_unit_test(test_arlist_discard_null),
-      cmocka_unit_test(test_deque_discard_null),
-      cmocka_unit_test(test_dllist_discard_null),
-      cmocka_unit_test(test_sllist_discard_null),
-      cmocka_unit_test(test_arlist_foreach),
-      cmocka_unit_test(test_deque_foreach),
-      cmocka_unit_test(test_dllist_foreach),
-      cmocka_unit_test(test_sllist_foreach),
-      cmocka_unit_test(test_arlist_discard_all),
-      cmocka_unit_test(test_deque_discard_all),
-      cmocka_unit_test(test_dllist_discard_all),
-      cmocka_unit_test(test_sllist_discard_all),
-      cmocka_unit_test(test_arlist_discard_all_prefix),
-      cmocka_unit_test(test_deque_discard_all_prefix),
-      cmocka_unit_test(test_dllist_discard_all_prefix),
-      cmocka_unit_test(test_sllist_discard_all_prefix),
-      cmocka_unit_test(test_deque_discard_all_exhaustive),
-      cmocka_unit_test(test_arlist_shuffle),
-      cmocka_unit_test(test_deque_shuffle),
-      cmocka_unit_test(test_dllist_shuffle),
-      cmocka_unit_test(test_sllist_shuffle),
-      cmocka_unit_test(test_arlist_draw),
-      cmocka_unit_test(test_deque_draw),
-      cmocka_unit_test(test_arlist_draw_empty),
-      cmocka_unit_test(test_deque_draw_empty),
-      cmocka_unit_test(test_arlist_pick),
-      cmocka_unit_test(test_deque_pick),
-      cmocka_unit_test(test_list_e_null_ptr),
+#include "test_list.c"
   };
 
   return cmocka_run_group_tests_name(
       "flytools list", tests, list_setup, list_teardown);
 }
+#endif  // METHODS_ONLY
 #endif

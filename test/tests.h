@@ -1,6 +1,7 @@
 #ifndef _WINDLL
+#ifndef TEST
 #define TEST(name, def) void name(void **state) def
-#define TESTCALL(name, call) TEST(name, { (void) state; call; });
+#define TESTCALL(name, call) TEST(name, { (void) state; call; })
 
 #include <stdarg.h>
 #include <stddef.h>
@@ -13,6 +14,7 @@
 #define testlog print_message
 #define vtestlog vprint_message
 
+#endif  // TEST
 #else
 
 #define TESTCALL(name, call) TEST(name, { call; });

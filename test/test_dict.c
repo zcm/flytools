@@ -3,7 +3,7 @@
 #include "dict.h"
 #include "internal/dict.h"
 
-#ifndef _WINDLL
+#if !defined(_WINDLL) && !defined(METHODS_ONLY)
 int dict_test_setup(void **state) {
   (void) state;
 
@@ -78,6 +78,11 @@ void do_test_dict_new_of_size() {
   assert_null(d);
   assert_fly_status(FLY_E_INVALID_ARG);
 }
+#else
+#ifndef _WINDLL
+#undef TEST
+#define TEST(name, def) cmocka_unit_test(name),
+#endif  // _WINDLL
 #endif
 
 TESTCALL(test_dict_new, do_test_dict_new())
@@ -177,6 +182,15 @@ void do_test_dict_sets_then_gets() {
 
   dict_del(d);
 }
+#else
+#ifndef _WINDLL
+#define dict_unit_test(f) \
+  cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
+
+#undef TEST
+#define TEST(name, def) dict_unit_test(name),
+
+#endif  // _WINDLL
 #endif
 
 TESTCALL(test_dict_set_then_get, do_test_dict_set_then_get())
@@ -767,33 +781,15 @@ TEST(test_dict_foreach, {
 })
 
 #ifndef _WINDLL
-
-#define dict_unit_test(f) \
-  cmocka_unit_test_setup_teardown(f, dict_test_setup, dict_test_teardown)
-
+#ifndef METHODS_ONLY
+#define METHODS_ONLY
 int main(void) {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_dict_new),
-      cmocka_unit_test(test_dict_new_of_size),
-      dict_unit_test(test_dict_foreach),
-      dict_unit_test(test_dict_get_from_empty),
-      dict_unit_test(test_dict_gets_from_empty),
-      dict_unit_test(test_dict_null_as_key),
-      dict_unit_test(test_dict_remove_from_empty),
-      dict_unit_test(test_dict_removes_from_empty),
-      dict_unit_test(test_dict_resize),
-      dict_unit_test(test_dict_resize_custom_allocator),
-      dict_unit_test(test_dict_remove_after_collision),
-      dict_unit_test(test_dict_set_overwrites),
-      dict_unit_test(test_dict_set_sets_get_gets_remove_removes_combo),
-      dict_unit_test(test_dict_set_then_get),
-      dict_unit_test(test_dict_set_then_remove),
-      dict_unit_test(test_dict_sets_then_gets),
-      dict_unit_test(test_dict_sets_then_removes),
+#include "test_dict.c"
   };
 
   return cmocka_run_group_tests_name(
       "flytools dict", tests, NULL, NULL);
 }
-
+#endif  // METHODS_ONLY
 #endif

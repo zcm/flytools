@@ -2,7 +2,7 @@
 
 #include "random.h"
 
-#ifndef _WINDLL
+#if !defined(_WINDLL) && !defined(METHODS_ONLY)
 int random_setup(void **state) {
   (void) state;
 
@@ -326,21 +326,17 @@ TESTCALL(test_rng64_idempotency, do_test_rng64_idempotency())
 #undef MAX_GEN_ATTEMPTS
 
 #ifndef _WINDLL
+#ifndef METHODS_ONLY
+#define METHODS_ONLY
+#undef TEST
+#define TEST(name, def) cmocka_unit_test(name),
 int main(void) {
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_rng32_next_uninitialized),
-    cmocka_unit_test(test_rng64_next_uninitialized),
-    cmocka_unit_test(test_rng32_next_seed),
-    cmocka_unit_test(test_rng64_next_seed),
-    cmocka_unit_test(test_rng32_next_set_seed),
-    cmocka_unit_test(test_rng64_next_set_seed),
-    cmocka_unit_test(test_rng32_next_in),
-    cmocka_unit_test(test_rng64_next_in),
-    cmocka_unit_test(test_rng32_idempotency),
-    cmocka_unit_test(test_rng64_idempotency),
+#include "test_random.c"
   };
 
   return cmocka_run_group_tests_name(
       "flytools random", tests, random_setup, random_teardown);
 }
+#endif  // METHODS_ONLY
 #endif

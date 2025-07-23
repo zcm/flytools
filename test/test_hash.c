@@ -3,7 +3,7 @@
 #include "hash.h"
 
 
-#ifndef _WINDLL
+#if !defined(_WINDLL) && !defined(METHODS_ONLY)
 int hash_setup(void **state) {
   (void) state;
 
@@ -231,16 +231,17 @@ TEST(test_hash_xorshift64s_ptr_no_pattern, {
 })
 
 #ifndef _WINDLL
-
+#ifndef METHODS_ONLY
+#define METHODS_ONLY
+#undef TEST
+#define TEST(name, def) cmocka_unit_test(name),
 int main(void) {
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_hash_xorshift64s),
-      cmocka_unit_test(test_hash_xorshift64s_ptr),
-      cmocka_unit_test(test_hash_xorshift64s_ptr_no_pattern),
+#include "test_hash.c"
   };
 
   return cmocka_run_group_tests_name(
       "flytools hash", tests, hash_setup, hash_teardown);
 }
-
+#endif  // METHODS_ONLY
 #endif
