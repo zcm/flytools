@@ -2216,6 +2216,108 @@ TESTCALL(test_arlist_pick, do_test_list_pick(LISTKIND_ARRAY))
 TESTCALL(test_deque_pick, do_test_list_pick(LISTKIND_DEQUE))
 
 #ifndef METHODS_ONLY
+int comp_descending(const void *lp, const void *rp) {
+  uintptr_t left = *(uintptr_t *) lp;
+  uintptr_t right = *(uintptr_t *) rp;
+
+  return (left < right) - (left > right);
+}
+
+void do_test_list_sort(
+    listkind *kind, void (*sort)(list *, int (*)(const void *, const void *)),
+    int (*comp)(const void *, const void *)) {
+  size_t i, j, k;
+
+  if (!sort) {
+    sort = &list_sort;
+  }
+
+  list *l = list_new_kind(kind);
+  assert_non_null(l);
+
+  fly_status = FLY_E_TOO_BIG;
+  sort(NULL, comp);
+  assert_fly_status(FLY_E_NULL_PTR);
+
+  sort(l, comp);
+  assert_fly_status(FLY_OK);
+  assert_int_equal(0, l->size);
+
+  fly_status = FLY_E_TOO_BIG;
+  list_push(l, (void *) 0x5);
+  sort(l, comp);
+  assert_fly_status(FLY_OK);
+  assert_int_equal(1, l->size);
+  assert_int_equal(5, (uintptr_t) list_get(l, 0));
+
+  list_del(l);
+
+  for (i = 2; i <= 5; ++i) {
+    for (j = 0; j <= 2; ++j) {
+      l = list_new_kind(kind);
+      assert_non_null(l);
+
+      for (k = 1; k <= i; ++k) {
+        switch (j) {
+          case 0:
+            list_push(l, (void *) k);
+            break;
+          case 1:
+            list_unshift(l, (void *) k);
+            break;
+          default:
+            if (k % 2) {
+              list_push(l, (void *) k);
+            } else {
+              list_unshift(l, (void *) k);
+            }
+            break;
+        }
+      }
+
+      assert_int_equal(i, l->size);
+      fly_status = FLY_E_TOO_BIG;
+      sort(l, comp);
+      assert_fly_status(FLY_OK);
+      assert_int_equal(i, l->size);
+
+      if (comp == &comp_descending) {
+        for (k = 0; k < i; ++k) {
+          assert_int_equal(l->size - k, list_get(l, k));
+          assert_fly_status(FLY_OK);
+        }
+      } else {
+        for (k = 0; k < i; ++k) {
+          assert_int_equal(k + 1, list_get(l, k));
+          assert_fly_status(FLY_OK);
+        }
+      }
+    }
+  }
+}
+#endif
+
+TESTCALL(test_arlist_sort_base_ascending,
+    do_test_list_sort(LISTKIND_ARRAY, NULL, NULL))
+TESTCALL(test_deque_sort_base_ascending,
+    do_test_list_sort(LISTKIND_DEQUE, NULL, NULL))
+
+TESTCALL(test_arlist_sort_base_descending,
+    do_test_list_sort(LISTKIND_ARRAY, NULL, &comp_descending))
+TESTCALL(test_deque_sort_base_descending,
+    do_test_list_sort(LISTKIND_DEQUE, NULL, &comp_descending))
+
+TESTCALL(test_arlist_sort_direct_ascending,
+    do_test_list_sort(LISTKIND_ARRAY, (void *) &arlist_sort, NULL))
+TESTCALL(test_deque_sort_direct_ascending,
+    do_test_list_sort(LISTKIND_DEQUE, (void *) &deque_sort, NULL))
+
+TESTCALL(test_arlist_sort_direct_descending,
+    do_test_list_sort(LISTKIND_ARRAY, (void *) &arlist_sort, &comp_descending))
+TESTCALL(test_deque_sort_direct_descending,
+    do_test_list_sort(LISTKIND_DEQUE, (void *) &deque_sort, &comp_descending))
+
+#ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
   list *l = list_new();
   assert_non_null(l);

@@ -42,6 +42,8 @@ static void *_unsafe_arlist_discard(arlist *l, int (*matcher)(void *));
 static size_t _unsafe_arlist_discard_all(
     arlist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static void _unsafe_arlist_shuffle(arlist *l);
+static void _unsafe_arlist_sort(
+    arlist *l, int (*comp)(const void *, const void *));
 
 static void deque_init(deque *l);
 static inline void *_unsafe_deque_get(deque *l, ptrdiff_t i);
@@ -56,6 +58,8 @@ static void *_unsafe_deque_discard(deque *l, int (*matcher)(void *));
 static size_t _unsafe_deque_discard_all(
     deque *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static void _unsafe_deque_shuffle(deque *l);
+static void _unsafe_deque_sort(
+    deque *l, int (*comp)(const void *, const void *));
 
 static void dllist_init(dllist *l);
 static void dllist_del(dllist *l);
@@ -69,6 +73,8 @@ static void *_unsafe_dllist_discard(dllist *l, int (*matcher)(void *));
 static size_t _unsafe_dllist_discard_all(
     dllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static void _unsafe_dllist_shuffle(dllist *l);
+static void _unsafe_dllist_sort(
+    dllist *l, int (*comp)(const void *, const void *));
 
 static void sllist_init(sllist *l);
 static void sllist_del(sllist *l);
@@ -84,6 +90,8 @@ static void *_unsafe_sllist_discard(sllist *l, int (*matcher)(void *));
 static size_t _unsafe_sllist_discard_all(
     sllist *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 static void _unsafe_sllist_shuffle(sllist *l);
+static void _unsafe_sllist_sort(
+    sllist *l, int (*comp)(const void *, const void *));
 
 #ifdef __TURBOC__
 #define ASSIGN_STATIC_PTR(KIND) \
@@ -111,6 +119,7 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   (void *) &_unsafe_arlist_discard,
   (void *) &_unsafe_arlist_discard_all,
   (void *) &_unsafe_arlist_shuffle,
+  (void *) &_unsafe_arlist_sort,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
@@ -129,6 +138,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   (void *) &_unsafe_deque_discard,
   (void *) &_unsafe_deque_discard_all,
   (void *) &_unsafe_deque_shuffle,
+  (void *) &_unsafe_deque_sort,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
@@ -147,6 +157,7 @@ ASSIGN_STATIC_PTR(LISTKIND_DLINK) {
   (void *) &_unsafe_dllist_discard,
   (void *) &_unsafe_dllist_discard_all,
   (void *) &_unsafe_dllist_shuffle,
+  (void *) &_unsafe_dllist_sort,
 };
 
 ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
@@ -165,6 +176,7 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
   (void *) &_unsafe_sllist_discard,
   (void *) &_unsafe_sllist_discard_all,
   (void *) &_unsafe_sllist_shuffle,
+  (void *) &_unsafe_sllist_sort,
 };
 
 #undef ASSIGN_STATIC_PTR
@@ -1043,6 +1055,26 @@ FLYAPI void list_shuffle(list *l) {
   }
 }
 
+static int comp_uintptr(const void *lp, const void *rp) {
+  uintptr_t left = *(uintptr_t *) lp;
+  uintptr_t right = *(uintptr_t *) rp;
+
+  return (left > right) - (left < right);
+}
+
+FLYAPI void list_sort(list *l, int (*comp)(const void *, const void *)) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+
+  fly_status = FLY_OK;
+
+  if (l->size > 1) {
+    l->kind->sort(l, comp ? comp : &comp_uintptr);
+  }
+}
+
 #define ARLIST_DEFAULT_CAPACITY 8
 
 static inline void arlist_init(arlist *l) {
@@ -1359,7 +1391,7 @@ FLYAPI void arlist_shuffle(arlist *l) {
   }
 }
 
-static void _unsafe_deque_shuffle(deque *l) {
+static inline void unsafe_deque_unwrap(deque *l) {
   if (l->end < l->start && l->end != 0) {
     // Unwrap by cutting the deque by the smaller segment.
     // Doesn't matter that we change the order since we're shuffling anyway.
@@ -1377,6 +1409,10 @@ static void _unsafe_deque_shuffle(deque *l) {
       l->start = 0;
     }
   }
+}
+
+static void _unsafe_deque_shuffle(deque *l) {
+  unsafe_deque_unwrap(l);
 
   l->items += l->start;
   unsafe_array_shuffle(l->items, l->size, &l->rng);
@@ -1507,6 +1543,49 @@ FLYAPI void *deque_pick(deque *l) {
   i = (l->start + rng64_next_in(&l->rng, l->size)) % l->capacity;
 
   return l->items[i];
+}
+
+static inline void _unsafe_arlist_sort(
+    arlist *l, int (*comp)(const void *, const void *)) {
+  ASSUME(l != NULL && l->items != NULL && l->size > 1);
+  ASSUME(comp != NULL);
+
+  qsort(l->items, l->size, sizeof (void *), comp);
+}
+
+static inline void _unsafe_deque_sort(
+    deque *l, int (*comp)(const void *, const void *)) {
+  ASSUME(l != NULL && l->items != NULL && l->size > 1);
+  ASSUME(comp != NULL);
+
+  unsafe_deque_unwrap(l);
+  qsort(l->items + l->start, l->size, sizeof (void *), comp);
+}
+
+FLYAPI void arlist_sort(arlist *l, int (*comp)(const void *, const void *)) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+
+  fly_status = FLY_OK;
+
+  if (l->size > 1) {
+    _unsafe_arlist_sort(l, comp ? comp : &comp_uintptr);
+  }
+}
+
+FLYAPI void deque_sort(deque *l, int (*comp)(const void *, const void *)) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+
+  fly_status = FLY_OK;
+
+  if (l->size > 1) {
+    _unsafe_deque_sort(l, comp ? comp : &comp_uintptr);
+  }
 }
 
 #undef ARLIST_HAS_CAPACITY_OR_DIE
@@ -1919,6 +1998,40 @@ FLYAPI void dllist_shuffle(dllist *l) {
 
   if (l->size > 1) {
     _unsafe_dllist_shuffle(l);
+  }
+}
+
+static void _unsafe_sllist_sort(
+    sllist *l, int (*comp)(const void *, const void *)) {
+}
+
+static void _unsafe_dllist_sort(
+    dllist *l, int (*comp)(const void *, const void *)) {
+}
+
+FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *)) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+
+  fly_status = FLY_OK;
+
+  if (l->size > 1) {
+    _unsafe_sllist_sort(l, comp ? comp : &comp_uintptr);
+  }
+}
+
+FLYAPI void dllist_sort(dllist *l, int (*comp)(const void *, const void *)) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+
+  fly_status = FLY_OK;
+
+  if (l->size > 1) {
+    _unsafe_dllist_sort(l, comp ? comp : &comp_uintptr);
   }
 }
 

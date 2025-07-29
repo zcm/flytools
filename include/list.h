@@ -93,6 +93,7 @@ typedef struct listkind {
   void *(*discard)(list *, int (*)(void *));
   size_t (*discard_all)(list *, int (*)(void *), int (*)(void *, size_t));
   void (*shuffle)(list *);
+  void (*sort)(list *, int(*)(const void *, const void *));
 } listkind;
 
 extern FLYAPI listkind *LISTKIND_ARRAY;
@@ -123,6 +124,7 @@ FLYAPI void *list_discard(list *l, int (*matcher)(void *));
 FLYAPI size_t list_discard_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t));
 FLYAPI void list_shuffle(list *l);
+FLYAPI void list_sort(list *l, int (*comp)(const void *, const void *));
 
 FLYAPI void *arlist_get(arlist *l, ptrdiff_t i);
 FLYAPI void arlist_push(arlist *l, void *data);
@@ -133,6 +135,7 @@ FLYAPI void arlist_concat(arlist *l1, arlist *l2);
 FLYAPI void arlist_shuffle(arlist *l);
 FLYAPI void **arlist_draw(arlist * restrict l, void ** restrict cursor);
 FLYAPI void *arlist_pick(arlist *l);
+FLYAPI void arlist_sort(arlist *l, int (*comp)(const void *, const void *));
 
 FLYAPI void *deque_get(deque *l, ptrdiff_t i);
 FLYAPI void deque_push(deque *l, void *data);
@@ -143,6 +146,7 @@ FLYAPI void deque_concat(deque *l1, deque *l2);
 FLYAPI void deque_shuffle(deque *l);
 FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor);
 FLYAPI void *deque_pick(deque *l);
+FLYAPI void deque_sort(deque *l, int (*comp)(const void *, const void *));
 
 FLYAPI void *dllist_get(dllist *l, ptrdiff_t i);
 FLYAPI void dllist_push(dllist *l, void *data);
@@ -151,6 +155,7 @@ FLYAPI void *dllist_pop(dllist *l);
 FLYAPI void *dllist_shift(dllist *l);
 FLYAPI void dllist_concat(dllist *l1, dllist *l2);
 FLYAPI void dllist_shuffle(dllist *l);
+FLYAPI void dllist_sort(dllist *l, int (*comp)(const void *, const void *));
 
 FLYAPI void *sllist_get(sllist *l, ptrdiff_t i);
 FLYAPI void sllist_push(sllist *l, void *data);
@@ -159,6 +164,7 @@ FLYAPI void *sllist_pop(sllist *l);
 FLYAPI void *sllist_shift(sllist *l);
 FLYAPI void sllist_concat(sllist *l1, sllist *l2);
 FLYAPI void sllist_shuffle(sllist *l);
+FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *));
 
 #if defined(_MSC_VER)
 #undef restrict
