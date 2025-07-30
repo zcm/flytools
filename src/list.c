@@ -2020,7 +2020,11 @@ static sllistnode *sllist_mergesort(
       current = node->next;
       current->next = node;
       node->next = NULL;
-      *last = node;
+
+      if (last) {
+        *last = node;
+      }
+
       return current;
     } else {
       return node;
@@ -2072,7 +2076,9 @@ static sllistnode *sllist_mergesort(
     current = current->next;
   }
 
-  *last = current;
+  if (last) {
+    *last = current;
+  }
 
   return node;
 }
@@ -2086,6 +2092,18 @@ static void _unsafe_sllist_sort(
 
 static void _unsafe_dllist_sort(
     dllist *l, int (*comp)(const void *, const void *)) {
+  dllistnode *current = l->head;
+
+  l->head->prev->next = NULL;
+  l->head->next = (dllistnode *)
+    sllist_mergesort((sllistnode *) l->head->next, l->size, NULL, comp);
+
+  do {
+    current->next->prev = current;
+  } while ((current = current->next)->next);
+
+  current->next = l->head;
+  l->head->prev = current;
 }
 
 FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *)) {

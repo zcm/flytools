@@ -2277,12 +2277,30 @@ void do_test_list_sort(
   assert_fly_status(FLY_OK);
   assert_int_equal(0, l->size);
 
+  if (kind == LISTKIND_SLINK) {
+    assert_ptr_equal(((sllist *) l)->head, ((sllist *) l)->last);
+  } else if (kind == LISTKIND_DLINK) {
+    assert_ptr_equal(((dllist *) l)->head, ((dllist *) l)->head->next);
+    assert_ptr_equal(((dllist *) l)->head, ((dllist *) l)->head->prev);
+  }
+
   fly_status = FLY_E_TOO_BIG;
   list_push(l, (void *) 0x5);
   sort(l, comp);
   assert_fly_status(FLY_OK);
   assert_int_equal(1, l->size);
   assert_int_equal(5, (uintptr_t) list_get(l, 0));
+
+  if (kind == LISTKIND_SLINK) {
+    assert_ptr_equal((void *) 0x5, ((sllist *) l)->last->data);
+    assert_ptr_equal(((sllist *) l)->head, ((sllist *) l)->last->next);
+  } else if (kind == LISTKIND_DLINK) {
+    assert_ptr_equal((void *) 0x5, ((dllist *) l)->head->next->data);
+    assert_ptr_equal((void *) 0x5, ((dllist *) l)->head->prev->data);
+    assert_ptr_equal(((dllist *) l)->head->next, ((dllist *) l)->head->prev);
+    assert_ptr_equal(((dllist *) l)->head, ((dllist *) l)->head->next->next);
+    assert_ptr_equal(((dllist *) l)->head, ((dllist *) l)->head->prev->prev);
+  }
 
   list_del(l);
 
@@ -2339,6 +2357,19 @@ void do_test_list_sort(
         assert_int_equal(last_expected, (uintptr_t) ((sllist *) l)->last->data);
         assert_int_equal(last_expected, (uintptr_t) list_get(l, l->size - 1));
         assert_int_equal(last_expected, (uintptr_t) list_get(l, -1));
+      } else if (kind == LISTKIND_DLINK) {
+        struct dllistnode *dn = ((dllist *) l)->head;
+        struct dllistnode *nodes[8];
+        struct dllistnode **curnode = nodes;
+
+        while ((dn = dn->prev) != ((dllist *) l)->head) {
+          *curnode++ = dn;
+        }
+        while ((dn = dn->next) != ((dllist *) l)->head) {
+          assert_ptr_equal(dn, *--curnode);
+        }
+
+        assert_ptr_equal(nodes, curnode);
       }
 
       list_del(l);
@@ -2355,6 +2386,8 @@ TESTCALL(test_arlist_sort_base_ascending,
     do_test_list_sort(LISTKIND_ARRAY, NULL, NULL))
 TESTCALL(test_deque_sort_base_ascending,
     do_test_list_sort(LISTKIND_DEQUE, NULL, NULL))
+TESTCALL(test_dllist_sort_base_ascending,
+    do_test_list_sort(LISTKIND_DLINK, NULL, NULL))
 TESTCALL(test_sllist_sort_base_ascending,
     do_test_list_sort(LISTKIND_SLINK, NULL, NULL))
 
@@ -2362,6 +2395,8 @@ TESTCALL(test_arlist_sort_base_descending,
     do_test_list_sort(LISTKIND_ARRAY, NULL, &comp_descending))
 TESTCALL(test_deque_sort_base_descending,
     do_test_list_sort(LISTKIND_DEQUE, NULL, &comp_descending))
+TESTCALL(test_dllist_sort_base_descending,
+    do_test_list_sort(LISTKIND_DLINK, NULL, &comp_descending))
 TESTCALL(test_sllist_sort_base_descending,
     do_test_list_sort(LISTKIND_SLINK, NULL, &comp_descending))
 
@@ -2369,6 +2404,8 @@ TESTCALL(test_arlist_sort_direct_ascending,
     do_test_list_sort(LISTKIND_ARRAY, (void *) &arlist_sort, NULL))
 TESTCALL(test_deque_sort_direct_ascending,
     do_test_list_sort(LISTKIND_DEQUE, (void *) &deque_sort, NULL))
+TESTCALL(test_dllist_sort_direct_ascending,
+    do_test_list_sort(LISTKIND_DLINK, (void *) &dllist_sort, NULL))
 TESTCALL(test_sllist_sort_direct_ascending,
     do_test_list_sort(LISTKIND_SLINK, (void *) &sllist_sort, NULL))
 
@@ -2376,6 +2413,8 @@ TESTCALL(test_arlist_sort_direct_descending,
     do_test_list_sort(LISTKIND_ARRAY, (void *) &arlist_sort, &comp_descending))
 TESTCALL(test_deque_sort_direct_descending,
     do_test_list_sort(LISTKIND_DEQUE, (void *) &deque_sort, &comp_descending))
+TESTCALL(test_dllist_sort_direct_descending,
+    do_test_list_sort(LISTKIND_DLINK, (void *) &dllist_sort, &comp_descending))
 TESTCALL(test_sllist_sort_direct_descending,
     do_test_list_sort(LISTKIND_SLINK, (void *) &sllist_sort, &comp_descending))
 
