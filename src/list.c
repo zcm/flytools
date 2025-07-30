@@ -2001,8 +2001,87 @@ FLYAPI void dllist_shuffle(dllist *l) {
   }
 }
 
+static sllistnode *sllist_mergesort(
+    sllistnode *node, size_t size, sllistnode **last,
+    int (*comp)(const void *, const void *)) {
+  size_t i, next_size;
+  sllistnode *left, *right, *current;
+
+  ASSUME(size > 0);
+  ASSUME(node != NULL);
+
+  if (size <= 2) {
+    if (size <= 1) {
+      node->next = NULL;
+      return node;
+    }
+
+    if (comp(&node->data, &node->next->data) > 0) {
+      current = node->next;
+      current->next = node;
+      node->next = NULL;
+      *last = node;
+      return current;
+    } else {
+      return node;
+    }
+  }
+
+
+  i = (next_size = size >> 1) - 1;
+  current = node;
+
+  while (i) {
+    current = current->next;
+    --i;
+  }
+
+  right = current->next;
+  current->next = NULL;
+
+  left = sllist_mergesort(node, next_size, last, comp);
+  right = sllist_mergesort(right, size - next_size, last, comp);
+
+  if (comp(&left->data, &right->data) > 0) {
+    node = current = right;
+    right = right->next;
+  } else {
+    node = current = left;
+    left = left->next;
+  }
+
+  while (left && right) {
+    if (comp(&left->data, &right->data) > 0) {
+      current->next = right;
+      current = right;
+      right = right->next;
+    } else {
+      current->next = left;
+      current = left;
+      left = left->next;
+    }
+  }
+
+  if (left) {
+    current->next = left;
+  } else {
+    current->next = right;
+  }
+
+  while (current->next) {
+    current = current->next;
+  }
+
+  *last = current;
+
+  return node;
+}
+
 static void _unsafe_sllist_sort(
     sllist *l, int (*comp)(const void *, const void *)) {
+  l->last->next = NULL;
+  l->head->next = sllist_mergesort(l->head->next, l->size, &l->last, comp);
+  l->last->next = l->head;
 }
 
 static void _unsafe_dllist_sort(

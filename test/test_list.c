@@ -7,6 +7,10 @@
 #define ARLIST_DEFAULT_CAPACITY 8
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)
+#endif
+
 #if !defined(_WINDLL) && !defined(METHODS_ONLY)
 int list_setup(void **state) {
   (void) state;
@@ -2223,10 +2227,40 @@ int comp_descending(const void *lp, const void *rp) {
   return (left < right) - (left > right);
 }
 
+#if 0
+void print_test_list(list *l) {
+  char out[128];
+  char *s = out;
+  size_t i = 0;
+
+  if (!l->size) {
+    testlog("[]\n");
+    return;
+  }
+
+  *s++ = '[';
+
+  s += sprintf(s, "%" PRIuPTR, (uintptr_t) list_get(l, i));
+
+  while (++i < l->size) {
+    s += sprintf(s, " -> %" PRIuPTR, (uintptr_t) list_get(l, i));
+  }
+
+  *s++ = ']';
+  *s++ = '\n';
+  *s = 0;
+
+  testlog(out);
+}
+#endif
+
+#define INPUT_MODE_ASCENDING 0
+#define INPUT_MODE_DESCENDING 1
+
 void do_test_list_sort(
     listkind *kind, void (*sort)(list *, int (*)(const void *, const void *)),
     int (*comp)(const void *, const void *)) {
-  size_t i, j, k;
+  size_t list_len, input_mode, k;
 
   if (!sort) {
     sort = &list_sort;
@@ -2252,17 +2286,17 @@ void do_test_list_sort(
 
   list_del(l);
 
-  for (i = 2; i <= 5; ++i) {
-    for (j = 0; j <= 2; ++j) {
+  for (list_len = 2; list_len <= 5; ++list_len) {
+    for (input_mode = 0; input_mode <= 2; ++input_mode) {
       l = list_new_kind(kind);
       assert_non_null(l);
 
-      for (k = 1; k <= i; ++k) {
-        switch (j) {
-          case 0:
+      for (k = 1; k <= list_len; ++k) {
+        switch (input_mode) {
+          case INPUT_MODE_ASCENDING:
             list_push(l, (void *) k);
             break;
-          case 1:
+          case INPUT_MODE_DESCENDING:
             list_unshift(l, (void *) k);
             break;
           default:
@@ -2275,47 +2309,75 @@ void do_test_list_sort(
         }
       }
 
-      assert_int_equal(i, l->size);
+      assert_int_equal(list_len, l->size);
       fly_status = FLY_E_TOO_BIG;
+
+      //print_test_list(l);
       sort(l, comp);
+      //print_test_list(l);
+      //testlog("\n");
+
       assert_fly_status(FLY_OK);
-      assert_int_equal(i, l->size);
+      assert_int_equal(list_len, l->size);
 
       if (comp == &comp_descending) {
-        for (k = 0; k < i; ++k) {
-          assert_int_equal(l->size - k, list_get(l, k));
+        for (k = 0; k < list_len; ++k) {
+          assert_int_equal(l->size - k, (uintptr_t) list_get(l, k));
           assert_fly_status(FLY_OK);
         }
       } else {
-        for (k = 0; k < i; ++k) {
-          assert_int_equal(k + 1, list_get(l, k));
+        for (k = 0; k < list_len; ++k) {
+          assert_int_equal(k + 1, (uintptr_t) list_get(l, k));
           assert_fly_status(FLY_OK);
         }
       }
+
+      if (kind == LISTKIND_SLINK) {
+        uintptr_t last_expected = comp ? 1 : list_len;
+
+        assert_non_null(((sllist *) l)->last);
+        assert_int_equal(last_expected, (uintptr_t) ((sllist *) l)->last->data);
+        assert_int_equal(last_expected, (uintptr_t) list_get(l, l->size - 1));
+        assert_int_equal(last_expected, (uintptr_t) list_get(l, -1));
+      }
+
+      list_del(l);
     }
   }
 }
+
+#undef INPUT_MODE_ASCENDING
+#undef INPUT_MODE_DESCENDING
+
 #endif
 
 TESTCALL(test_arlist_sort_base_ascending,
     do_test_list_sort(LISTKIND_ARRAY, NULL, NULL))
 TESTCALL(test_deque_sort_base_ascending,
     do_test_list_sort(LISTKIND_DEQUE, NULL, NULL))
+TESTCALL(test_sllist_sort_base_ascending,
+    do_test_list_sort(LISTKIND_SLINK, NULL, NULL))
 
 TESTCALL(test_arlist_sort_base_descending,
     do_test_list_sort(LISTKIND_ARRAY, NULL, &comp_descending))
 TESTCALL(test_deque_sort_base_descending,
     do_test_list_sort(LISTKIND_DEQUE, NULL, &comp_descending))
+TESTCALL(test_sllist_sort_base_descending,
+    do_test_list_sort(LISTKIND_SLINK, NULL, &comp_descending))
 
 TESTCALL(test_arlist_sort_direct_ascending,
     do_test_list_sort(LISTKIND_ARRAY, (void *) &arlist_sort, NULL))
 TESTCALL(test_deque_sort_direct_ascending,
     do_test_list_sort(LISTKIND_DEQUE, (void *) &deque_sort, NULL))
+TESTCALL(test_sllist_sort_direct_ascending,
+    do_test_list_sort(LISTKIND_SLINK, (void *) &sllist_sort, NULL))
 
 TESTCALL(test_arlist_sort_direct_descending,
     do_test_list_sort(LISTKIND_ARRAY, (void *) &arlist_sort, &comp_descending))
 TESTCALL(test_deque_sort_direct_descending,
     do_test_list_sort(LISTKIND_DEQUE, (void *) &deque_sort, &comp_descending))
+TESTCALL(test_sllist_sort_direct_descending,
+    do_test_list_sort(LISTKIND_SLINK, (void *) &sllist_sort, &comp_descending))
 
 #ifndef METHODS_ONLY
 void do_test_list_e_null_ptr() {
