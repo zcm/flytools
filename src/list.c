@@ -1166,10 +1166,10 @@ static inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements) {
 // Using SIZE_MAX to mean no resize makes sense; the only time it can grow by
 // SIZE_MAX is when it's initially empty, and no reorientation is needed then.
 #define DEQUE_HAS_CAPACITY_OR_DIE(l, new_elements)  \
-  size_t grew_by;  \
-  ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements, grew_by =)  \
-  if (grew_by != SIZE_MAX) {  \
-    deque_reorient(l, grew_by);  \
+  size_t new_capacity, old_capacity = l->capacity;  \
+  ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements, new_capacity =)  \
+  if (new_capacity != SIZE_MAX) {  \
+    deque_reorient(l, new_capacity - old_capacity);  \
   }
 
 static void _unsafe_arlist_push(arlist *l, void *data) {

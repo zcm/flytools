@@ -2306,7 +2306,7 @@ void do_test_list_sort(
   list_del(l);
 
 parameterized_start:
-  for (list_len = 2; list_len <= 8; ++list_len) {
+  for (list_len = 2; list_len <= 13; ++list_len) {
     for (input_mode = 0; input_mode <= 2; ++input_mode) {
       l = list_new_kind(kind);
       assert_non_null(l);
