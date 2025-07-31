@@ -1408,6 +1408,9 @@ static inline void unsafe_deque_unwrap(deque *l) {
       l->end = l->size;
       l->start = 0;
     }
+  } else if (l->start == l->end) {
+    // It's full, so we can just cut by zeroing the indices instead.
+    l->start = l->end = 0;
   }
 }
 

@@ -2250,7 +2250,7 @@ void print_test_list(list *l) {
   *s++ = '\n';
   *s = 0;
 
-  testlog(out);
+  testlog("%s", out);
 }
 #endif
 
@@ -2261,6 +2261,7 @@ void do_test_list_sort(
     listkind *kind, void (*sort)(list *, int (*)(const void *, const void *)),
     int (*comp)(const void *, const void *)) {
   size_t list_len, input_mode, k;
+  size_t dq_start = 0;
 
   if (!sort) {
     sort = &list_sort;
@@ -2304,10 +2305,25 @@ void do_test_list_sort(
 
   list_del(l);
 
-  for (list_len = 2; list_len <= 5; ++list_len) {
+parameterized_start:
+  for (list_len = 2; list_len <= 8; ++list_len) {
     for (input_mode = 0; input_mode <= 2; ++input_mode) {
       l = list_new_kind(kind);
       assert_non_null(l);
+
+      if (kind == LISTKIND_DEQUE && dq_start) {
+        if (dq_start >= list_len) {
+          list_del(l);
+          continue;
+        }
+
+        // need to warm up storage first
+        list_push(l, NULL);
+        list_pop(l);
+
+        ((deque *) l)->start = dq_start;
+        ((deque *) l)->end = dq_start;
+      }
 
       for (k = 1; k <= list_len; ++k) {
         switch (input_mode) {
@@ -2359,7 +2375,7 @@ void do_test_list_sort(
         assert_int_equal(last_expected, (uintptr_t) list_get(l, -1));
       } else if (kind == LISTKIND_DLINK) {
         struct dllistnode *dn = ((dllist *) l)->head;
-        struct dllistnode *nodes[8];
+        struct dllistnode *nodes[16];
         struct dllistnode **curnode = nodes;
 
         while ((dn = dn->prev) != ((dllist *) l)->head) {
@@ -2373,6 +2389,19 @@ void do_test_list_sort(
       }
 
       list_del(l);
+    }
+  }
+
+  if (kind == LISTKIND_DEQUE) {
+    switch (dq_start) {
+      case 0:
+        dq_start = 3;
+        goto parameterized_start;
+      case 3:
+        dq_start = 5;
+        goto parameterized_start;
+      default:
+        break;
     }
   }
 }
