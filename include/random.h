@@ -71,11 +71,13 @@ FLYAPI void rng32_seed(rng32 *rng);
 FLYAPI void rng32_set_seed(rng32 *rng, union rng_seed32 seed);
 FLYAPI uint32_t rng32_next(rng32 *rng);
 FLYAPI uint32_t rng32_next_in(rng32 *rng, uint32_t bound);
+FLYAPI uint32_t rng32_next_in_biased(rng32 *rng, uint32_t bound);
 
 FLYAPI void rng64_seed(rng64 *rng);
 FLYAPI void rng64_set_seed(rng64 *rng, union rng_seed64 seed);
 FLYAPI uint64_t rng64_next(rng64 *rng);
 FLYAPI uint64_t rng64_next_in(rng64 *rng, uint64_t bound);
+FLYAPI uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound);
 
 FLYAPI union rng_seed32 rng_seed32_make(uint64_t state, uint64_t seq);
 #ifdef __SIZEOF_INT128__

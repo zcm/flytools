@@ -84,7 +84,7 @@ void next64_compare(
 #endif
 }
 
-void do_test_rng32_next(uint8_t mode, uint32_t bound) {
+void do_test_rng32_next(uint8_t mode, uint32_t bound, int bias) {
   rng32 rng, before;
   uint32_t r;
   union rng_seed32 seed;
@@ -110,7 +110,11 @@ void do_test_rng32_next(uint8_t mode, uint32_t bound) {
   if (!bound) {
     r = rng32_next(&rng);
   } else {
-    r = rng32_next_in(&rng, bound);
+    if (bias) {
+      r = rng32_next_in_biased(&rng, bound);
+    } else {
+      r = rng32_next_in(&rng, bound);
+    }
 
     assert_in_range(r, 0, bound);
   }
@@ -121,7 +125,7 @@ void do_test_rng32_next(uint8_t mode, uint32_t bound) {
   next32_compare(r, &before, &rng, bound, 0);
 }
 
-void do_test_rng64_next(uint8_t mode, uint64_t bound) {
+void do_test_rng64_next(uint8_t mode, uint64_t bound, int bias) {
   rng64 rng, before;
   uint64_t r;
   union rng_seed64 seed;
@@ -158,7 +162,11 @@ void do_test_rng64_next(uint8_t mode, uint64_t bound) {
   if (!bound) {
     r = rng64_next(&rng);
   } else {
-    r = rng64_next_in(&rng, bound);
+    if (bias) {
+      r = rng64_next_in_biased(&rng, bound);
+    } else {
+      r = rng64_next_in(&rng, bound);
+    }
 
     assert_in_range(r, 0, bound);
   }
@@ -179,17 +187,20 @@ void do_test_rng64_next(uint8_t mode, uint64_t bound) {
 
 // Test that you can generate without seeding first.
 // Stack garbage is technically a seed - isolate next() from seed() this way.
-TESTCALL(test_rng32_next_uninitialized, do_test_rng32_next(DO_NOT_SEED, 0))
-TESTCALL(test_rng64_next_uninitialized, do_test_rng64_next(DO_NOT_SEED, 0))
+TESTCALL(test_rng32_next_uninitialized, do_test_rng32_next(DO_NOT_SEED, 0, 0))
+TESTCALL(test_rng64_next_uninitialized, do_test_rng64_next(DO_NOT_SEED, 0, 0))
 
-TESTCALL(test_rng32_next_seed, do_test_rng32_next(USE_ENTROPY, 0))
-TESTCALL(test_rng64_next_seed, do_test_rng64_next(USE_ENTROPY, 0))
+TESTCALL(test_rng32_next_seed, do_test_rng32_next(USE_ENTROPY, 0, 0))
+TESTCALL(test_rng64_next_seed, do_test_rng64_next(USE_ENTROPY, 0, 0))
 
-TESTCALL(test_rng32_next_set_seed, do_test_rng32_next(SET_SEED, 0))
-TESTCALL(test_rng64_next_set_seed, do_test_rng64_next(SET_SEED, 0))
+TESTCALL(test_rng32_next_set_seed, do_test_rng32_next(SET_SEED, 0, 0))
+TESTCALL(test_rng64_next_set_seed, do_test_rng64_next(SET_SEED, 0, 0))
 
-TESTCALL(test_rng32_next_in, do_test_rng32_next(DO_NOT_SEED, 12345))
-TESTCALL(test_rng64_next_in, do_test_rng64_next(DO_NOT_SEED, 12345))
+TESTCALL(test_rng32_next_in, do_test_rng32_next(DO_NOT_SEED, 12345, 0))
+TESTCALL(test_rng64_next_in, do_test_rng64_next(DO_NOT_SEED, 12345, 0))
+
+TESTCALL(test_rng32_next_in_biased, do_test_rng32_next(DO_NOT_SEED, 12345, 1))
+TESTCALL(test_rng64_next_in_biased, do_test_rng64_next(DO_NOT_SEED, 12345, 1))
 
 #ifndef METHODS_ONLY
 
