@@ -97,60 +97,6 @@ FLYAPI uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound) {
   return fastrange64(rng64_next(rng), bound);
 }
 
-static inline uint32_t
-fastrange32_unbiased(uint32_t word, const uint32_t p, rng32 *rng) {
-  uint64_t product = (uint64_t) word * (uint64_t) p;
-  uint32_t threshold, leftover = (uint32_t) product;
-
-  if (leftover < p) {
-    threshold = -p % p;
-
-    while (leftover < threshold) {
-      word = rng32_next(rng);
-      product = (uint64_t) word * (uint64_t) p;
-      leftover = (uint32_t) product;
-    }
-  }
-
-  return product >> 32;
-}
-
-static inline uint64_t
-fastrange64_unbiased(uint64_t word, const uint64_t p, rng64 *rng) {
-#ifdef __SIZEOF_INT128__
-  __uint128_t product = (__uint128_t) word * (__uint128_t) p;
-  uint64_t threshold, leftover = (uint64_t) product;
-
-  if (leftover < p) {
-    threshold = -p % p;
-
-    while (leftover < threshold) {
-      word = rng64_next(rng);
-      product = (__uint128_t) word * (__uint128_t) p;
-      leftover = (uint64_t) product;
-    }
-  }
-
-  return product >> 64;
-#elif defined(_MSC_VER) && defined(_WIN64)
-  uint64_t high, low, threshold;
-  low = _umul128(word, p, &high);
-
-  if (low < p) {
-    threshold = -p % p;
-
-    while (low < threshold) {
-      word = rng64_next(rng);
-      low = _umul128(word, p, &high);
-    }
-  }
-
-  return high;
-#else
-  return word % p;
-#endif
-}
-
 FLYAPI uint32_t rng32_next_in(rng32 *rng, uint32_t bound) {
   return fastrange32_unbiased(rng32_next(rng), bound, rng);
 }

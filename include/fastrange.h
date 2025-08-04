@@ -6,8 +6,20 @@
 * Modifications (c) Zachary Murray
 * Apache License 2.0
 */
+#ifndef ZCM_UNBIASED_FASTRANGE_H
+
+#ifndef fastrangemax
+#if (SIZE_MAX == UINT32_MAX)
+#define fastrangemax fastrange32
+#else
+#define fastrangemax fastrange64
+#endif
+#endif
+
+// If another fastrange has been included elsewhere, we'll use it instead.
 #ifndef INCLUDE_FASTRANGE_H
 #define INCLUDE_FASTRANGE_H
+
 #include <iso646.h> // mostly for Microsoft compilers
 #include <stdint.h> // part of Visual Studio 2010 and better
 #include <stddef.h> // for size_t in C
@@ -21,14 +33,6 @@
 #ifndef UINT32_MAX
 #define UINT32_MAX  (0xffffffff)
 #endif // UINT32_MAX
-
-#ifndef fastrangemax
-#if (SIZE_MAX == UINT32_MAX)
-#define fastrangemax fastrange32
-#else
-#define fastrangemax fastrange64
-#endif
-#endif
 
 /**
 * Given a value "word", produces an integer in [0,p) without division.
@@ -79,6 +83,62 @@ static inline int fastrangeint(int word, int p) {
 	return (int) fastrangemax(word, p);
 }
 
+#endif  // INCLUDE_FASTRANGE_H
+
+static inline uint32_t
+fastrange32_unbiased(uint32_t word, const uint32_t p, rng32 *rng) {
+  uint64_t product = (uint64_t) word * (uint64_t) p;
+  uint32_t threshold, leftover = (uint32_t) product;
+
+  if (leftover < p) {
+    threshold = -p % p;
+
+    while (leftover < threshold) {
+      word = rng32_next(rng);
+      product = (uint64_t) word * (uint64_t) p;
+      leftover = (uint32_t) product;
+    }
+  }
+
+  return product >> 32;
+}
+
+static inline uint64_t
+fastrange64_unbiased(uint64_t word, const uint64_t p, rng64 *rng) {
+#ifdef __SIZEOF_INT128__
+  __uint128_t product = (__uint128_t) word * (__uint128_t) p;
+  uint64_t threshold, leftover = (uint64_t) product;
+
+  if (leftover < p) {
+    threshold = -p % p;
+
+    while (leftover < threshold) {
+      word = rng64_next(rng);
+      product = (__uint128_t) word * (__uint128_t) p;
+      leftover = (uint64_t) product;
+    }
+  }
+
+  return product >> 64;
+#elif defined(_MSC_VER) && defined(_WIN64)
+  uint64_t high, low, threshold;
+  low = _umul128(word, p, &high);
+
+  if (low < p) {
+    threshold = -p % p;
+
+    while (low < threshold) {
+      word = rng64_next(rng);
+      low = _umul128(word, p, &high);
+    }
+  }
+
+  return high;
+#else
+  return word % p;
+#endif
+}
+
 #undef fastrangemax
 
-#endif// INCLUDE_FASTRANGE_H
+#endif  // ZCM_UNBIASED_FASTRANGE_H
