@@ -27,22 +27,11 @@
  * We also need to try to test whether or not to use the fallback.
  */
 
-#ifndef ENABLE_PCG_SPINLOCKS
-
-#if __GNUC__ || __clang__ || __INTEL_LLVM_COMPILER
-#define PCG_SPINLOCK_DECLARE(mutex) int dummy __attribute__((unused))
-#elif defined(_MSC_VER)
-#define PCG_SPINLOCK_DECLARE(mutex) void dummy(void)
-#else
-#define PCG_SPINLOCK_DECLARE(mutex)
-#endif
-
-#define PCG_SPINLOCK_LOCK(mutex)
-#define PCG_SPINLOCK_UNLOCK(mutex)
-
-#define PCG_SPINLOCK_H_INCLUDED 1
-
-#endif  // ENABLE_PCG_SPINLOCKS
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <time.h>
 
 #if __GNUC__ || __clang__ || __INTEL_LLVM_COMPILER
 #define inline __attribute__((always_inline)) inline
@@ -50,15 +39,7 @@
 #define inline __forceinline
 #endif
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <time.h>
-
 #include "pcg_variants.h"
-//#include "pcg_spinlock.h"
-
 #include "entropy.h"
 
 #ifndef IS_UNIX
@@ -72,12 +53,12 @@
 
 /* If HAVE_DEV_RANDOM is set, we use that value, otherwise we guess */
 #ifndef HAVE_DEV_RANDOM
-#define HAVE_DEV_RANDOM         IS_UNIX
+#define HAVE_DEV_RANDOM IS_UNIX
 #endif
 
 #if HAVE_DEV_RANDOM
-    #include <fcntl.h>
-    #include <unistd.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 #if HAVE_DEV_RANDOM
@@ -89,9 +70,7 @@
  *     false, otherwise it returns true.  If it fails, you could instead call
  *     fallback_entropy_getbytes which always succeeds.
  */
-
-bool entropy_getbytes(void* dest, size_t size)
-{
+FLYAPI bool entropy_getbytes(void *dest, size_t size) {
     int fd = open("/dev/urandom", O_RDONLY);
     if (fd < 0)
         return false;
@@ -99,8 +78,7 @@ bool entropy_getbytes(void* dest, size_t size)
     return (close(fd) == 0) && (sz == (ssize_t) size);
 }
 #else
-bool entropy_getbytes(void* dest, size_t size)
-{
+bool entropy_getbytes(void *dest, size_t size) {
     fallback_entropy_getbytes(dest, size);
     return true;
 }
@@ -111,34 +89,26 @@ bool entropy_getbytes(void* dest, size_t size)
  *     Instead, it uses a private RNG (so that repeated calls will return
  *     different seeds).  Makes no attempt at cryptographic security.
  */
-
-void fallback_entropy_getbytes(void* dest, size_t size)
-{
+FLYAPI void fallback_entropy_getbytes(void *dest, size_t size) {
     /* Most modern OSs use address-space randomization, meaning that we can
        use the address of stack variables and system library code as
        initializers.  It's not as good as using /dev/random, but probably
        better than using the current time alone. */
-
-    static PCG_SPINLOCK_DECLARE(mutex);
-    PCG_SPINLOCK_LOCK(mutex);
-
     static int intitialized = 0;
     static pcg32_random_t entropy_rng;
 
     if (!intitialized) {
         int dummyvar;
         pcg32_srandom_r(&entropy_rng,
-                        time(NULL) ^ (intptr_t)&fallback_entropy_getbytes,
-                        (intptr_t)&dummyvar);
+                        time(NULL) ^ (intptr_t) &fallback_entropy_getbytes,
+                        (intptr_t) &dummyvar);
         intitialized = 1;
     }
 
-    char* dest_cp = (char*) dest;
+    char *dest_cp = (char *) dest;
     for (size_t i = 0; i < size; ++i) {
         dest_cp[i] = (char) pcg32_random_r(&entropy_rng);
     }
-
-    PCG_SPINLOCK_UNLOCK(mutex);
 }
 
 #ifdef inline

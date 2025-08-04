@@ -20,16 +20,18 @@
  */
 
 #ifndef ENTROPY_H_INCLUDED
-#define ENTROPY_H_INCLUDED 1
+#define ENTROPY_H_INCLUDED
 
 #include <stdbool.h>
+
+#include "common.h"
 
 #if __cplusplus
 extern "C" {
 #endif
 
-extern bool entropy_getbytes(void* dest, size_t size);
-extern void fallback_entropy_getbytes(void* dest, size_t size);
+FLYAPI bool entropy_getbytes(void *dest, size_t size);
+FLYAPI void fallback_entropy_getbytes(void *dest, size_t size);
 
 #if __cplusplus
 }
