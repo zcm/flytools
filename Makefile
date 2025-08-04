@@ -7,8 +7,7 @@ OBJ = \
 	src/random.o src/entropy.o
 
 CFLAGS += \
-	-Iinclude -Isrc/pcg-c -Isrc/pcg-c/include -I src/fastrange \
-	-Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
+	-Iinclude -Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
 
 VPATH = src:include:.
 
@@ -27,9 +26,7 @@ all: $(OBJ) build/libflytools.a($(OBJ))
 src/dict.o: hash.h dict.h common.h list.h
 src/hash.o: hash.h common.h
 src/list.o: list.h common.h
-
 src/random.o: random.h common.h fastrange.h entropy.h pcg_variants.h
-
 src/entropy.o: entropy.h pcg_variants.h
 
 # uncomment to enable compilation of scanner code
