@@ -86,13 +86,39 @@ FLYAPI uint64_t rng64_next(rng64 *rng);
 FLYAPI uint64_t rng64_next_in(rng64 *rng, uint64_t bound);
 FLYAPI uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound);
 
-FLYAPI union rng_seed32 rng_seed32_make(uint64_t state, uint64_t seq);
+static inline union rng_seed32
+rng_seed32_make(uint64_t state, uint64_t seq) {
+  union rng_seed32 seed;
+
+  seed.init.state = state;
+  seed.init.seq = seq;
+
+  return seed;
+}
+
 #ifdef __SIZEOF_INT128__
-FLYAPI union rng_seed64 rng_seed64_make(__uint128_t state, __uint128_t seq);
+static inline union rng_seed64
+rng_seed64_make(__uint128_t state, __uint128_t seq) {
+  union rng_seed64 seed;
+
+  seed.init.state = state;
+  seed.init.seq = seq;
+
+  return seed;
+}
 #endif
 
-FLYAPI union rng_seed64 rng_seed64_make64(
-    uint64_t low_state, uint64_t high_state,
-    uint64_t low_seq, uint64_t high_seq);
+static inline union rng_seed64
+rng_seed64_make64(uint64_t low_state, uint64_t high_state,
+                  uint64_t low_seq, uint64_t high_seq) {
+  union rng_seed64 seed;
+
+  seed.init64.low.state = low_state;
+  seed.init64.high.state = high_state;
+  seed.init64.low.seq = low_seq;
+  seed.init64.high.seq = high_seq;
+
+  return seed;
+}
 
 #endif

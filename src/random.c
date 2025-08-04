@@ -19,15 +19,6 @@ FLYAPI void rng32_seed(rng32 *rng) {
   rng32_set_seed(rng, seed);
 }
 
-FLYAPI union rng_seed32 rng_seed32_make(uint64_t state, uint64_t seq) {
-  union rng_seed32 seed;
-
-  seed.init.state = state;
-  seed.init.seq = seq;
-
-  return seed;
-}
-
 FLYAPI void rng32_set_seed(rng32 *rng, union rng_seed32 seed) {
   pcg32_srandom_r((pcg32_random_t *) rng, seed.init.state, seed.init.seq);
 }
@@ -46,30 +37,7 @@ FLYAPI void rng64_seed(rng64 *rng) {
   rng64_set_seed(rng, seed);
 }
 
-FLYAPI union rng_seed64 rng_seed64_make64(
-    uint64_t low_state, uint64_t high_state,
-    uint64_t low_seq, uint64_t high_seq) {
-  union rng_seed64 seed;
-
-  seed.init64.low.state = low_state;
-  seed.init64.high.state = high_state;
-  seed.init64.low.seq = low_seq;
-  seed.init64.high.seq = high_seq;
-
-  return seed;
-}
-
 #ifdef __SIZEOF_INT128__
-
-FLYAPI union rng_seed64 rng_seed64_make(
-    __uint128_t state, __uint128_t seq) {
-  union rng_seed64 seed;
-
-  seed.init.state = state;
-  seed.init.seq = seq;
-
-  return seed;
-}
 
 FLYAPI void rng64_set_seed(rng64 *rng, union rng_seed64 seed) {
   pcg64_srandom_r((pcg64_random_t *) rng, seed.init.state, seed.init.seq);
