@@ -7,6 +7,7 @@
 * Apache License 2.0
 */
 #ifndef ZCM_UNBIASED_FASTRANGE_H
+#define ZCM_UNBIASED_FASTRANGE_H
 
 #ifndef fastrangemax
 #if (SIZE_MAX == UINT32_MAX)
@@ -85,8 +86,8 @@ static inline int fastrangeint(int word, int p) {
 
 #endif  // INCLUDE_FASTRANGE_H
 
-static inline uint32_t
-fastrange32_unbiased(uint32_t word, const uint32_t p, rng32 *rng) {
+static inline uint32_t fastrange32_unbiased(
+    uint32_t word, const uint32_t p, uint32_t (*rand_next)(void *), void *rng) {
   uint64_t product = (uint64_t) word * (uint64_t) p;
   uint32_t threshold, leftover = (uint32_t) product;
 
@@ -94,7 +95,7 @@ fastrange32_unbiased(uint32_t word, const uint32_t p, rng32 *rng) {
     threshold = -p % p;
 
     while (leftover < threshold) {
-      word = rng32_next(rng);
+      word = rand_next(rng);
       product = (uint64_t) word * (uint64_t) p;
       leftover = (uint32_t) product;
     }
@@ -103,8 +104,8 @@ fastrange32_unbiased(uint32_t word, const uint32_t p, rng32 *rng) {
   return product >> 32;
 }
 
-static inline uint64_t
-fastrange64_unbiased(uint64_t word, const uint64_t p, rng64 *rng) {
+static inline uint64_t fastrange64_unbiased(
+    uint64_t word, const uint64_t p, uint64_t (*rand_next)(void *), void *rng) {
 #ifdef __SIZEOF_INT128__
   __uint128_t product = (__uint128_t) word * (__uint128_t) p;
   uint64_t threshold, leftover = (uint64_t) product;
@@ -113,7 +114,7 @@ fastrange64_unbiased(uint64_t word, const uint64_t p, rng64 *rng) {
     threshold = -p % p;
 
     while (leftover < threshold) {
-      word = rng64_next(rng);
+      word = rand_next(rng);
       product = (__uint128_t) word * (__uint128_t) p;
       leftover = (uint64_t) product;
     }
@@ -128,7 +129,7 @@ fastrange64_unbiased(uint64_t word, const uint64_t p, rng64 *rng) {
     threshold = -p % p;
 
     while (low < threshold) {
-      word = rng64_next(rng);
+      word = rand_next(rng);
       low = _umul128(word, p, &high);
     }
   }
