@@ -28,7 +28,7 @@ src/dict.o: hash.h dict.h common.h list.h
 src/hash.o: hash.h common.h
 src/list.o: list.h common.h
 
-src/random.o: random.h common.h src/fastrange/fastrange.h \
+src/random.o: random.h common.h fastrange.h \
 	src/pcg-c/extras/entropy.h src/pcg-c/include/pcg_variants.h
 
 src/entropy.o: src/pcg-c/extras/entropy.c src/pcg-c/extras/entropy.h \
