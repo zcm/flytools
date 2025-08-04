@@ -1,17 +1,8 @@
 #include "random.h"
 
 #include "fastrange.h"
-
-#ifdef __GNUC__
-#define inline __attribute__((always_inline)) inline
-#endif
-
 #include "pcg_variants.h"
 #include "entropy.h"
-
-#ifdef inline
-#undef inline
-#endif
 
 FLYAPI void rng32_seed(rng32 *rng) {
   union rng_seed32 seed;

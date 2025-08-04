@@ -38,6 +38,12 @@
 
 #include <inttypes.h>
 
+#if __GNUC__ || __clang__ || __INTEL_LLVM_COMPILER
+#define inline __attribute__((always_inline)) inline
+#elif defined(_MSC_VER)
+#define inline __forceinline
+#endif
+
 #if __SIZEOF_INT128__
     typedef __uint128_t pcg128_t;
     #define PCG_128BIT_CONSTANT(high,low) \
@@ -2538,6 +2544,10 @@ extern void     pcg64_advance(pcg128_t delta);
 
 #if __cplusplus
 }
+#endif
+
+#ifdef inline
+#undef inline
 #endif
 
 #endif /* PCG_VARIANTS_H_INCLUDED */

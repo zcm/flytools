@@ -32,12 +32,6 @@
 #include <stdint.h>
 #include <time.h>
 
-#if __GNUC__ || __clang__ || __INTEL_LLVM_COMPILER
-#define inline __attribute__((always_inline)) inline
-#elif defined(_MSC_VER)
-#define inline __forceinline
-#endif
-
 #include "pcg_variants.h"
 #include "entropy.h"
 
@@ -105,6 +99,3 @@ FLYAPI void entropy_getbytes(void *dest, size_t size) {
   }
 }
 
-#ifdef inline
-#undef inline
-#endif
