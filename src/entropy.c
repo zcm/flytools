@@ -30,7 +30,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <time.h>
 
 #if __GNUC__ || __clang__ || __INTEL_LLVM_COMPILER
@@ -61,54 +60,49 @@
 #include <unistd.h>
 #endif
 
-#if HAVE_DEV_RANDOM
-/* entropy_getbytes(dest, size):
- *     Use /dev/urandom to get some external entropy for seeding purposes.
+/**
+ * Get some external entropy for seeding purposes.
  *
- * Note:
- *     If reading /dev/urandom fails (which ought to never happen), it returns
- *     false, otherwise it returns true.  If it fails, you could instead call
- *     fallback_entropy_getbytes which always succeeds.
+ * On operating systems that support `/dev/urandom`, it will be used as the
+ * source for entropy unless reading from it fails for some reason, which ought
+ * to never happen. But if it does, or no random device is available, a fallback
+ * method is used.
+ *
+ * The fallback method uses a private RNG to return different seeds between
+ * calls. It makes no attempt at cryptographic security. It combines use of the
+ * addresses of stack variables and library code with the current time as
+ * initializers, which is better than using the current time alone as most
+ * modern operating systems use address space layout randomization.
  */
-FLYAPI bool entropy_getbytes(void *dest, size_t size) {
-    int fd = open("/dev/urandom", O_RDONLY);
-    if (fd < 0)
-        return false;
+FLYAPI void entropy_getbytes(void *dest, size_t size) {
+#if HAVE_DEV_RANDOM
+  int fd = open("/dev/urandom", O_RDONLY);
+
+  if (fd >= 0) {
     ssize_t sz = read(fd, dest, size);
-    return (close(fd) == 0) && (sz == (ssize_t) size);
-}
-#else
-bool entropy_getbytes(void *dest, size_t size) {
-    fallback_entropy_getbytes(dest, size);
-    return true;
-}
+
+    if ((close(fd) == 0) && (sz == (ssize_t) size)) {
+      return;
+    }
+  }
 #endif
 
-/* fallback_entropy_getbytes(dest, size):
- *     Works like the /dev/random version above, but avoids using /dev/random.
- *     Instead, it uses a private RNG (so that repeated calls will return
- *     different seeds).  Makes no attempt at cryptographic security.
- */
-FLYAPI void fallback_entropy_getbytes(void *dest, size_t size) {
-    /* Most modern OSs use address-space randomization, meaning that we can
-       use the address of stack variables and system library code as
-       initializers.  It's not as good as using /dev/random, but probably
-       better than using the current time alone. */
-    static int intitialized = 0;
-    static pcg32_random_t entropy_rng;
+  static int intitialized = 0;
+  static pcg32_random_t entropy_rng;
 
-    if (!intitialized) {
-        int dummyvar;
-        pcg32_srandom_r(&entropy_rng,
-                        time(NULL) ^ (intptr_t) &fallback_entropy_getbytes,
-                        (intptr_t) &dummyvar);
-        intitialized = 1;
-    }
+  if (!intitialized) {
+    int dummyvar;
 
-    char *dest_cp = (char *) dest;
-    for (size_t i = 0; i < size; ++i) {
-        dest_cp[i] = (char) pcg32_random_r(&entropy_rng);
-    }
+    pcg32_srandom_r(
+        &entropy_rng, time(NULL) ^ (intptr_t) &time, (intptr_t) &dummyvar);
+
+    intitialized = 1;
+  }
+
+  char *dest_cp = (char *) dest;
+  for (size_t i = 0; i < size; ++i) {
+    dest_cp[i] = (char) pcg32_random_r(&entropy_rng);
+  }
 }
 
 #ifdef inline
