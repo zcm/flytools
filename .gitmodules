@@ -1,3 +1,0 @@
-[submodule "src/pcg-c"]
-	path = src/pcg-c
-	url = git@github.com:imneme/pcg-c.git

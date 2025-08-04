@@ -28,11 +28,9 @@ src/dict.o: hash.h dict.h common.h list.h
 src/hash.o: hash.h common.h
 src/list.o: list.h common.h
 
-src/random.o: random.h common.h fastrange.h \
-	src/pcg-c/extras/entropy.h src/pcg-c/include/pcg_variants.h
+src/random.o: random.h common.h fastrange.h entropy.h pcg_variants.h
 
-src/entropy.o: src/pcg-c/extras/entropy.c src/pcg-c/extras/entropy.h \
-	src/pcg-c/extras/pcg_spinlock.h src/pcg-c/include/pcg_variants.h
+src/entropy.o: entropy.h pcg_variants.h
 
 # uncomment to enable compilation of scanner code
 #src/scanner.c: scanner.h

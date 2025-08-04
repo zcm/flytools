@@ -7,7 +7,7 @@
 #endif
 
 #include "pcg_variants.h"
-#include "extras/entropy.h"
+#include "entropy.h"
 
 #ifdef inline
 #undef inline
