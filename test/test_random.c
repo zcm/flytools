@@ -107,6 +107,7 @@ void do_test_rng32_next(uint8_t mode, uint32_t bound, int bias) {
       break;
   }
 
+redraw:
   if (!bound) {
     r = rng32_next(&rng);
   } else {
@@ -123,6 +124,12 @@ void do_test_rng32_next(uint8_t mode, uint32_t bound, int bias) {
   before.inc = rng.inc;
 
   next32_compare(r, &before, &rng, bound, 0);
+
+  if (r == 0) {
+    // 0 is a valid value and seems to be generated when state == inc.
+    // We want to make sure other values can be generated too, however.
+    goto redraw;
+  }
 }
 
 void do_test_rng64_next(uint8_t mode, uint64_t bound, int bias) {
@@ -159,6 +166,7 @@ void do_test_rng64_next(uint8_t mode, uint64_t bound, int bias) {
       break;
   }
 
+redraw:
   if (!bound) {
     r = rng64_next(&rng);
   } else {
@@ -182,6 +190,11 @@ void do_test_rng64_next(uint8_t mode, uint64_t bound, int bias) {
 #endif
 
   next64_compare(r, &before, &rng, bound, 0);
+
+  if (r == 0) {
+    // Same thing as with rng32. Verify we can also generate non-zero values.
+    goto redraw;
+  }
 }
 #endif
 
@@ -201,6 +214,93 @@ TESTCALL(test_rng64_next_in, do_test_rng64_next(DO_NOT_SEED, 12345, 0))
 
 TESTCALL(test_rng32_next_in_biased, do_test_rng32_next(DO_NOT_SEED, 12345, 1))
 TESTCALL(test_rng64_next_in_biased, do_test_rng64_next(DO_NOT_SEED, 12345, 1))
+
+#ifndef METHODS_ONLY
+
+#define BIASED_BOUND_32 (UINT32_MAX / 2 + UINT32_MAX / 4 + 999979)
+#define BIASED_BOUND_64 (UINT64_MAX / 2 + UINT64_MAX / 4 + 6223707953)
+
+void do_test_rng32_next_in_unbiased_redraw() {
+  rng32 u, b;
+  uint32_t ru;
+
+  u.state = 1694877417741926800ULL;
+  u.inc = 533521648ULL;
+  b = u;
+
+  // First two in a row (!!) in this sequence should be redrawn due to bias
+  assert_int_not_equal(
+      rng32_next_in_biased(&b, BIASED_BOUND_32),
+      ru = rng32_next_in(&u, BIASED_BOUND_32));
+
+  // Next biased draw was also redrawn
+  assert_int_not_equal(ru, rng32_next_in_biased(&b, BIASED_BOUND_32));
+
+  // The next biased number is the unbiased one we skipped to
+  assert_int_equal(ru, rng32_next_in_biased(&b, BIASED_BOUND_32));
+
+  // And then one should be redrawn this time
+  assert_int_not_equal(
+      rng32_next_in_biased(&b, BIASED_BOUND_32),
+      ru = rng32_next_in(&u, BIASED_BOUND_32));
+
+  // The unbiased one we skipped to on the second time around
+  assert_int_equal(ru, rng32_next_in_biased(&b, BIASED_BOUND_32));
+
+  // Next is out of range so is not redrawn
+  assert_int_equal(
+      rng32_next_in_biased(&b, BIASED_BOUND_32),
+      rng32_next_in(&u, BIASED_BOUND_32));
+
+  // Just jump to a state that we know will be in range but over the threshold
+  u.state = b.state = 8530570146876432800ULL;
+
+  // Finally we draw one within range but not redrawn due to over threshold
+  assert_int_equal(
+      rng32_next_in_biased(&b, BIASED_BOUND_32),
+      rng32_next_in(&u, BIASED_BOUND_32));
+}
+
+void do_test_rng64_next_in_unbiased_redraw() {
+  rng64 u, b;
+  uint64_t ru;
+
+  // These values happen to pass for both the 128-bit and dual 64-bit methods
+  u.low.state = 7722718773909012224ULL;
+  u.low.inc = 533718128ULL;
+  u.high = u.low;
+  b = u;
+
+  // First one in this sequence should be redrawn due to bias
+  assert_int_not_equal(
+      rng64_next_in_biased(&b, BIASED_BOUND_64),
+      ru = rng64_next_in(&u, BIASED_BOUND_64));
+
+  // The next biased number is the unbiased one we skipped to
+  assert_int_equal(ru, rng64_next_in_biased(&b, BIASED_BOUND_64));
+
+  // Next is within range but not redrawn due to being over the threshold
+  assert_int_equal(
+      rng64_next_in_biased(&b, BIASED_BOUND_64),
+      rng64_next_in(&u, BIASED_BOUND_64));
+
+  // Finally we draw a number out of range and again do not redraw
+  assert_int_equal(
+      rng64_next_in_biased(&b, BIASED_BOUND_64),
+      rng64_next_in(&u, BIASED_BOUND_64));
+}
+
+#undef BIASED_BOUND_32
+#undef BIASED_BOUND_64
+
+#endif
+
+TESTCALL(
+    test_rng32_next_in_unbiased_redraw,
+    do_test_rng32_next_in_unbiased_redraw())
+TESTCALL(
+    test_rng64_next_in_unbiased_redraw,
+    do_test_rng64_next_in_unbiased_redraw())
 
 #ifndef METHODS_ONLY
 

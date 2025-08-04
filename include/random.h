@@ -12,11 +12,18 @@ typedef struct rng32 {
 
 typedef struct rng64 {
 #ifdef __SIZEOF_INT128__
-  __uint128_t state;
-  __uint128_t inc;
-#else
-  struct rng32 low;
-  struct rng32 high;
+  union {
+    struct {
+      __uint128_t state;
+      __uint128_t inc;
+    };
+    struct {
+#endif
+      struct rng32 low;
+      struct rng32 high;
+#ifdef __SIZEOF_INT128__
+    };
+  };
 #endif
 } rng64;
 
