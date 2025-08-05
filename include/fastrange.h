@@ -36,6 +36,8 @@
 #endif  // _WIN64
 #endif  // _MSC_VER
 
+#include "jargon.h"
+
 #ifndef UINT32_MAX
 #define UINT32_MAX  (0xffffffff)
 #endif // UINT32_MAX
@@ -91,8 +93,10 @@ static inline int fastrangeint(int word, int p) {
 
 #endif  // INCLUDE_FASTRANGE_H
 
+__attribute__((callback (3, 1)))
 static inline uint32_t fastrange32_unbiased(
-    uint32_t word, const uint32_t p, uint32_t (*rand_next)(void *), void *rng) {
+    void *rng, const uint32_t p, uint32_t (*rand_next)(void *)) {
+  uint32_t word = rand_next(rng);
   uint64_t product = (uint64_t) word * (uint64_t) p;
   uint32_t threshold, leftover = (uint32_t) product;
 
@@ -109,25 +113,28 @@ static inline uint32_t fastrange32_unbiased(
   return product >> 32;
 }
 
+__attribute__((callback (3, 1)))
 static inline uint64_t fastrange64_unbiased(
-    uint64_t word, const uint64_t p, uint64_t (*rand_next)(void *), void *rng) {
+    void *rng, const uint64_t p, uint64_t (*rand_next)(void *)) {
+  uint64_t threshold, low, word = rand_next(rng);
+
 #ifdef __SIZEOF_INT128__
   __uint128_t product = (__uint128_t) word * (__uint128_t) p;
-  uint64_t threshold, leftover = (uint64_t) product;
+  low = (uint64_t) product;
 
-  if (leftover < p) {
+  if (low < p) {
     threshold = -p % p;
 
-    while (leftover < threshold) {
+    while (low < threshold) {
       word = rand_next(rng);
       product = (__uint128_t) word * (__uint128_t) p;
-      leftover = (uint64_t) product;
+      low = (uint64_t) product;
     }
   }
 
   return product >> 64;
 #elif defined(_MSC_VER) && defined(_WIN64)
-  uint64_t high, low, threshold;
+  uint64_t high;
   low = _umul128(word, p, &high);
 
   if (low < p) {
@@ -141,6 +148,17 @@ static inline uint64_t fastrange64_unbiased(
 
   return high;
 #else
+  low = word * p;
+
+  if (low < p) {
+    threshold = -p % p;
+
+    while (low < threshold) {
+      word = rand_next(rng);
+      low = word * p;
+    }
+  }
+
   return word % p;
 #endif
 }
@@ -150,5 +168,7 @@ static inline uint64_t fastrange64_unbiased(
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+#include "unjargon.h"
 
 #endif  // ZCM_UNBIASED_FASTRANGE_H

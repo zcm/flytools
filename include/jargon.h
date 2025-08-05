@@ -16,6 +16,12 @@
 
 #if !HAS_ATTRIBUTE_SYNTAX
 #define __attribute__(x)
+#else
+
+#ifndef __clang__
+#define callback(...)
+#endif
+
 #endif
 
 #endif

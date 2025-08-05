@@ -95,7 +95,7 @@ static inline uint32_t rng32_next_thunk(void *rng) {
 }
 
 static inline uint32_t rng32_next_in(rng32 *rng, uint32_t bound) {
-  return fastrange32_unbiased(rng32_next(rng), bound, &rng32_next_thunk, rng);
+  return fastrange32_unbiased(rng, bound, &rng32_next_thunk);
 }
 
 static inline uint32_t rng32_next_in_biased(rng32 *rng, uint32_t bound) {
@@ -126,7 +126,7 @@ static inline uint64_t rng64_next_thunk(void *rng) {
 }
 
 static inline uint64_t rng64_next_in(rng64 *rng, uint64_t bound) {
-  return fastrange64_unbiased(rng64_next(rng), bound, &rng64_next_thunk, rng);
+  return fastrange64_unbiased(rng, bound, &rng64_next_thunk);
 }
 
 static inline uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound) {

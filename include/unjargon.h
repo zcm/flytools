@@ -5,4 +5,8 @@
 #undef __attribute__
 #endif
 
+#ifdef callback
+#undef callback
+#endif
+
 #endif
