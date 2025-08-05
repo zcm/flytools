@@ -30,11 +30,6 @@ typedef struct dllistnode dllistnode;
 
 static void arlist_init(arlist *l);
 static void arlist_del(arlist *l);
-static inline void *_unsafe_arlist_get(arlist *l, ptrdiff_t i);
-static void _unsafe_arlist_push(arlist *l, void *data);
-static void _unsafe_arlist_unshift(arlist *l, void *data);
-static void *_unsafe_arlist_pop(arlist *l);
-static void *_unsafe_arlist_shift(arlist *l);
 static void _unsafe_arlist_append_array(arlist *l, size_t n, void **items);
 static void _unsafe_arlist_foreach(arlist *l, int (*)(void *, size_t));
 static void *_unsafe_arlist_find_first(arlist *l, int (*matcher)(void *));
@@ -46,11 +41,6 @@ static void _unsafe_arlist_sort(
     arlist *l, int (*comp)(const void *, const void *));
 
 static void deque_init(deque *l);
-static inline void *_unsafe_deque_get(deque *l, ptrdiff_t i);
-static void _unsafe_deque_push(deque *l, void *data);
-static void _unsafe_deque_unshift(deque *l, void *data);
-static void *_unsafe_deque_pop(deque *l);
-static void *_unsafe_deque_shift(deque *l);
 static void _unsafe_deque_append_array(deque *l, size_t n, void **items);
 static void _unsafe_deque_foreach(deque *l, int (*)(void *, size_t));
 static void *_unsafe_deque_find_first(deque *l, int (*matcher)(void *));
@@ -107,11 +97,11 @@ ASSIGN_STATIC_PTR(LISTKIND_ARRAY) {
   sizeof (arlist),
   (void *) &arlist_init,
   (void *) &arlist_del,
-  (void *) &_unsafe_arlist_get,
-  (void *) &_unsafe_arlist_push,
-  (void *) &_unsafe_arlist_unshift,
-  (void *) &_unsafe_arlist_pop,
-  (void *) &_unsafe_arlist_shift,
+  (void *) &arlist_get_unsafe,
+  (void *) &arlist_push_unsafe,
+  (void *) &arlist_unshift_unsafe,
+  (void *) &arlist_pop_unsafe,
+  (void *) &arlist_shift_unsafe,
   (void *) &arlist_concat,
   (void *) &_unsafe_arlist_append_array,
   (void *) &_unsafe_arlist_foreach,
@@ -126,11 +116,11 @@ ASSIGN_STATIC_PTR(LISTKIND_DEQUE) {
   sizeof (deque),
   (void *) &deque_init,
   (void *) &arlist_del,  /* not a typo */
-  (void *) &_unsafe_deque_get,
-  (void *) &_unsafe_deque_push,
-  (void *) &_unsafe_deque_unshift,
-  (void *) &_unsafe_deque_pop,
-  (void *) &_unsafe_deque_shift,
+  (void *) &deque_get_unsafe,
+  (void *) &deque_push_unsafe,
+  (void *) &deque_unshift_unsafe,
+  (void *) &deque_pop_unsafe,
+  (void *) &deque_shift_unsafe,
   (void *) &deque_concat,
   (void *) &_unsafe_deque_append_array,
   (void *) &_unsafe_deque_foreach,
@@ -237,22 +227,6 @@ FLYAPI void list_del(list *l) {
   }
 }
 
-static inline void *_unsafe_arlist_get(arlist *l, ptrdiff_t i) {
-  if (i < 0) {
-    i += l->size;
-  }
-
-  return l->items[i];
-}
-
-static inline void *_unsafe_deque_get(deque *l, ptrdiff_t i) {
-  if (i < 0) {
-    i += l->size;
-  }
-
-  return l->items[(l->start + i) % l->capacity];
-}
-
 static inline sllistnode *_unsafe_sllist_get_node(sllist *l, size_t i) {
   sllistnode *current = l->head->next;
 
@@ -298,23 +272,6 @@ static inline void *_unsafe_dllist_get(dllist *l, ptrdiff_t i) {
   return _unsafe_sllist_get_node((sllist *) l, (size_t) i)->data;
 }
 
-static inline enum FLY_STATUS list_bad_call(void * restrict lp, ptrdiff_t i) {
-  ptrdiff_t size;
-  list *l = (list *) lp;
-
-  if (!l) {
-    return fly_status = FLY_E_NULL_PTR;
-  }
-
-  size = (ptrdiff_t) l->size;
-
-  if (i >= size || i < -size) {
-    return fly_status = FLY_E_OUT_OF_RANGE;
-  }
-
-  return fly_status = FLY_OK;
-}
-
 FLYAPI void *list_get(list *l, ptrdiff_t i) {
   if (list_bad_call(l, i)) {
     return NULL;
@@ -326,14 +283,14 @@ FLYAPI void *arlist_get(arlist *l, ptrdiff_t i) {
   if (list_bad_call(l, i)) {
     return NULL;
   }
-  return _unsafe_arlist_get(l, i);
+  return arlist_get_unsafe(l, i);
 }
 
 FLYAPI void *deque_get(deque *l, ptrdiff_t i) {
   if (list_bad_call(l, i)) {
     return NULL;
   }
-  return _unsafe_deque_get(l, i);
+  return deque_get_unsafe(l, i);
 }
 
 FLYAPI void *dllist_get(dllist *l, ptrdiff_t i) {
@@ -1092,7 +1049,7 @@ static void arlist_del(arlist *l) {
   l->del(l->items);
 }
 
-static size_t arlist_grow(arlist *l, size_t new_elements) {
+FLYAPI size_t arlist_grow(arlist *l, size_t new_elements) {
   void *next_elements;
   size_t delta = l->capacity >> 1;
 
@@ -1124,7 +1081,7 @@ static size_t arlist_grow(arlist *l, size_t new_elements) {
   return l->capacity = delta;
 }
 
-static void deque_reorient(deque *l, size_t grew_by) {
+FLYAPI void deque_reorient(deque *l, size_t grew_by) {
   if (l->start < l->end || !l->size) {
     return;
   }
@@ -1150,48 +1107,12 @@ static void deque_reorient(deque *l, size_t grew_by) {
 
 #undef ARLIST_DEFAULT_CAPACITY
 
-// 0 means out of memory. SIZE_MAX means no resize happened.
-static inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements) {
-  if (new_elements > l->capacity - l->size) {
-    return arlist_grow(l, new_elements);
-  }
-  return SIZE_MAX;
-}
-
-#define ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements, capture)            \
-  if (!(capture arlist_ensure_capacity((arlist *) l, new_elements))) {  \
-    return;                                          \
-  }
-
-// Using SIZE_MAX to mean no resize makes sense; the only time it can grow by
-// SIZE_MAX is when it's initially empty, and no reorientation is needed then.
-#define DEQUE_HAS_CAPACITY_OR_DIE(l, new_elements)  \
-  size_t new_capacity, old_capacity = l->capacity;  \
-  ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements, new_capacity =)  \
-  if (new_capacity != SIZE_MAX) {  \
-    deque_reorient(l, new_capacity - old_capacity);  \
-  }
-
-static void _unsafe_arlist_push(arlist *l, void *data) {
-  ARLIST_HAS_CAPACITY_OR_DIE(l, 1, );
-
-  l->items[l->size++] = data;
-}
-
 FLYAPI void arlist_push(arlist *l, void *data) {
   if (!l) {
     fly_status = FLY_E_NULL_PTR;
     return;
   }
-  _unsafe_arlist_push(l, data);
-}
-
-static void _unsafe_deque_push(deque *l, void *data) {
-  DEQUE_HAS_CAPACITY_OR_DIE(l, 1)
-
-  l->size++;
-  l->items[l->end] = data;
-  l->end = (l->end + 1) % l->capacity;
+  arlist_push_unsafe(l, data);
 }
 
 FLYAPI void deque_push(deque *l, void *data) {
@@ -1199,18 +1120,7 @@ FLYAPI void deque_push(deque *l, void *data) {
     fly_status = FLY_E_NULL_PTR;
     return;
   }
-  _unsafe_deque_push(l, data);
-}
-
-static void _unsafe_arlist_unshift(arlist *l, void *data) {
-  ARLIST_HAS_CAPACITY_OR_DIE(l, 1, )
-
-  memmove(l->items + 1, l->items, l->size * sizeof (void *));
-
-  l->size++;
-  l->items[0] = data;
-
-  fly_status = FLY_OK;
+  deque_push_unsafe(l, data);
 }
 
 FLYAPI void arlist_unshift(arlist *l, void *data) {
@@ -1218,14 +1128,7 @@ FLYAPI void arlist_unshift(arlist *l, void *data) {
     fly_status = FLY_E_NULL_PTR;
     return;
   }
-  _unsafe_arlist_unshift(l, data);
-}
-
-static void _unsafe_deque_unshift(deque *l, void *data) {
-  DEQUE_HAS_CAPACITY_OR_DIE(l, 1)
-
-  l->size++;
-  l->items[l->start = (l->start ? l->start : l->capacity) - 1] = data;
+  arlist_unshift_unsafe(l, data);
 }
 
 FLYAPI void deque_unshift(deque *l, void *data) {
@@ -1233,11 +1136,7 @@ FLYAPI void deque_unshift(deque *l, void *data) {
     fly_status = FLY_E_NULL_PTR;
     return;
   }
-  _unsafe_deque_unshift(l, data);
-}
-
-static void *_unsafe_arlist_pop(arlist *l) {
-  return l->items[--(l->size)];
+  deque_unshift_unsafe(l, data);
 }
 
 FLYAPI void *arlist_pop(arlist *l) {
@@ -1245,12 +1144,7 @@ FLYAPI void *arlist_pop(arlist *l) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
-  return list_end_remove_op(l, &_unsafe_arlist_pop);
-}
-
-static void *_unsafe_deque_pop(deque *l) {
-  l->size--;
-  return l->items[l->end = (l->end ? l->end : l->capacity) - 1];
+  return list_end_remove_op(l, &arlist_pop_unsafe);
 }
 
 FLYAPI void *deque_pop(deque *l) {
@@ -1258,17 +1152,7 @@ FLYAPI void *deque_pop(deque *l) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
-  return list_end_remove_op(l, &_unsafe_deque_pop);
-}
-
-static void *_unsafe_arlist_shift(arlist *l) {
-  void *ret;
-
-  ret = l->items[0];
-
-  memmove(l->items, l->items + 1, --(l->size) * sizeof (void *));
-
-  return ret;
+  return list_end_remove_op(l, &deque_pop_unsafe);
 }
 
 FLYAPI void *arlist_shift(arlist *l) {
@@ -1276,16 +1160,7 @@ FLYAPI void *arlist_shift(arlist *l) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
-  return list_end_remove_op(l, &_unsafe_arlist_shift);
-}
-
-static void *_unsafe_deque_shift(deque *l) {
-  void *ret = l->items[l->start];
-
-  l->size--;
-  l->start = (l->start + 1) % l->capacity;
-
-  return ret;
+  return list_end_remove_op(l, &arlist_shift_unsafe);
 }
 
 FLYAPI void *deque_shift(deque *l) {
@@ -1293,11 +1168,11 @@ FLYAPI void *deque_shift(deque *l) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
-  return list_end_remove_op(l, &_unsafe_deque_shift);
+  return list_end_remove_op(l, &deque_shift_unsafe);
 }
 
 FLYAPI void arlist_concat(arlist * restrict l1, arlist * restrict l2) {
-  ARLIST_HAS_CAPACITY_OR_DIE(l1, l2->size, )
+  ARLIST_HAS_CAPACITY_OR_DIE(l1, l2->size)
 
   memcpy(l1->items + l1->size, l2->items, l2->size * sizeof (void *));
 
@@ -1336,7 +1211,7 @@ FLYAPI void deque_concat(deque * restrict l1, deque * restrict l2) {
 }
 
 static void _unsafe_arlist_append_array(arlist *l, size_t n, void **suffix) {
-  ARLIST_HAS_CAPACITY_OR_DIE(l, n, )
+  ARLIST_HAS_CAPACITY_OR_DIE(l, n)
 
   memcpy(l->items + l->size, suffix, n * sizeof (void *));
   l->size += n;

@@ -126,6 +126,123 @@ FLYAPI size_t list_discard_all(
 FLYAPI void list_shuffle(list *l);
 FLYAPI void list_sort(list *l, int (*comp)(const void *, const void *));
 
+static inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i) {
+  ptrdiff_t size;
+  list *l = (list *) lp;
+
+  if (!l) {
+    return fly_status = FLY_E_NULL_PTR;
+  }
+
+  size = (ptrdiff_t) l->size;
+
+  if (i >= size || i < -size) {
+    return fly_status = FLY_E_OUT_OF_RANGE;
+  }
+
+  return fly_status = FLY_OK;
+}
+
+static inline void *arlist_get_unsafe(arlist *l, ptrdiff_t i) {
+  if (i < 0) {
+    i += l->size;
+  }
+
+  return l->items[i];
+}
+
+static inline void *deque_get_unsafe(deque *l, ptrdiff_t i) {
+  if (i < 0) {
+    i += l->size;
+  }
+
+  return l->items[(l->start + i) % l->capacity];
+}
+
+FLYAPI size_t arlist_grow(arlist *l, size_t new_elements);
+FLYAPI void deque_reorient(deque *l, size_t grew_by);
+
+static inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements) {
+  // 0 means out of memory. SIZE_MAX means no resize happened.
+  if (new_elements > l->capacity - l->size) {
+    return arlist_grow(l, new_elements);
+  }
+  return SIZE_MAX;
+}
+
+#define ARLIST_HAS_CAPACITY_OR_DIE_CAPTURE(l, new_elements, capture)  \
+  if (!(capture arlist_ensure_capacity((arlist *) l, new_elements))) {  \
+    return;  \
+  }
+
+#define ARLIST_HAS_CAPACITY_OR_DIE(l, new_elements) \
+  ARLIST_HAS_CAPACITY_OR_DIE_CAPTURE(l, new_elements, )
+
+// Using SIZE_MAX to mean no resize makes sense; the only time it can grow by
+// SIZE_MAX is when it's initially empty, and no reorientation is needed then.
+#define DEQUE_HAS_CAPACITY_OR_DIE(l, new_elements)  \
+  size_t new_capacity, old_capacity = l->capacity;  \
+  ARLIST_HAS_CAPACITY_OR_DIE_CAPTURE(l, new_elements, new_capacity =)  \
+  if (new_capacity != SIZE_MAX) {  \
+    deque_reorient(l, new_capacity - old_capacity);  \
+  }
+
+static inline void arlist_push_unsafe(arlist *l, void *data) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l, 1);
+
+  l->items[l->size++] = data;
+}
+
+static inline void deque_push_unsafe(deque *l, void *data) {
+  DEQUE_HAS_CAPACITY_OR_DIE(l, 1)
+
+  l->size++;
+  l->items[l->end] = data;
+  l->end = (l->end + 1) % l->capacity;
+}
+
+static inline void *arlist_pop_unsafe(arlist *l) {
+  return l->items[--(l->size)];
+}
+
+static inline void *deque_pop_unsafe(deque *l) {
+  l->size--;
+  return l->items[l->end = (l->end ? l->end : l->capacity) - 1];
+}
+
+static inline void arlist_unshift_unsafe(arlist *l, void *data) {
+  ARLIST_HAS_CAPACITY_OR_DIE(l, 1)
+
+  memmove(l->items + 1, l->items, l->size * sizeof (void *));
+
+  l->size++;
+  l->items[0] = data;
+
+  fly_status = FLY_OK;
+}
+
+static inline void deque_unshift_unsafe(deque *l, void *data) {
+  DEQUE_HAS_CAPACITY_OR_DIE(l, 1)
+
+  l->size++;
+  l->items[l->start = (l->start ? l->start : l->capacity) - 1] = data;
+}
+
+static inline void *arlist_shift_unsafe(arlist *l) {
+  void *ret = l->items[0];
+  memmove(l->items, l->items + 1, --(l->size) * sizeof (void *));
+  return ret;
+}
+
+static inline void *deque_shift_unsafe(deque *l) {
+  void *ret = l->items[l->start];
+
+  l->size--;
+  l->start = (l->start + 1) % l->capacity;
+
+  return ret;
+}
+
 FLYAPI void *arlist_get(arlist *l, ptrdiff_t i);
 FLYAPI void arlist_push(arlist *l, void *data);
 FLYAPI void arlist_unshift(arlist *l, void *data);
