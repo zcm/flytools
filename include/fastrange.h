@@ -26,10 +26,15 @@
 #include <stddef.h> // for size_t in C
 #include <limits.h> // for size_t in C
 
-#if defined(_MSC_VER) && defined (_WIN64)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4146)
+
+#ifdef _WIN64
 #include <intrin.h>// should be part of all recent Visual Studio
 #pragma intrinsic(_umul128)
-#endif // defined(_MSC_VER) && defined (_WIN64)
+#endif  // _WIN64
+#endif  // _MSC_VER
 
 #ifndef UINT32_MAX
 #define UINT32_MAX  (0xffffffff)
@@ -141,5 +146,9 @@ static inline uint64_t fastrange64_unbiased(
 }
 
 #undef fastrangemax
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif  // ZCM_UNBIASED_FASTRANGE_H

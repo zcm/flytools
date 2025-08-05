@@ -184,6 +184,7 @@
     <ClInclude Include="include\generics.h" />
     <ClInclude Include="include\flytools.h" />
     <ClInclude Include="include\hash.h" />
+    <ClInclude Include="include\jargon.h" />
     <ClInclude Include="include\list.h" />
     <ClInclude Include="include\random.h" />
   </ItemGroup>

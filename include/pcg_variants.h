@@ -42,6 +42,9 @@
 #define inline __attribute__((always_inline)) inline
 #elif defined(_MSC_VER)
 #define inline __forceinline
+#pragma warning(push)
+#pragma warning(disable: 4146)
+#pragma warning(disable: 4244)
 #endif
 
 #if __SIZEOF_INT128__
@@ -2548,6 +2551,10 @@ extern void     pcg64_advance(pcg128_t delta);
 
 #ifdef inline
 #undef inline
+#endif
+
+#ifdef _MSC_VER
+#pragma warning(pop)
 #endif
 
 #endif /* PCG_VARIANTS_H_INCLUDED */

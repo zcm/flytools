@@ -7,6 +7,8 @@
 #include "fastrange.h"
 #include "pcg_variants.h"
 
+#include "jargon.h"
+
 typedef struct rng32 {
   uint64_t state;
   uint64_t inc;
@@ -87,6 +89,7 @@ static inline uint32_t rng32_next(rng32 *rng) {
   return pcg32_random_r((pcg32_random_t *) rng);
 }
 
+__attribute__((artificial))
 static inline uint32_t rng32_next_thunk(void *rng) {
   return rng32_next((rng32 *) rng);
 }
@@ -117,6 +120,7 @@ static inline uint64_t rng64_next(rng64 *rng) {
 #endif
 }
 
+__attribute__((artificial))
 static inline uint64_t rng64_next_thunk(void *rng) {
   return rng64_next((rng64 *) rng);
 }
@@ -129,6 +133,7 @@ static inline uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound) {
   return fastrange64(rng64_next(rng), bound);
 }
 
+__attribute__((const))
 static inline union rng_seed32
 rng_seed32_make(uint64_t state, uint64_t seq) {
   union rng_seed32 seed;
@@ -140,6 +145,7 @@ rng_seed32_make(uint64_t state, uint64_t seq) {
 }
 
 #ifdef __SIZEOF_INT128__
+__attribute__((const))
 static inline union rng_seed64
 rng_seed64_make(__uint128_t state, __uint128_t seq) {
   union rng_seed64 seed;
@@ -151,6 +157,7 @@ rng_seed64_make(__uint128_t state, __uint128_t seq) {
 }
 #endif
 
+__attribute__((const))
 static inline union rng_seed64
 rng_seed64_make64(uint64_t low_state, uint64_t high_state,
                   uint64_t low_seq, uint64_t high_seq) {
@@ -163,5 +170,7 @@ rng_seed64_make64(uint64_t low_state, uint64_t high_state,
 
   return seed;
 }
+
+#include "unjargon.h"
 
 #endif
