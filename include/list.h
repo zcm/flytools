@@ -127,16 +127,16 @@ FLYAPI void list_shuffle(list *l);
 FLYAPI void list_sort(list *l, int (*comp)(const void *, const void *));
 
 static inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i) {
-  ptrdiff_t size;
   list *l = (list *) lp;
 
   if (!l) {
     return fly_status = FLY_E_NULL_PTR;
   }
 
-  size = (ptrdiff_t) l->size;
+  size_t size = l->size;
+  i += (ptrdiff_t) size;
 
-  if (i >= size || i < -size) {
+  if ((size_t) i >= size * 2) {
     return fly_status = FLY_E_OUT_OF_RANGE;
   }
 
