@@ -27,6 +27,7 @@
 typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
 
+extern inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i);
 
 static void arlist_init(arlist *l);
 static void arlist_del(arlist *l);

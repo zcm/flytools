@@ -126,7 +126,7 @@ FLYAPI size_t list_discard_all(
 FLYAPI void list_shuffle(list *l);
 FLYAPI void list_sort(list *l, int (*comp)(const void *, const void *));
 
-static inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i) {
+FLYAPI inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i) {
   list *l = (list *) lp;
 
   if (!l) {
