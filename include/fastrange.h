@@ -36,6 +36,7 @@
 #endif  // _WIN64
 #endif  // _MSC_VER
 
+#include "common.h"
 #include "jargon.h"
 
 #ifndef UINT32_MAX
@@ -48,7 +49,7 @@
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline uint32_t fastrange32(uint32_t word, uint32_t p) {
+FLYAPI inline uint32_t fastrange32(uint32_t word, uint32_t p) {
 	return (uint32_t) (((uint64_t) word * (uint64_t) p) >> 32);
 }
 
@@ -58,7 +59,7 @@ static inline uint32_t fastrange32(uint32_t word, uint32_t p) {
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline uint64_t fastrange64(uint64_t word, uint64_t p) {
+FLYAPI inline uint64_t fastrange64(uint64_t word, uint64_t p) {
 #ifdef __SIZEOF_INT128__ // then we know we have a 128-bit int
 	return (uint64_t) (((__uint128_t) word * (__uint128_t) p) >> 64);
 #elif defined(_MSC_VER) && defined(_WIN64)
@@ -77,7 +78,8 @@ static inline uint64_t fastrange64(uint64_t word, uint64_t p) {
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline size_t fastrangesize(size_t word, size_t p) {
+__attribute__((artificial))
+FLYAPI inline size_t fastrangesize(size_t word, size_t p) {
 	return (size_t) fastrangemax(word, p);
 }
 
@@ -87,14 +89,15 @@ static inline size_t fastrangesize(size_t word, size_t p) {
 * through all possible values of "word", then you will generate all
 * possible outputs as uniformly as possible.
 */
-static inline int fastrangeint(int word, int p) {
+__attribute__((artificial))
+FLYAPI inline int fastrangeint(int word, int p) {
 	return (int) fastrangemax(word, p);
 }
 
 #endif  // INCLUDE_FASTRANGE_H
 
 __attribute__((callback (3, 1)))
-static inline uint32_t fastrange32_unbiased(
+FLYAPI inline uint32_t fastrange32_unbiased(
     void *rng, const uint32_t p, uint32_t (*rand_next)(void *)) {
   uint32_t word = rand_next(rng);
   uint64_t product = (uint64_t) word * (uint64_t) p;
@@ -114,7 +117,7 @@ static inline uint32_t fastrange32_unbiased(
 }
 
 __attribute__((callback (3, 1)))
-static inline uint64_t fastrange64_unbiased(
+FLYAPI inline uint64_t fastrange64_unbiased(
     void *rng, const uint64_t p, uint64_t (*rand_next)(void *)) {
   uint64_t threshold, low, word = rand_next(rng);
 

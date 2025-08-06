@@ -28,6 +28,26 @@ typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
 
 extern inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i);
+extern inline size_t arlist_ensure_capacity(arlist *l, size_t new_elements);
+
+extern inline void *arlist_get_unsafe(arlist *l, ptrdiff_t i);
+extern inline void *deque_get_unsafe(deque *l, ptrdiff_t i);
+
+extern inline void *arlist_get(arlist *l, ptrdiff_t i);
+extern inline void arlist_push_unsafe(arlist *l, void *data);
+extern inline void *arlist_pop_unsafe(arlist *l);
+extern inline void arlist_unshift_unsafe(arlist *l, void *data);
+extern inline void *arlist_shift_unsafe(arlist *l);
+extern inline void arlist_push(arlist *l, void *data);
+extern inline void arlist_unshift(arlist *l, void *data);
+extern inline void *arlist_pop(arlist *l);
+extern inline void *arlist_shift(arlist *l);
+extern inline void *arlist_pick(arlist *l);
+
+extern inline void deque_push_unsafe(deque *l, void *data);
+extern inline void *deque_pop_unsafe(deque *l);
+extern inline void deque_unshift_unsafe(deque *l, void *data);
+extern inline void *deque_shift_unsafe(deque *l);
 
 static void arlist_init(arlist *l);
 static void arlist_del(arlist *l);
@@ -278,13 +298,6 @@ FLYAPI void *list_get(list *l, ptrdiff_t i) {
     return NULL;
   }
   return l->kind->get(l, i);
-}
-
-FLYAPI void *arlist_get(arlist *l, ptrdiff_t i) {
-  if (list_bad_call(l, i)) {
-    return NULL;
-  }
-  return arlist_get_unsafe(l, i);
 }
 
 FLYAPI void *deque_get(deque *l, ptrdiff_t i) {
@@ -1108,28 +1121,12 @@ FLYAPI void deque_reorient(deque *l, size_t grew_by) {
 
 #undef ARLIST_DEFAULT_CAPACITY
 
-FLYAPI void arlist_push(arlist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
-  arlist_push_unsafe(l, data);
-}
-
 FLYAPI void deque_push(deque *l, void *data) {
   if (!l) {
     fly_status = FLY_E_NULL_PTR;
     return;
   }
   deque_push_unsafe(l, data);
-}
-
-FLYAPI void arlist_unshift(arlist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
-  arlist_unshift_unsafe(l, data);
 }
 
 FLYAPI void deque_unshift(deque *l, void *data) {
@@ -1140,28 +1137,12 @@ FLYAPI void deque_unshift(deque *l, void *data) {
   deque_unshift_unsafe(l, data);
 }
 
-FLYAPI void *arlist_pop(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-  return list_end_remove_op(l, &arlist_pop_unsafe);
-}
-
 FLYAPI void *deque_pop(deque *l) {
   if (!l) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
   return list_end_remove_op(l, &deque_pop_unsafe);
-}
-
-FLYAPI void *arlist_shift(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-  return list_end_remove_op(l, &arlist_shift_unsafe);
 }
 
 FLYAPI void *deque_shift(deque *l) {
@@ -1386,22 +1367,6 @@ FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
   *next   = temp;
 
   return cursor;
-}
-
-FLYAPI void *arlist_pick(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
-
-  fly_status = FLY_OK;
-
-  return l->items[rng64_next_in(&l->rng, l->size)];
 }
 
 FLYAPI void *deque_pick(deque *l) {

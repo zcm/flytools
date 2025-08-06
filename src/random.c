@@ -13,3 +13,12 @@ FLYAPI void rng64_seed(rng64 *rng) {
   rng64_set_seed(rng, seed);
 }
 
+extern inline uint32_t rng32_next(rng32 *rng);
+extern inline uint32_t rng32_next_thunk(void *rng);
+extern inline uint32_t rng32_next_in(rng32 *rng, uint32_t bound);
+extern inline uint32_t rng32_next_in_biased(rng32 *rng, uint32_t bound);
+
+extern inline uint64_t rng64_next(rng64 *rng);
+extern inline uint64_t rng64_next_thunk(void *rng);
+extern inline uint64_t rng64_next_in(rng64 *rng, uint64_t bound);
+extern inline uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound);

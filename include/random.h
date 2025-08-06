@@ -85,20 +85,20 @@ static inline void rng32_set_seed(rng32 *rng, union rng_seed32 seed) {
   pcg32_srandom_r((pcg32_random_t *) rng, seed.init.state, seed.init.seq);
 }
 
-static inline uint32_t rng32_next(rng32 *rng) {
+FLYAPI inline uint32_t rng32_next(rng32 *rng) {
   return pcg32_random_r((pcg32_random_t *) rng);
 }
 
 __attribute__((artificial))
-static inline uint32_t rng32_next_thunk(void *rng) {
+FLYAPI inline uint32_t rng32_next_thunk(void *rng) {
   return rng32_next((rng32 *) rng);
 }
 
-static inline uint32_t rng32_next_in(rng32 *rng, uint32_t bound) {
+FLYAPI inline uint32_t rng32_next_in(rng32 *rng, uint32_t bound) {
   return fastrange32_unbiased(rng, bound, &rng32_next_thunk);
 }
 
-static inline uint32_t rng32_next_in_biased(rng32 *rng, uint32_t bound) {
+FLYAPI inline uint32_t rng32_next_in_biased(rng32 *rng, uint32_t bound) {
   return fastrange32(rng32_next(rng), bound);
 }
 
@@ -111,7 +111,7 @@ static inline void rng64_set_seed(rng64 *rng, union rng_seed64 seed) {
 #endif
 }
 
-static inline uint64_t rng64_next(rng64 *rng) {
+FLYAPI inline uint64_t rng64_next(rng64 *rng) {
 #ifdef __SIZEOF_INT128__
   return pcg64_random_r((pcg64_random_t *) rng);
 #else
@@ -121,15 +121,15 @@ static inline uint64_t rng64_next(rng64 *rng) {
 }
 
 __attribute__((artificial))
-static inline uint64_t rng64_next_thunk(void *rng) {
+FLYAPI inline uint64_t rng64_next_thunk(void *rng) {
   return rng64_next((rng64 *) rng);
 }
 
-static inline uint64_t rng64_next_in(rng64 *rng, uint64_t bound) {
+FLYAPI inline uint64_t rng64_next_in(rng64 *rng, uint64_t bound) {
   return fastrange64_unbiased(rng, bound, &rng64_next_thunk);
 }
 
-static inline uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound) {
+FLYAPI inline uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound) {
   return fastrange64(rng64_next(rng), bound);
 }
 
