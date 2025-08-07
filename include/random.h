@@ -133,6 +133,35 @@ FLYAPI inline uint64_t rng64_next_in_biased(rng64 *rng, uint64_t bound) {
   return fastrange64(rng64_next(rng), bound);
 }
 
+#if __STDC_VERSION__ >= 201112L
+
+#define rng_seed(rng) _Generic((rng), \
+    rng32 *: rng32_seed, \
+    rng64 *: rng64_seed \
+  )(rng)
+
+#define rng_set_seed(rng, seed) _Generic((rng), \
+    rng32 *: rng32_set_seed, \
+    rng64 *: rng64_set_seed \
+  )(rng, seed)
+
+#define rng_next(rng) _Generic((rng), \
+    rng32 *: rng32_next, \
+    rng64 *: rng64_next \
+  )(rng)
+
+#define rng_next_in(rng, bound) _Generic((rng), \
+    rng32 *: rng32_next_in, \
+    rng64 *: rng64_next_in \
+  )(rng, bound)
+
+#define rng_next_in_biased(rng, bound) _Generic((rng), \
+    rng32 *: rng32_next_in_biased, \
+    rng64 *: rng64_next_in_biased \
+  )(rng, bound)
+
+#endif
+
 __attribute__((const))
 static inline union rng_seed32
 rng_seed32_make(uint64_t state, uint64_t seq) {
@@ -155,7 +184,15 @@ rng_seed64_make(__uint128_t state, __uint128_t seq) {
 
   return seed;
 }
-#endif
+
+#define rng_seed_make(state, seq) _Generic((state), \
+    __uint128_t: rng_seed64_make, \
+    default: rng_seed32_make \
+  )(state, seq);
+
+#else
+#define rng_seed_make(state, seq) rng_seed32_make(state, seq)
+#endif  // __SIZEOF_INT128__
 
 __attribute__((const))
 static inline union rng_seed64

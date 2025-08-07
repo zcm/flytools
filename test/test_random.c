@@ -427,6 +427,113 @@ void do_test_rng64_idempotency() {
 TESTCALL(test_rng32_idempotency, do_test_rng32_idempotency())
 TESTCALL(test_rng64_idempotency, do_test_rng64_idempotency())
 
+#if __STDC_VERSION__ >= 201112L || defined(_MSC_VER)
+#ifndef METHODS_ONLY
+#define ulll(high, low) (((__uint128_t) high << 64) | (__uint128_t) low)
+
+void do_test_rng() {
+  union rng_seed32 seed32 = rng_seed_make(32ull, 32ull);
+#ifdef __SIZEOF_INT128__
+  union rng_seed64 seed64 = rng_seed_make(ulll(128, 64), ulll(128, 64));
+#endif
+  union rng_seed64 seed64m = rng_seed64_make64(64, 64, 64, 64);
+
+  rng32 auto32, static32;
+  rng64 auto64, auto64m, static64, static64m;
+
+  rng_seed(&auto32);
+  static32 = auto32;
+
+  rng_seed(&auto64);
+  static64 = auto64;
+
+  assert_int_equal(rng32_next(&static32), rng_next(&auto32));
+  assert_int_equal(rng32_next(&static32), rng_next(&auto32));
+  assert_int_equal(rng64_next(&static64), rng_next(&auto64));
+  assert_int_equal(rng64_next(&static64), rng_next(&auto64));
+
+  rng_set_seed(&auto32, seed32);
+  rng32_set_seed(&static32, seed32);
+  assert_rng32_equal(static32, auto32);
+
+#ifdef __SIZEOF_INT128__
+  rng_set_seed(&auto64, seed64);
+  rng64_set_seed(&static64, seed64);
+  assert_rng64_equal(static64, auto64);
+#endif
+
+  rng_set_seed(&auto64m, seed64m);
+  rng64_set_seed(&static64m, seed64m);
+  assert_rng64_equal(static64m, auto64m);
+
+  assert_int_equal(rng32_next(&static32), rng_next(&auto32));
+  assert_int_equal(rng32_next(&static32), rng_next(&auto32));
+#ifdef __SIZEOF_INT128__
+  assert_int_equal(rng64_next(&static64), rng_next(&auto64));
+  assert_int_equal(rng64_next(&static64), rng_next(&auto64));
+#endif
+  assert_int_equal(rng64_next(&static64m), rng_next(&auto64m));
+  assert_int_equal(rng64_next(&static64m), rng_next(&auto64m));
+
+  uint32_t r32;
+  uint64_t r64;
+
+  assert_int_equal(
+      r32 = rng32_next_in(&static32, 1024), rng_next_in(&auto32, 1024));
+  assert_in_range(r32, 0, 1024);
+  assert_int_equal(
+      r32 = rng32_next_in(&static32, 1024), rng_next_in(&auto32, 1024));
+  assert_in_range(r32, 0, 1024);
+#ifdef __SIZEOF_INT128__
+  assert_int_equal(
+      r64 = rng64_next_in(&static64, 1024), rng_next_in(&auto64, 1024));
+  assert_in_range(r64, 0, 1024);
+  assert_int_equal(
+      r64 = rng64_next_in(&static64, 1024), rng_next_in(&auto64, 1024));
+  assert_in_range(r64, 0, 1024);
+#endif
+  assert_int_equal(
+      r64 = rng64_next_in(&static64m, 1024), rng_next_in(&auto64m, 1024));
+  assert_in_range(r64, 0, 1024);
+  assert_int_equal(
+      r64 = rng64_next_in(&static64m, 1024), rng_next_in(&auto64m, 1024));
+  assert_in_range(r64, 0, 1024);
+
+  assert_int_equal(
+      r32 = rng32_next_in_biased(&static32, 1024),
+      rng_next_in_biased(&auto32, 1024));
+  assert_in_range(r32, 0, 1024);
+  assert_int_equal(
+      r32 = rng32_next_in_biased(&static32, 1024),
+      rng_next_in_biased(&auto32, 1024));
+  assert_in_range(r32, 0, 1024);
+#ifdef __SIZEOF_INT128__
+  assert_int_equal(
+      r64 = rng64_next_in_biased(&static64, 1024),
+      rng_next_in_biased(&auto64, 1024));
+  assert_in_range(r64, 0, 1024);
+  assert_int_equal(
+      r64 = rng64_next_in_biased(&static64, 1024),
+      rng_next_in_biased(&auto64, 1024));
+  assert_in_range(r64, 0, 1024);
+#endif
+  assert_int_equal(
+      r64 = rng64_next_in_biased(&static64m, 1024),
+      rng_next_in_biased(&auto64m, 1024));
+  assert_in_range(r64, 0, 1024);
+  assert_int_equal(
+      r64 = rng64_next_in_biased(&static64m, 1024),
+      rng_next_in_biased(&auto64m, 1024));
+  assert_in_range(r64, 0, 1024);
+}
+
+#undef ulll
+#endif
+
+TESTCALL(test_rng, do_test_rng())
+
+#endif  // __STDC_VERSION__ >= 201112L
+
 #undef DO_NOT_SEED
 #undef USE_ENTROPY
 #undef SET_SEED
