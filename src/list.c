@@ -1927,10 +1927,3 @@ FLYAPI void dllist_sort(dllist *l, int (*comp)(const void *, const void *)) {
   }
 }
 
-#if defined(__STRICT_ANSI__)
-#undef inline
-#elif defined(_MSC_VER)
-#undef inline
-#undef restrict
-#endif
-

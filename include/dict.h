@@ -20,10 +20,6 @@
 #include "hash.h"
 #include "list.h"
 
-#if __STDC_VERSION__ < 199901L
-#define restrict
-#endif
-
 /** \defgroup Dictionaries
  * The \ref dict type defines dictionaries in the Flytools API.
  * @{
@@ -200,9 +196,5 @@ FLYAPI void *dict_gets(dict * restrict d, char *key);
 FLYAPI void dict_foreach(dict *d, int (*fn)(void *, size_t));
 
 /** @} */
-
-#if __STDC_VERSION__ < 199901L
-#undef restrict
-#endif
 
 #endif

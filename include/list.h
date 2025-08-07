@@ -25,10 +25,6 @@
 
 #include "jargon.h"
 
-#if defined(_MSC_VER)
-#define restrict __restrict
-#endif
-
 struct sllistnode {
   void *data;
   struct sllistnode *next;
@@ -406,10 +402,6 @@ FLYAPI void *sllist_shift(sllist *l);
 FLYAPI void sllist_concat(sllist *l1, sllist *l2);
 FLYAPI void sllist_shuffle(sllist *l);
 FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *));
-
-#if defined(_MSC_VER)
-#undef restrict
-#endif
 
 #include "unjargon.h"
 
