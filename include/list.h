@@ -39,7 +39,6 @@ struct dllistnode {
 struct listkind;
 
 #define LIST_DEFINITION             \
-  INHERIT_STRUCT_DEF(FLYOBJ_SUPER)  \
   struct listkind *kind;            \
   size_t size;                      \
   rng64 rng;
@@ -99,12 +98,13 @@ extern FLYAPI listkind *LISTKIND_DEQUE;
 extern FLYAPI listkind *LISTKIND_DLINK;
 extern FLYAPI listkind *LISTKIND_SLINK;
 
-FLYAPI list *list_new();
 FLYAPI list *list_new_kind(listkind *kind);
-FLYAPI list *list_new_with(
-    void *(*allocproc)(size_t), void (*freeproc)(void *));
-FLYAPI list *list_new_kind_with(
-    listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *));
+
+__attribute__((artificial))
+FLYAPI inline list *list_new() {
+  return list_new_kind(LISTKIND_DLINK);
+}
+
 FLYAPI void list_del(list *l);
 FLYAPI void *list_get(list *l, ptrdiff_t i);
 FLYAPI void *list_pop(list *l);

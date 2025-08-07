@@ -16,48 +16,21 @@
 #include <stdlib.h>
 #include "generics.h"
 
-static void *(*_flyobj_default_allocproc)(size_t) = &malloc;
-static void (*_flyobj_default_freeproc)(void *) = &free;
-
+// Yeah, this file does nothing right now. But I might want it in the future.
+#if 0
 FLYAPI void flyobj_del(struct flyobj *obj) {
   if (obj != NULL) {
-    obj->del(obj);
+    free(obj);
   } else {
     fly_status = FLY_E_NULL_PTR;
   }
 }
 
-FLYAPI void flyobj_init(
-    struct flyobj *obj, void *(*alloc)(size_t), void (*del)(void *)) {
-  if (obj != NULL) {
-    obj->alloc = alloc;
-    obj->del = del;
-  } else {
+FLYAPI void flyobj_init(struct flyobj *obj) {
+  if (obj == NULL) {
     fly_status = FLY_E_NULL_PTR;
+    return;
   }
 }
-
-FLYAPI void flyobj_set_freeproc(struct flyobj *obj, void (*proc)(void *)) {
-  if (obj != NULL) {
-    obj->del = proc == NULL ? flyobj_get_default_freeproc() : proc;
-  } else {
-    fly_status = FLY_E_NULL_PTR;
-  }
-}
-
-FLYAPI void *(*flyobj_get_default_allocproc())(size_t) {
-  return _flyobj_default_allocproc;
-}
-
-FLYAPI void flyobj_set_default_allocproc(void *(*proc)(size_t)) {
-  _flyobj_default_allocproc = proc;
-}
-
-FLYAPI void (*flyobj_get_default_freeproc())(void *) {
-  return _flyobj_default_freeproc;
-}
-
-FLYAPI void flyobj_set_default_freeproc(void (*proc)(void *)) {
-  _flyobj_default_freeproc = proc;
-}
+#endif
 

@@ -39,9 +39,9 @@
 #define UNIFY_OBJECT_DEF(parent, def) UNIFY_PARENT(parent, STRUCTIFY(def););
 #endif
 
+// Maybe someday this'll be useful, like headers and refcounting.
+#if 0
 #define FLYOBJ_DEFINITION \
-  void *(*alloc)(size_t); \
-  void (*del)(void *);
 
 struct flyobj {
   INHERIT_STRUCT_DEF(FLYOBJ_DEFINITION)
@@ -51,12 +51,7 @@ struct flyobj {
   UNIFY_OBJECT_DEF(struct flyobj _obj, FLYOBJ_DEFINITION)
 
 FLYAPI void flyobj_del(struct flyobj *obj);
-FLYAPI void flyobj_init(
-    struct flyobj *obj, void *(*allocproc)(size_t), void (*freeproc)(void *));
-FLYAPI void flyobj_set_freeproc(struct flyobj *obj, void (*proc)(void *));
-FLYAPI void *(*flyobj_get_default_allocproc())(size_t);
-FLYAPI void flyobj_set_default_allocproc(void *(*proc)(size_t));
-FLYAPI void (*flyobj_get_default_freeproc())(void *);
-FLYAPI void flyobj_set_default_freeproc(void (*proc)(void *));
+FLYAPI void flyobj_init(struct flyobj *obj);
+#endif
 
 #endif

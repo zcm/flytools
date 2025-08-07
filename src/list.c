@@ -213,30 +213,14 @@ ASSIGN_STATIC_PTR(LISTKIND_SLINK) {
 #define inline
 #endif
 
-FLYAPI list *list_new() {
-  return list_new_kind_with(
-      LISTKIND_DLINK,
-      flyobj_get_default_allocproc(), flyobj_get_default_freeproc());
-}
+extern inline list *list_new();
 
 FLYAPI list *list_new_kind(listkind *kind) {
-  return list_new_kind_with(
-      kind, flyobj_get_default_allocproc(), flyobj_get_default_freeproc());
-}
-
-FLYAPI list *list_new_with(
-    void *(*allocproc)(size_t), void (*freeproc)(void *)) {
-  return list_new_kind_with(LISTKIND_DLINK, allocproc, freeproc);
-}
-
-FLYAPI list *list_new_kind_with(
-    listkind *kind, void *(*allocproc)(size_t), void (*freeproc)(void *)) {
-  list *ret = allocproc(kind->size);
+  list *ret = (list *) malloc(kind->size);
 
   if(ret != NULL) {
     fly_status = FLY_OK;
 
-    flyobj_init((struct flyobj *) ret, allocproc, freeproc);
     ret->kind = kind;
     kind->init(ret);
   } else {
@@ -250,7 +234,7 @@ FLYAPI void list_del(list *l) {
     fly_status = FLY_OK;
 
     l->kind->destroy(l);
-    flyobj_del((struct flyobj *) l);
+    free(l);
   } else {
     fly_status = FLY_E_NULL_PTR;
   }
@@ -631,7 +615,7 @@ static void *_unsafe_dllist_discard(dllist *l, int (*matcher)(void *)) {
 
       dllist_stitch(current);
 
-      l->del(current);
+      free(current);
       l->size--;
 
       fly_status = FLY_OK;
@@ -656,7 +640,7 @@ static void *_unsafe_sllist_discard(sllist *l, int (*matcher)(void *)) {
 
       sllist_stitch(current, prev, l);
 
-      l->del(current);
+      free(current);
       l->size--;
 
       fly_status = FLY_OK;
@@ -935,7 +919,7 @@ static size_t _unsafe_dllist_discard_all(
 
       dllist_stitch(current);
 
-      l->del(current);
+      free(current);
 
       ++total_removed;
 
@@ -971,7 +955,7 @@ static size_t _unsafe_sllist_discard_all(
 
       // Defer freeing because of need to modify prev
       if (chopping_block) {
-        l->del(chopping_block);
+        free(chopping_block);
       }
       chopping_block = current;
 
@@ -989,7 +973,7 @@ static size_t _unsafe_sllist_discard_all(
   }
 
   if (chopping_block) {
-    l->del(chopping_block);
+    free(chopping_block);
   }
 
   l->size -= total_removed;
@@ -1063,7 +1047,7 @@ static void deque_init(deque *l) {
 }
 
 static void arlist_del(arlist *l) {
-  l->del(l->items);
+  free(l->items);
 }
 
 FLYAPI size_t arlist_grow(arlist *l, size_t new_elements) {
@@ -1405,7 +1389,7 @@ static inline void sllistnode_head_init(sllistnode * restrict head) {
 static inline void *listnode_alloc(void * restrict l, size_t node_size) {
   void *node;
 
-  if (!(node = ((struct flyobj *) l)->alloc(node_size))) {
+  if (!(node = malloc(node_size))) {
     fly_status = FLY_E_OUT_OF_MEMORY;
   }
 
@@ -1415,7 +1399,7 @@ static inline void *listnode_alloc(void * restrict l, size_t node_size) {
 static void dllist_init(dllist *l) {
   l->size = 0;
 
-  if ((l->head = l->alloc(sizeof (dllistnode)))) {
+  if ((l->head = (dllistnode *) malloc(sizeof (dllistnode)))) {
     dllistnode_head_init(l->head);
   } else {
     fly_status = FLY_E_OUT_OF_MEMORY;
@@ -1427,7 +1411,7 @@ static void dllist_del(dllist *l) {
     dllist_pop(l);
   }
 
-  l->del(l->head);
+  free(l->head);
 }
 
 static void _unsafe_dllist_push(dllist *l, void *data) {
@@ -1484,7 +1468,7 @@ static void *_unsafe_dllist_pop(dllist *l) {
   l->head->prev = node->prev;
   l->size--;
   ret = node->data;
-  l->del(node);
+  free(node);
 
   return ret;
 }
@@ -1505,7 +1489,7 @@ static void *_unsafe_dllist_shift(dllist *l) {
   l->head->next = node->next;
   l->size--;
   ret = node->data;
-  l->del(node);
+  free(node);
 
   return ret;
 }
@@ -1539,7 +1523,7 @@ static void _unsafe_dllist_append_array(dllist *l, size_t n, void **items) {
   dllistnode *last = l->head->prev;
 
   do {
-    if ((current = l->alloc(sizeof (dllistnode)))) {
+    if ((current = (dllistnode *) malloc(sizeof (dllistnode)))) {
       (last->next = current)->prev = last;
       (last = current)->data = *items++;
     } else {
@@ -1554,7 +1538,7 @@ static void _unsafe_dllist_append_array(dllist *l, size_t n, void **items) {
 out_of_memory_unwind:
   while (last != l->head->prev) {
     current = last->prev;
-    l->del(last);
+    free(last);
     last = current;
   }
 
@@ -1565,7 +1549,7 @@ out_of_memory_unwind:
 static void sllist_init(sllist *l) {
   l->size = 0;
 
-  if ((l->head = l->last = l->alloc(sizeof (dllistnode)))) {
+  if ((l->head = l->last = (sllistnode *) malloc(sizeof (sllistnode)))) {
     sllistnode_head_init(l->head);
   } else {
     fly_status = FLY_E_OUT_OF_MEMORY;
@@ -1577,7 +1561,7 @@ void sllist_del(sllist *l) {
     sllist_pop(l);
   }
 
-  l->del(l->head);
+  free(l->head);
 }
 
 static void _unsafe_sllist_push(sllist *l, void *data) {
@@ -1632,7 +1616,7 @@ FLYAPI void sllist_unshift(sllist *l, void *data) {
 static void *_unsafe_sllist_pop(sllist *l) {
   void *ret = l->last->data;
 
-  l->del(l->last);
+  free(l->last);
 
   if (l->size == 1) {
     l->size = 0;
@@ -1668,7 +1652,7 @@ static void *_unsafe_sllist_shift(sllist *l) {
   }
 
   ret = node->data;
-  l->del(node);
+  free(node);
 
   return ret;
 }
@@ -1699,9 +1683,10 @@ FLYAPI void sllist_concat(sllist *l1, sllist *l2) {
 static void _unsafe_sllist_append_array(sllist *l, size_t n, void **items) {
   const size_t n_save = n;
   sllistnode *current = l->last;
+  sllistnode *unwind_next;
 
   do {
-    if ((current->next = l->alloc(sizeof (sllistnode)))) {
+    if ((current->next = (sllistnode *) malloc(sizeof (sllistnode)))) {
       (current = current->next)->data = *items++;
     } else {
       goto out_of_memory_unwind;
@@ -1713,13 +1698,14 @@ static void _unsafe_sllist_append_array(sllist *l, size_t n, void **items) {
   return;
 
 out_of_memory_unwind:
-  current = l->last;
+  current = l->last->next;
 
-  while (current->next) {
-    l->del(current = current->next);
+  for (current = l->last->next; current; current = unwind_next) {
+    unwind_next = current->next;
+    free(current);
   }
 
-  l->last = l->head;
+  l->last->next = l->head;
   fly_status = FLY_E_OUT_OF_MEMORY;
 }
 
@@ -1729,7 +1715,7 @@ static void _unsafe_sllist_shuffle(sllist *l) {
   ASSUME(size > 1);
 
   sllistnode **dest;
-  sllistnode ** const nodes = (sllistnode **) l->alloc(size * sizeof (void *));
+  sllistnode ** const nodes = (sllistnode **) malloc(size * sizeof (void *));
   sllistnode ** const end = dest = nodes + size;
   sllistnode *cursor = l->head;
 
@@ -1746,7 +1732,7 @@ static void _unsafe_sllist_shuffle(sllist *l) {
 
   (l->last = cursor)->next = l->head;
 
-  l->del(nodes);
+  free(nodes);
 }
 
 static void _unsafe_dllist_shuffle(dllist *l) {
@@ -1755,7 +1741,7 @@ static void _unsafe_dllist_shuffle(dllist *l) {
   ASSUME(size > 1);
 
   dllistnode **dest;
-  dllistnode ** const nodes = (dllistnode **) l->alloc(size * sizeof (void *));
+  dllistnode ** const nodes = (dllistnode **) malloc(size * sizeof (void *));
   dllistnode ** end = dest = nodes + size;
   dllistnode *cursor = l->head;
 
@@ -1772,7 +1758,7 @@ static void _unsafe_dllist_shuffle(dllist *l) {
     ((*dest)->next = *(dest + 1))->prev = *dest;
   } while (++dest != end);
 
-  l->del(nodes);
+  free(nodes);
 }
 
 FLYAPI void sllist_shuffle(sllist *l) {
