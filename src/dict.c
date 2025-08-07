@@ -26,6 +26,8 @@
 #include "dict.h"
 #include "internal/dict.h"
 
+#include "jargon.h"
+
 #ifdef __TURBOC__
 // this is here to fix a bug in tlib... I have no idea why
 // but without it it causes tlib to hang after it puts dict.obj
@@ -39,8 +41,9 @@ void *__this_function_does_nothing(void *nothing) {
 }
 #endif
 
-#define DEFAULT_SIZE 16
 #define LOAD_FACTOR 75
+
+extern inline dict *dict_new();
 
 static thread_local void *_match_key = NULL;
 static thread_local size_t _curr_bitmask = 0;
@@ -77,155 +80,85 @@ static int _generic_key_matcher(void *node) {
       ((dictnode *) node)->key, _match_key, _match_key_matcher);
 }
 
-dictnode *dictnode_alloc_with(void *(*alloc)(size_t)) {
-	void *ret = (*alloc)(sizeof(dictnode));
-  fly_status = FLY_OK;
-	if(ret == NULL) {
-    fly_status = FLY_E_OUT_OF_MEMORY;
-	}
-	return (dictnode *)ret;
-}
-
-dictnode *dictnode_alloc() {
-	return dictnode_alloc_with(&malloc);
-}
-
 dictnode *dictnode_new(
     void *key, void *value, uint64_t hash,
-    int (*key_matcher)(const void *, const void *, const void *),
-    void *(*alloc)(size_t)) {
-  dictnode *ret = dictnode_alloc_with(alloc);
-  fly_status = FLY_OK;
+    int (*key_matcher)(const void *, const void *, const void *)) {
+  dictnode *ret = (dictnode *) malloc(sizeof (dictnode));
+
   if(ret == NULL) {
     fly_status = FLY_E_OUT_OF_MEMORY;
   } else {
+    fly_status = FLY_OK;
+
     ret->key = key;
     ret->value = value;
     ret->hash = hash;
     ret->key_matcher = key_matcher;
   }
+
   return ret;
 }
 
-void dictnode_del(dictnode *dnode, void (*del)(void *)) {
-  fly_status = FLY_OK;
+void dictnode_del(dictnode *dnode) {
   if (dnode != NULL) {
     if (dnode->key_matcher == &_str_key_matcher) {
       free(dnode->key);
     }
-    (*del)(dnode);
+    free(dnode);
+
+    fly_status = FLY_OK;
   } else {
     fly_status = FLY_E_NULL_PTR;
   }
 }
 
-FLYAPI dict *dict_alloc_with(void *(*alloc)(size_t)) {
-	void *ret = (*alloc)(sizeof(dict));
-  fly_status = FLY_OK;
-	if(ret == NULL) {
-    fly_status = FLY_E_OUT_OF_MEMORY;
-	}
-	return (dict *)ret;
+__attribute__((const))
+static inline int is_power_of_two(const size_t size) {
+  return !(size <= 1 || (size & (size - 1)));
 }
 
-FLYAPI dict *dict_alloc() {
-	return dict_alloc_with(&malloc);
-}
+FLYAPI dict *dict_init(dict *d, const size_t size) {
+  if (!is_power_of_two(size)) {
+    fly_status = FLY_E_INVALID_ARG;
+    return NULL;
+  }
 
-static dict *_dict_init_with(
-    dict *d, const size_t size,
-    void *(*alloc)(size_t), void (*del)(void *)) {
   if (!d) {
     fly_status = FLY_E_NULL_PTR;
     return NULL;
   }
 
-  if (alloc == &malloc) {
-    if (!(d->buckets = (struct dbucket *)
-          calloc(size, sizeof (struct dbucket)))) {
-      fly_status = FLY_E_OUT_OF_MEMORY;
-      return NULL;
-    }
-    if (!(d->items = (struct dictnode **)
-          calloc(size * LOAD_FACTOR / 100, sizeof (struct dictnode *)))) {
-      free(d->buckets);  /* supposedly this succeeded so don't leak it */
-      fly_status = FLY_E_OUT_OF_MEMORY;
-      return NULL;
-    }
-  } else {
-    if (!(d->buckets = (struct dbucket *)
-          memset(
-            alloc(size * sizeof (struct dbucket)),
-            0, size * sizeof (struct dbucket)))) {
-      fly_status = FLY_E_OUT_OF_MEMORY;
-      return NULL;
-    }
-    if (!(d->items = (struct dictnode **)
-          memset(
-            alloc(size * LOAD_FACTOR / 100 * sizeof (struct dictnode *)),
-            0, size * LOAD_FACTOR / 100 * sizeof (struct dictnode *)))) {
-      del(d->buckets);  /* supposedly this succeeded so don't leak it */
-      fly_status = FLY_E_OUT_OF_MEMORY;
-      return NULL;
-    }
+  if (!(d->buckets = (struct dbucket *)
+        calloc(size, sizeof (struct dbucket)))) {
+    fly_status = FLY_E_OUT_OF_MEMORY;
+    return NULL;
+  }
+
+  if (!(d->items = (struct dictnode **)
+        calloc(size * LOAD_FACTOR / 100, sizeof (struct dictnode *)))) {
+    free(d->buckets);  /* supposedly this succeeded so don't leak it */
+    fly_status = FLY_E_OUT_OF_MEMORY;
+    return NULL;
   }
 
   d->size = 0;
   d->exponent = (size_t) llogb((double) size);
-  d->alloc = alloc;
-  d->del = del;
 
   fly_status = FLY_OK;
 
   return d;
 }
 
-static inline int _check_power_of_two(const size_t size) {
-  if (size <= 1 || (size & (size - 1))) {
-    fly_status = FLY_E_INVALID_ARG;
-    return 0;
-  }
-
-  return 1;
-}
-
-FLYAPI void dict_init_with(
-    dict *d, const size_t size,
-    void *(*alloc)(size_t), void (*del)(void *)) {
-  if (_check_power_of_two(size)) {
-    _dict_init_with(d, size, alloc, del);
-  }
-}
-
-FLYAPI void dict_init(dict *d, const size_t size) {
-	dict_init_with(d, size, &malloc, &free);
-}
-
-FLYAPI dict *dict_new_with(
-    const size_t size,
-    void *(*alloc)(size_t), void (*del)(void *)) {
-	dict *d;
-
-  if (_check_power_of_two(size)) {
-    if ((d = dict_alloc_with(alloc))) {
-      return _dict_init_with(d, size, alloc, del);
-    }
-
-    fly_status = FLY_E_OUT_OF_MEMORY;
-  }
-
-	return NULL;
-}
-
 FLYAPI dict *dict_new_of_size(const size_t size) {
-	return dict_new_with(size, &malloc, &free);
-}
+  if (!is_power_of_two(size)) {
+    fly_status = FLY_E_INVALID_ARG;
+    return NULL;
+  }
 
-FLYAPI dict *dict_new() {
-  dict *d = dict_alloc_with(&malloc);
+	dict *d = malloc(sizeof (dict));
 
   if (d) {
-    return _dict_init_with(d, DEFAULT_SIZE, &malloc, &free);
+    return dict_init(d, size);
   }
 
   fly_status = FLY_E_OUT_OF_MEMORY;
@@ -242,20 +175,21 @@ FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
     while (i < capacity) {
       if (d->buckets[i].flags & 0x1) {
         while (((list *) d->buckets[i].data)->size > 0) {
-          dictnode_del(list_pop(d->buckets[i].data), d->del);
+          dictnode_del(list_pop(d->buckets[i].data));
         }
 
         assert(((list *) d->buckets[i].data)->size == 0);
         list_del(d->buckets[i].data);
       } else if (d->buckets[i].data) {
-        dictnode_del(d->buckets[i].data, d->del);
+        dictnode_del(d->buckets[i].data);
       }
 
       i++;
     }
-    d->del(d->buckets);
-    d->del(d->items);
-    d->del(d);
+
+    free(d->buckets);
+    free(d->items);
+    free(d);
   } else {
     fly_status = FLY_E_NULL_PTR;
   }
@@ -276,9 +210,7 @@ static int _relocate_node(void *node, size_t unused_size) {
       if (_recycle_bin) {
         bucket_list = _recycle_bin;
         _recycle_bin = NULL;
-      } else if (!(bucket_list =
-            list_new_kind_with(
-              LISTKIND_SLINK, _curr_dict->alloc, _curr_dict->del))) {
+      } else if (!(bucket_list = list_new_kind(LISTKIND_SLINK))) {
         fly_status = FLY_E_OUT_OF_MEMORY;
         return 1;
       }
@@ -311,43 +243,19 @@ static int _dict_resize(dict *d) {
   _curr_dict = d;
   _next_bitmask = (_curr_bitmask << 1) - 1;
 
-  if (d->alloc == &malloc) {
-    buckets = d->buckets =
-      realloc(d->buckets,
-          ((size_t) 1 << ++(d->exponent)) * sizeof (struct dbucket));
-
-    if (!buckets) {
-      return 0;
-    }
-
-    items = d->items =
-      realloc(d->items, og_item_capacity * 2 * sizeof (struct dictnode *));
-
-    if (!items) {
-      return 0;
-    }
-  } else {
-    buckets = d->alloc(
+  buckets = d->buckets =
+    realloc(d->buckets,
         ((size_t) 1 << ++(d->exponent)) * sizeof (struct dbucket));
 
-    if (!buckets) {
-      return 0;
-    }
+  if (!buckets) {
+    return 0;
+  }
 
-    items = d->alloc(og_item_capacity * 2 * sizeof (struct dictnode *));
+  items = d->items =
+    realloc(d->items, og_item_capacity * 2 * sizeof (struct dictnode *));
 
-    if (!items) {
-      d->del(buckets);
-      return 0;
-    }
-
-    memcpy(buckets, d->buckets, og_capacity * sizeof (struct dbucket));
-    d->del(d->buckets);
-    d->buckets = buckets;
-
-    memcpy(items, d->items, og_item_capacity * sizeof (struct dictnode *));
-    d->del(d->items);
-    d->items = items;
+  if (!items) {
+    return 0;
   }
 
   memset(buckets + og_capacity, 0, og_capacity * sizeof (struct dbucket));
@@ -402,7 +310,7 @@ static int _dict_resize(dict *d) {
 #define WITH_NEW_NODE_OR_DIE(operation) \
   if (!(node = dictnode_new( \
           key_matcher == &_str_key_matcher ? strdup(key) : key, \
-          value, hash, key_matcher, d->alloc))) { \
+          value, hash, key_matcher))) { \
     return; \
   } \
   operation
@@ -462,8 +370,7 @@ start:
     if (_recycle_bin) {
       bucket_list = _recycle_bin;
       _recycle_bin = NULL;
-    } else if (!(bucket_list =
-          list_new_kind_with(LISTKIND_SLINK, d->alloc, d->del))) {
+    } else if (!(bucket_list = list_new_kind(LISTKIND_SLINK))) {
       fly_status = FLY_E_OUT_OF_MEMORY;
       return;
     }
@@ -587,7 +494,7 @@ static inline void * _dict_remove_using(
   d->items[node->index] = d->items[d->size];
   d->items[d->size] = NULL;
 
-  dictnode_del(node, d->del);
+  dictnode_del(node);
 
   return value;
 }
@@ -641,6 +548,3 @@ FLYAPI void dict_foreach(dict *d, int (*fn)(void *, size_t)) {
   }
 }
 
-#if __STDC_VERSION__ < 199901L
-#undef restrict
-#endif

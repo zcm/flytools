@@ -20,6 +20,8 @@
 #include "hash.h"
 #include "list.h"
 
+#include "jargon.h"
+
 /** \defgroup Dictionaries
  * The \ref dict type defines dictionaries in the Flytools API.
  * @{
@@ -38,44 +40,14 @@ typedef struct dict {
   size_t exponent;         //!< Capacity in log<sub>2</sub>(# of buckets) terms.
   struct dbucket *buckets; //!< Array of containers for \ref dict elements.
   struct dictnode **items; //!< Linear array of elements for iteration, etc.
-  void *(*alloc)(size_t);  //!< Allocator for internal structures.
-  void (*del)(void *);     //!< Deallocator for internal structures.
 } dict;
 
 /**
- * Allocates a new dictionary using the specified callback function. Does no
- * initialization.
- * @param alloc the callback with which to allocate the new node
- * @return a pointer to the newly allocated dictionary
- */
-FLYAPI dict *dict_alloc_with(void *(*alloc)(size_t));
-/**
- * Allocates a new dictionary. Does no initialization.
- * @return a pointer to the newly allocated dictionary
- */
-FLYAPI dict *dict_alloc();
-/**
- * Frees the specified dictionary. Uses the default freeing routine, free(),
- * unless a destructor callback has been set for the given dictionary. In that
- * case, that callback function is used instead of free().
+ * Frees the given dictionary.
+ *
  * @param d the dictionary to destroy
- * @see dict_set_destructor()
  */
 FLYAPI void dict_del(dict *d);
-
-/**
- * Initializes a dictionary with a bucket array of size `size` and the given
- * allocator. `size` must be a power of 2 greater than 1; otherwise this
- * method sets the `EFLYBADARG` error and returns null.
- *
- * @param d the dictionary to initialize
- * @param size the number of buckets for this dictionary
- * @param alloc the callback function for allocating this dictionary
- * @see list
- */
-FLYAPI void dict_init_with(
-    dict *d, const size_t size,
-    void *(*alloc)(size_t), void (*del)(void *));
 
 /**
  * Initializes a dictionary with a bucket array of size `size`. `size` must be a
@@ -84,22 +56,9 @@ FLYAPI void dict_init_with(
  *
  * @param d the dictionary to initialize
  * @param size the number of buckets for this dictionary
- * @see list
+ * @return the parameter `d` unmodified on success, `NULL` otherwise
  */
-FLYAPI void dict_init(dict *d, const size_t size);
-
-/**
- * Allocates and initializes a new dictionary with the specified number of
- * buckets and the given allocator. `size` must be a power of 2 greater than 1;
- * otherwise this method sets the `EFLYBADARG` error and returns null.
- *
- * @param size the number of buckets for this dictionary
- * @param alloc the callback function for allocating this dictionary
- * @return a pointer to the newly created dictionary
- */
-FLYAPI dict *dict_new_with(
-    const size_t size,
-    void *(*alloc)(size_t), void (*del)(void *));
+FLYAPI dict *dict_init(dict *d, const size_t size);
 
 /**
  * Allocates and initializes a new dictionary with the specified number of
@@ -111,12 +70,17 @@ FLYAPI dict *dict_new_with(
  */
 FLYAPI dict *dict_new_of_size(const size_t size);
 
+#define DICT_DEFAULT_SIZE 16
+
 /**
  * Creates a new dictionary using all defaults.
  *
  * @return a pointer to the newly created dictionary
  */
-FLYAPI dict *dict_new();
+__attribute__((artificial))
+FLYAPI inline dict *dict_new() {
+	return dict_new_of_size(DICT_DEFAULT_SIZE);
+}
 
 /**
  * Inserts a value into the specified dictionary with the given object key. That
@@ -196,5 +160,7 @@ FLYAPI void *dict_gets(dict * restrict d, char *key);
 FLYAPI void dict_foreach(dict *d, int (*fn)(void *, size_t));
 
 /** @} */
+
+#include "unjargon.h"
 
 #endif

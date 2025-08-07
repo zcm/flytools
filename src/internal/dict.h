@@ -18,20 +18,6 @@ typedef struct dictnode {
 } dictnode;
 
 /**
- * Allocates a new dictionary node with the specified allocation callback. Does
- * no initialization.
- * @param alloc the callback with which to allocate the new node
- * @return a pointer to the newly allocated dictionary node
- */
-dictnode *dictnode_alloc_with(void *(*alloc)(size_t));
-
-/**
- * Allocates a new node for a dictionary. Does no initialization.
- * @return a pointer to the newly allocated dictionary node
- */
-dictnode *dictnode_alloc();
-
-/**
  * Creates and initializes a new dictionary node with the specified key/value
  * pair and the allocation callback. No hashing is done at this time.
  * @param key the key string used for this element in the dictionary
@@ -43,8 +29,7 @@ dictnode *dictnode_alloc();
  */
 dictnode *dictnode_new(
     void *key, void *data, uint64_t hash,
-    int (*matches)(const void *, const void *, const void *),
-    void *(*alloc)(size_t));
+    int (*matches)(const void *, const void *, const void *));
 
 /**
  * Frees the specified dictionary node with the given callback function. Since
@@ -53,6 +38,6 @@ dictnode *dictnode_new(
  * @param dnode the dictionary node to destroy
  * @param del the callback function used to destroy the node
  */
-void dictnode_del(dictnode *dnode, void (*del)(void *));
+void dictnode_del(dictnode *dnode);
 
 #endif

@@ -637,17 +637,6 @@ TESTCALL(test_dict_remove_after_collision, do_test_dict_remove_after_collision()
 TESTCALL(test_dict_set_overwrites, do_test_dict_set_overwrites())
 
 #ifndef METHODS_ONLY
-void *(*volatile _passthrough_malloc)(size_t) = &malloc;
-void (*volatile _passthrough_free)(void *) = &free;
-
-void *passthrough_malloc(size_t size) {
-  return _passthrough_malloc(size);
-}
-
-void passthrough_free(void *ptr) {
-  _passthrough_free(ptr);
-}
-
 void _test_dict_resize(dict *d) {
   assert_non_null(d);
   assert_int_equal(0, d->size);
@@ -694,12 +683,6 @@ TEST(test_dict_resize, {
   (void) state;
 
   _test_dict_resize(dict_new_of_size(4));
-})
-
-TEST(test_dict_resize_custom_allocator, {
-  (void) state;
-
-  _test_dict_resize(dict_new_with(4, &passthrough_malloc, &passthrough_free));
 })
 
 #ifndef METHODS_ONLY
