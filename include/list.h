@@ -312,15 +312,77 @@ FLYAPI inline void *arlist_pick(arlist *l) {
 
 FLYAPI void arlist_sort(arlist *l, int (*comp)(const void *, const void *));
 
-FLYAPI void *deque_get(deque *l, ptrdiff_t i);
-FLYAPI void deque_push(deque *l, void *data);
-FLYAPI void deque_unshift(deque *l, void *data);
-FLYAPI void *deque_pop(deque *l);
-FLYAPI void *deque_shift(deque *l);
+FLYAPI inline void *deque_get(deque *l, ptrdiff_t i) {
+  if (list_bad_call(l, i)) {
+    return NULL;
+  }
+  return deque_get_unsafe(l, i);
+}
+
+FLYAPI inline void deque_push(deque *l, void *data) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  deque_push_unsafe(l, data);
+}
+
+FLYAPI inline void deque_unshift(deque *l, void *data) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return;
+  }
+  deque_unshift_unsafe(l, data);
+}
+
+FLYAPI inline void *deque_pop(deque *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+  return deque_pop_unsafe(l);
+}
+
+FLYAPI inline void *deque_shift(deque *l) {
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+  return deque_shift_unsafe(l);
+}
+
 FLYAPI void deque_concat(deque *l1, deque *l2);
 FLYAPI void deque_shuffle(deque *l);
 FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor);
-FLYAPI void *deque_pick(deque *l);
+
+FLYAPI inline void *deque_pick(deque *l) {
+  size_t i;
+
+  if (!l) {
+    fly_status = FLY_E_NULL_PTR;
+    return NULL;
+  }
+
+  if (l->size == 0) {
+    fly_status = FLY_EMPTY;
+    return NULL;
+  }
+
+  fly_status = FLY_OK;
+
+  i = (l->start + rng64_next_in(&l->rng, l->size)) % l->capacity;
+
+  return l->items[i];
+}
+
 FLYAPI void deque_sort(deque *l, int (*comp)(const void *, const void *));
 
 FLYAPI void *dllist_get(dllist *l, ptrdiff_t i);
