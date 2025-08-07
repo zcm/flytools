@@ -1,5 +1,8 @@
 #include "fastrange.h"
 
+#undef fastrangesize_unbiased
+#undef fastrangeint_unbiased
+
 extern inline uint32_t fastrange32(uint32_t word, uint32_t p);
 extern inline uint64_t fastrange64(uint64_t word, uint64_t p);
 extern inline size_t fastrangesize(size_t word, size_t p);

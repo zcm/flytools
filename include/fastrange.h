@@ -21,9 +21,11 @@
 #if (SIZE_MAX == UINT32_MAX)
 #define fastrangemax fastrange32
 #define fastrangemax_unbiased fastrange32_unbiased
+#define fastrangemax_t uint32_t
 #else
 #define fastrangemax fastrange64
 #define fastrangemax_unbiased fastrange64_unbiased
+#define fastrangemax_t uint64_t
 #endif
 #endif
 
@@ -211,8 +213,26 @@ FLYAPI inline int fastrangeint_unbiased(
   return (int) fastrangemax_unbiased(&info, p, &fastrangeint_rand_thunk);
 }
 
+#if __STDC_VERSION__ >= 201112L
+
+#define fastrangesize_unbiased(rng, p, rand_next) \
+  ((size_t) _Generic((rand_next), \
+    fastrangemax_t (*)(void *): fastrangemax_unbiased, \
+    default: fastrangesize_unbiased \
+  )(rng, p, rand_next))
+
+#define fastrangeint_unbiased(rng, p, rand_next) \
+  ((int) _Generic((rand_next), \
+    uint32_t (*)(void *): fastrange32_unbiased, \
+    uint64_t (*)(void *): fastrange64_unbiased, \
+    default: fastrangeint_unbiased \
+  )(rng, p, rand_next))
+
+#endif  // __STDC_VERSION__ >= 201112L
+
 #undef fastrangemax
 #undef fastrangemax_unbiased
+#undef fastrangemax_t
 
 #ifdef _MSC_VER
 #pragma warning(pop)
