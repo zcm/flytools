@@ -1313,19 +1313,24 @@ FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
 
   if (cursor > l->items + l->start) {
     remaining = cursor - (l->items + l->start);
-  } else if (cursor == NULL) {
-    cursor = l->items + (l->end ? l->end : l->capacity);
-    remaining = l->size;
-  } else if (cursor == l->items + l->start || cursor < l->items) {
-    return NULL;
-  } else if (cursor == l->items) {
-    remaining = l->capacity - l->start;
-  } else {
-    remaining = cursor - l->items + l->capacity - l->start;
-  }
 
-  r = rng64_next_in(&l->rng, remaining);
-  next = l->items + (l->start + r) % l->capacity;
+    r = rng64_next_in(&l->rng, remaining);
+    next = l->items + l->start + r;
+  } else {
+    if (cursor == NULL) {
+      cursor = l->items + (l->end ? l->end : l->capacity);
+      remaining = l->size;
+    } else if (cursor == l->items + l->start || cursor < l->items) {
+      return NULL;
+    } else if (cursor == l->items) {
+      remaining = l->capacity - l->start;
+    } else {
+      remaining = cursor - l->items + l->capacity - l->start;
+    }
+
+    r = rng64_next_in(&l->rng, remaining);
+    next = l->items + (l->start + r) % l->capacity;
+  }
 
   if (cursor != l->items) {
     --cursor;
