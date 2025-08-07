@@ -9,35 +9,36 @@
 #ifndef ZCM_UNBIASED_FASTRANGE_H
 #define ZCM_UNBIASED_FASTRANGE_H
 
-#ifndef fastrangemax
-#if (SIZE_MAX == UINT32_MAX)
-#define fastrangemax fastrange32
-#else
-#define fastrangemax fastrange64
-#endif
-#endif
-
-// If another fastrange has been included elsewhere, we'll use it instead.
-#ifndef INCLUDE_FASTRANGE_H
-#define INCLUDE_FASTRANGE_H
-
 #include <iso646.h> // mostly for Microsoft compilers
 #include <stdint.h> // part of Visual Studio 2010 and better
 #include <stddef.h> // for size_t in C
 #include <limits.h> // for size_t in C
 
+#include "common.h"
+#include "jargon.h"
+
+#ifndef fastrangemax
+#if (SIZE_MAX == UINT32_MAX)
+#define fastrangemax fastrange32
+#define fastrangemax_unbiased fastrange32_unbiased
+#else
+#define fastrangemax fastrange64
+#define fastrangemax_unbiased fastrange64_unbiased
+#endif
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4146)
-
 #ifdef _WIN64
 #include <intrin.h>// should be part of all recent Visual Studio
 #pragma intrinsic(_umul128)
 #endif  // _WIN64
 #endif  // _MSC_VER
 
-#include "common.h"
-#include "jargon.h"
+// If another fastrange has been included elsewhere, we'll use it instead.
+#ifndef INCLUDE_FASTRANGE_H
+#define INCLUDE_FASTRANGE_H
 
 #ifndef UINT32_MAX
 #define UINT32_MAX  (0xffffffff)
@@ -166,7 +167,52 @@ FLYAPI inline uint64_t fastrange64_unbiased(
 #endif
 }
 
+struct fastrangesize_thunkinfo {
+  void *rng;
+  size_t (*rand_next)(void *);
+};
+
+struct fastrangeint_thunkinfo {
+  void *rng;
+  int (*rand_next)(void *);
+};
+
+#ifdef _MSC_VER
+#define inline __forceinline
+#endif
+
+__attribute__((artificial, always_inline))
+inline size_t fastrangesize_rand_thunk(void *ptr) {
+  struct fastrangesize_thunkinfo *info = (struct fastrangesize_thunkinfo *) ptr;
+  return (size_t) info->rand_next(info->rng);
+}
+
+__attribute__((artificial, always_inline))
+inline size_t fastrangeint_rand_thunk(void *ptr) {
+  struct fastrangeint_thunkinfo *info = (struct fastrangeint_thunkinfo *) ptr;
+  return (size_t) info->rand_next(info->rng);
+}
+
+#ifdef inline
+#undef inline
+#endif
+
+__attribute__((artificial))
+FLYAPI inline size_t fastrangesize_unbiased(
+    void *rng, const size_t p, size_t (*rand_next)(void *)) {
+  struct fastrangesize_thunkinfo info = { rng, rand_next };
+  return (size_t) fastrangemax_unbiased(&info, p, &fastrangesize_rand_thunk);
+}
+
+__attribute__((artificial))
+FLYAPI inline int fastrangeint_unbiased(
+    void *rng, const int p, int (*rand_next)(void *)) {
+  struct fastrangeint_thunkinfo info = { rng, rand_next };
+  return (int) fastrangemax_unbiased(&info, p, &fastrangeint_rand_thunk);
+}
+
 #undef fastrangemax
+#undef fastrangemax_unbiased
 
 #ifdef _MSC_VER
 #pragma warning(pop)
