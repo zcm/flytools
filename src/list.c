@@ -24,6 +24,8 @@
 #include "list.h"
 #include "internal/common.h"
 
+#include "jargon.h"
+
 typedef struct sllistnode sllistnode;
 typedef struct dllistnode dllistnode;
 
@@ -994,6 +996,7 @@ static size_t _unsafe_sllist_discard_all(
   return total_removed;
 }
 
+__attribute__((const))
 static int do_nothing(void *unused_data, size_t unused_i) {
   return 0;
 }
@@ -1025,6 +1028,7 @@ FLYAPI void list_shuffle(list *l) {
   }
 }
 
+__attribute__((const))
 static int comp_uintptr(const void *lp, const void *rp) {
   uintptr_t left = *(uintptr_t *) lp;
   uintptr_t right = *(uintptr_t *) rp;

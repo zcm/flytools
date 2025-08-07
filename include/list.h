@@ -23,6 +23,8 @@
 #include "generics.h"
 #include "random.h"
 
+#include "jargon.h"
+
 #if defined(_MSC_VER)
 #define restrict __restrict
 #endif
@@ -143,6 +145,7 @@ FLYAPI inline enum FLY_STATUS list_bad_call(void *lp, ptrdiff_t i) {
   return fly_status = FLY_OK;
 }
 
+__attribute__((pure))
 FLYAPI inline void *arlist_get_unsafe(arlist *l, ptrdiff_t i) {
   if (i < 0) {
     i += l->size;
@@ -151,6 +154,7 @@ FLYAPI inline void *arlist_get_unsafe(arlist *l, ptrdiff_t i) {
   return l->items[i];
 }
 
+__attribute__((pure))
 FLYAPI inline void *deque_get_unsafe(deque *l, ptrdiff_t i) {
   if (i < 0) {
     i += l->size;
@@ -406,5 +410,7 @@ FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *));
 #if defined(_MSC_VER)
 #undef restrict
 #endif
+
+#include "unjargon.h"
 
 #endif
