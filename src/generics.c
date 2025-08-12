@@ -19,18 +19,13 @@
 // Yeah, this file does nothing right now. But I might want it in the future.
 #if 0
 FLYAPI void flyobj_del(struct flyobj *obj) {
-  if (obj != NULL) {
-    free(obj);
-  } else {
-    fly_status = FLY_E_NULL_PTR;
-  }
+  FLY_BAIL_IF_NULL(obj);
+
+  free(obj);
 }
 
 FLYAPI void flyobj_init(struct flyobj *obj) {
-  if (obj == NULL) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(obj);
 }
 #endif
 

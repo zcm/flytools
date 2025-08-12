@@ -251,42 +251,26 @@ FLYAPI inline void *arlist_get(arlist *l, ptrdiff_t i) {
 }
 
 FLYAPI inline void arlist_push(arlist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   arlist_push_unsafe(l, data);
 }
 
 FLYAPI inline void arlist_unshift(arlist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   arlist_unshift_unsafe(l, data);
 }
 
 FLYAPI inline void *arlist_pop(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
+
   return arlist_pop_unsafe(l);
 }
 
 FLYAPI inline void *arlist_shift(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
+
   return arlist_shift_unsafe(l);
 }
 
@@ -295,15 +279,8 @@ FLYAPI void arlist_shuffle(arlist *l);
 FLYAPI void **arlist_draw(arlist * restrict l, void ** restrict cursor);
 
 FLYAPI inline void *arlist_pick(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
 
   fly_status = FLY_OK;
 
@@ -320,42 +297,26 @@ FLYAPI inline void *deque_get(deque *l, ptrdiff_t i) {
 }
 
 FLYAPI inline void deque_push(deque *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   deque_push_unsafe(l, data);
 }
 
 FLYAPI inline void deque_unshift(deque *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   deque_unshift_unsafe(l, data);
 }
 
 FLYAPI inline void *deque_pop(deque *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
+
   return deque_pop_unsafe(l);
 }
 
 FLYAPI inline void *deque_shift(deque *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
+
   return deque_shift_unsafe(l);
 }
 
@@ -366,15 +327,8 @@ FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor);
 FLYAPI inline void *deque_pick(deque *l) {
   size_t i;
 
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
 
   fly_status = FLY_OK;
 

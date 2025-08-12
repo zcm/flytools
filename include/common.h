@@ -92,4 +92,24 @@ FLYAPI enum FLY_STATUS *fly_status_addr();
 
 extern FLYAPI const char * const FLY_STATUS_STR[FLY_STATUS_LEN];
 
+#ifndef FLY_BAIL_IF_NULL
+#define FLY_BAIL_IF_NULL(x, ...)  \
+  do {  \
+    if (!(x)) {  \
+      fly_status = FLY_E_NULL_PTR;  \
+      return __VA_ARGS__;  \
+    }  \
+  } while (0)
+#endif
+
+#ifndef FLY_BAIL_IF_EMPTY
+#define FLY_BAIL_IF_EMPTY(x, ...)  \
+  do {  \
+    if ((x) == 0) {  \
+      fly_status = FLY_EMPTY;  \
+      return __VA_ARGS__;  \
+    }  \
+  } while (0)
+#endif
+
 #endif

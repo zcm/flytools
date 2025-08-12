@@ -100,16 +100,14 @@ dictnode *dictnode_new(
 }
 
 void dictnode_del(dictnode *dnode) {
-  if (dnode != NULL) {
-    if (dnode->key_matcher == &_str_key_matcher) {
-      free(dnode->key);
-    }
-    free(dnode);
+  FLY_BAIL_IF_NULL(dnode);
 
-    fly_status = FLY_OK;
-  } else {
-    fly_status = FLY_E_NULL_PTR;
+  if (dnode->key_matcher == &_str_key_matcher) {
+    free(dnode->key);
   }
+  free(dnode);
+
+  fly_status = FLY_OK;
 }
 
 __attribute__((const))
@@ -123,10 +121,7 @@ FLYAPI dict *dict_init(dict *d, const size_t size) {
     return NULL;
   }
 
-  if (!d) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(d, NULL);
 
   if (!(d->buckets = (struct dbucket *)
         calloc(size, sizeof (struct dbucket)))) {
@@ -166,33 +161,31 @@ FLYAPI dict *dict_new_of_size(const size_t size) {
 }
 
 FLYAPI void dict_del(dict *d) /*@-compdestroy@*/ {
-  if (d != NULL) {
-    register size_t i = 0;
-    const size_t capacity = (size_t) 1 << d->exponent;
+  FLY_BAIL_IF_NULL(d);
 
-    fly_status = FLY_OK;
+  size_t i = 0;
+  const size_t capacity = (size_t) 1 << d->exponent;
 
-    while (i < capacity) {
-      if (d->buckets[i].flags & 0x1) {
-        while (((list *) d->buckets[i].data)->size > 0) {
-          dictnode_del(list_pop(d->buckets[i].data));
-        }
+  fly_status = FLY_OK;
 
-        assert(((list *) d->buckets[i].data)->size == 0);
-        list_del(d->buckets[i].data);
-      } else if (d->buckets[i].data) {
-        dictnode_del(d->buckets[i].data);
+  while (i < capacity) {
+    if (d->buckets[i].flags & 0x1) {
+      while (((list *) d->buckets[i].data)->size > 0) {
+        dictnode_del(list_pop(d->buckets[i].data));
       }
 
-      i++;
+      assert(((list *) d->buckets[i].data)->size == 0);
+      list_del(d->buckets[i].data);
+    } else if (d->buckets[i].data) {
+      dictnode_del(d->buckets[i].data);
     }
 
-    free(d->buckets);
-    free(d->items);
-    free(d);
-  } else {
-    fly_status = FLY_E_NULL_PTR;
+    i++;
   }
+
+  free(d->buckets);
+  free(d->items);
+  free(d);
 }
 
 static int _should_relocate_node(void *node) {
@@ -391,25 +384,21 @@ ensure_updated:
 #undef RESIZE_AND_RESTART_ON_LOAD_FACTOR_BREACH
 
 FLYAPI void dict_set(dict * restrict d, void *key, void *value) {
-  if (d) {
-    fly_status = FLY_OK;
+  FLY_BAIL_IF_NULL(d);
 
-    _dict_set_bucket_atomic(
-        d, key, value, hash_xorshift64s((uint64_t) key), &_ptr_key_matcher);
-  } else {
-    fly_status = FLY_E_NULL_PTR;
-  }
+  fly_status = FLY_OK;
+
+  _dict_set_bucket_atomic(
+      d, key, value, hash_xorshift64s((uint64_t) key), &_ptr_key_matcher);
 }
 
 FLYAPI void dict_sets(dict * restrict d, char *key, void *value) {
-  if (d && key) {
-    fly_status = FLY_OK;
+  FLY_BAIL_IF_NULL(d && key);
 
-    _dict_set_bucket_atomic(
-        d, key, value, hash_string(key), &_str_key_matcher);
-  } else {
-    fly_status = FLY_E_NULL_PTR;
-  }
+  fly_status = FLY_OK;
+
+  _dict_set_bucket_atomic(
+      d, key, value, hash_string(key), &_str_key_matcher);
 }
 
 static inline dictnode *_dict_lookup_using(
@@ -417,10 +406,7 @@ static inline dictnode *_dict_lookup_using(
     dictnode *(*lookup_proc)(dict * restrict, void *)) {
   dictnode *found;
 
-  if (!d || !lookup_proc) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(d && lookup_proc, NULL);
 
   _match_key = key;
   fly_status =

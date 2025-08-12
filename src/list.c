@@ -230,14 +230,12 @@ FLYAPI list *list_new_kind(listkind *kind) {
 }
 
 FLYAPI void list_del(list *l) {
-  if (l != NULL) {
-    fly_status = FLY_OK;
+  FLY_BAIL_IF_NULL(l);
 
-    l->kind->destroy(l);
-    free(l);
-  } else {
-    fly_status = FLY_E_NULL_PTR;
-  }
+  fly_status = FLY_OK;
+
+  l->kind->destroy(l);
+  free(l);
 }
 
 static inline sllistnode *_unsafe_sllist_get_node(sllist *l, size_t i) {
@@ -324,44 +322,31 @@ static inline void *list_end_remove_op_(
 #define list_end_remove_op(vl, remove) list_end_remove_op_(vl, (void *) remove)
 
 FLYAPI void *list_pop(list *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
   return list_end_remove_op(l, l->kind->pop);
 }
 
 FLYAPI void *list_shift(list *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
   return list_end_remove_op(l, l->kind->shift);
 }
 
 FLYAPI void list_push(list *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
+
   fly_status = FLY_OK;
   l->kind->push(l, data);
 }
 
 FLYAPI void list_unshift(list *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
+
   fly_status = FLY_OK;
   l->kind->unshift(l, data);
 }
 
 FLYAPI void list_concat(list *l1, list *l2) {
-  if (!(l1 && l2)) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l1 && l2);
 
   fly_status = FLY_OK;
 
@@ -375,10 +360,7 @@ FLYAPI void list_concat(list *l1, list *l2) {
 }
 
 FLYAPI void list_concat_into(list *l1, list *l2) {
-  if (l1 == NULL || l2 == NULL) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l1 && l2);
 
   if (l1->kind == l2->kind) {
     // silly user, they're the same kind! use list_concat instead (it's faster)
@@ -396,10 +378,7 @@ FLYAPI void list_concat_into(list *l1, list *l2) {
 }
 
 FLYAPI void list_append_array(list *l, size_t n, void **items) {
-  if (!(l && items)) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l && items);
 
   if (n > PTRINDEX_MAX - l->size) {
     fly_status = FLY_E_TOO_BIG;
@@ -475,10 +454,8 @@ static void *_unsafe_sllist_find_first(sllist *l, int (*matcher)(void *)) {
 }
 
 FLYAPI void *list_find_first(list *l, int (*matcher)(void *)) {
-  if (!(l && matcher)) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l && matcher, NULL);
+
   if (!l->size) {
     fly_status = FLY_NOT_FOUND;
     return NULL;
@@ -655,10 +632,8 @@ static void *_unsafe_sllist_discard(sllist *l, int (*matcher)(void *)) {
 }
 
 FLYAPI void *list_discard(list *l, int (*matcher)(void *)) {
-  if (!(l && matcher)) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l && matcher, NULL);
+
   if (!l->size) {
     fly_status = FLY_NOT_FOUND;
     return NULL;
@@ -713,10 +688,7 @@ static void _unsafe_sllist_foreach(sllist *l, int (*fn)(void *, size_t)) {
 }
 
 FLYAPI void list_foreach(list *l, int (*fn)(void *, size_t)) {
-  if (!(l && fn)) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l && fn);
 
   fly_status = FLY_OK;
 
@@ -987,10 +959,8 @@ static int do_nothing(void *unused_data, size_t unused_i) {
 
 FLYAPI size_t list_discard_all(
     list *l, int (*matcher)(void *), int (*fn)(void *, size_t)) {
-  if (!(l && matcher)) {
-    fly_status = FLY_E_NULL_PTR;
-    return 0;
-  }
+  FLY_BAIL_IF_NULL(l && matcher, 0);
+
   if (!l->size) {
     fly_status = FLY_OK;
     return 0;
@@ -1000,10 +970,7 @@ FLYAPI size_t list_discard_all(
 }
 
 FLYAPI void list_shuffle(list *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1021,10 +988,7 @@ static int comp_uintptr(const void *lp, const void *rp) {
 }
 
 FLYAPI void list_sort(list *l, int (*comp)(const void *, const void *)) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1191,10 +1155,7 @@ static inline void _unsafe_arlist_shuffle(arlist *l) {
 }
 
 FLYAPI void arlist_shuffle(arlist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1235,10 +1196,7 @@ static void _unsafe_deque_shuffle(deque *l) {
 }
 
 FLYAPI void deque_shuffle(deque *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1251,15 +1209,8 @@ FLYAPI void **arlist_draw(arlist * restrict l, void ** restrict cursor) {
   void *temp;
   size_t j;
 
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
 
   fly_status = FLY_OK;
 
@@ -1283,15 +1234,8 @@ FLYAPI void **deque_draw(deque * restrict l, void ** restrict cursor) {
   size_t remaining;
   uint64_t r;
 
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
-
-  if (l->size == 0) {
-    fly_status = FLY_EMPTY;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
+  FLY_BAIL_IF_EMPTY(l->size, NULL);
 
   fly_status = FLY_OK;
 
@@ -1347,10 +1291,7 @@ static inline void _unsafe_deque_sort(
 }
 
 FLYAPI void arlist_sort(arlist *l, int (*comp)(const void *, const void *)) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1360,10 +1301,7 @@ FLYAPI void arlist_sort(arlist *l, int (*comp)(const void *, const void *)) {
 }
 
 FLYAPI void deque_sort(deque *l, int (*comp)(const void *, const void *)) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1430,10 +1368,7 @@ static void _unsafe_dllist_push(dllist *l, void *data) {
 }
 
 FLYAPI void dllist_push(dllist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   _unsafe_dllist_push(l, data);
 }
 
@@ -1453,10 +1388,7 @@ static void _unsafe_dllist_unshift(dllist *l, void *data) {
 }
 
 FLYAPI void dllist_unshift(dllist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   _unsafe_dllist_unshift(l, data);
 }
 
@@ -1474,10 +1406,7 @@ static void *_unsafe_dllist_pop(dllist *l) {
 }
 
 FLYAPI void *dllist_pop(dllist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
   return list_end_remove_op(l, &_unsafe_dllist_pop);
 }
 
@@ -1495,10 +1424,7 @@ static void *_unsafe_dllist_shift(dllist *l) {
 }
 
 FLYAPI void *dllist_shift(dllist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
   return list_end_remove_op(l, _unsafe_dllist_shift);
 }
 
@@ -1580,10 +1506,7 @@ static void _unsafe_sllist_push(sllist *l, void *data) {
 }
 
 FLYAPI void sllist_push(sllist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   _unsafe_sllist_push(l, data);
 }
 
@@ -1606,10 +1529,7 @@ static void _unsafe_sllist_unshift(sllist *l, void *data) {
 }
 
 FLYAPI void sllist_unshift(sllist *l, void *data) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
   _unsafe_sllist_unshift(l, data);
 }
 
@@ -1632,10 +1552,7 @@ static void *_unsafe_sllist_pop(sllist *l) {
 }
 
 FLYAPI void *sllist_pop(sllist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
   return list_end_remove_op(l, &_unsafe_sllist_pop);
 }
 
@@ -1658,10 +1575,7 @@ static void *_unsafe_sllist_shift(sllist *l) {
 }
 
 FLYAPI void *sllist_shift(sllist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return NULL;
-  }
+  FLY_BAIL_IF_NULL(l, NULL);
   return list_end_remove_op(l, &_unsafe_sllist_shift);
 }
 
@@ -1762,10 +1676,7 @@ static void _unsafe_dllist_shuffle(dllist *l) {
 }
 
 FLYAPI void sllist_shuffle(sllist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1775,10 +1686,7 @@ FLYAPI void sllist_shuffle(sllist *l) {
 }
 
 FLYAPI void dllist_shuffle(dllist *l) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1893,10 +1801,7 @@ static void _unsafe_dllist_sort(
 }
 
 FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *)) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
@@ -1906,10 +1811,7 @@ FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *)) {
 }
 
 FLYAPI void dllist_sort(dllist *l, int (*comp)(const void *, const void *)) {
-  if (!l) {
-    fly_status = FLY_E_NULL_PTR;
-    return;
-  }
+  FLY_BAIL_IF_NULL(l);
 
   fly_status = FLY_OK;
 
