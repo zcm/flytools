@@ -344,7 +344,8 @@ FLYAPI void dllist_push(dllist *l, void *data);
 FLYAPI void dllist_unshift(dllist *l, void *data);
 FLYAPI void *dllist_pop(dllist *l);
 FLYAPI void *dllist_shift(dllist *l);
-FLYAPI void dllist_concat(dllist *l1, dllist *l2);
+FLYAPI void dllist_concat(dllist * restrict dst, dllist * restrict src);
+FLYAPI void dllist_move(dllist * restrict dst, dllist * restrict src);
 FLYAPI void dllist_shuffle(dllist *l);
 FLYAPI void dllist_sort(dllist *l, int (*comp)(const void *, const void *));
 
@@ -353,7 +354,8 @@ FLYAPI void sllist_push(sllist *l, void *data);
 FLYAPI void sllist_unshift(sllist *l, void *data);
 FLYAPI void *sllist_pop(sllist *l);
 FLYAPI void *sllist_shift(sllist *l);
-FLYAPI void sllist_concat(sllist *l1, sllist *l2);
+FLYAPI void sllist_concat(sllist * restrict dst, sllist * restrict src);
+FLYAPI void sllist_move(sllist * restrict dst, sllist * restrict src);
 FLYAPI void sllist_shuffle(sllist *l);
 FLYAPI void sllist_sort(sllist *l, int (*comp)(const void *, const void *));
 

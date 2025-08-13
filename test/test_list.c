@@ -735,6 +735,8 @@ void do_test_list_concat() {
 
   list_concat(l1, l2);
 
+  assert_int_equal(4, l2->size);
+
   while (i > 0) {
     assert_int_equal(i, l1->size);
     assert_ptr_equal((void *) data[--i], list_pop(l1));
@@ -743,6 +745,7 @@ void do_test_list_concat() {
   assert_int_equal(0, l1->size);
 
   list_del(l1);
+  list_del(l2);
 }
 
 void do_test_list_concat_from_empty() {
@@ -767,6 +770,8 @@ void do_test_list_concat_from_empty() {
 
   list_concat(l1, l2);
 
+  assert_int_equal(0, l2->size);
+
   while (i > 0) {
     assert_int_equal(i, l1->size);
     assert_ptr_equal((void *) data[--i], list_shift(l1));
@@ -775,6 +780,7 @@ void do_test_list_concat_from_empty() {
   assert_int_equal(0, l1->size);
 
   list_del(l1);
+  list_del(l2);
 }
 
 void do_test_list_concat_into_empty() {
@@ -799,6 +805,8 @@ void do_test_list_concat_into_empty() {
 
   list_concat(l1, l2);
 
+  assert_int_equal(3, l2->size);
+
   while (i > 0) {
     assert_int_equal(i, l1->size);
     assert_ptr_equal((void *) data[--i], list_shift(l1));
@@ -807,6 +815,7 @@ void do_test_list_concat_into_empty() {
   assert_int_equal(0, l1->size);
 
   list_del(l1);
+  list_del(l2);
 }
 
 void do_test_list_concat_both_empty() {
@@ -819,11 +828,14 @@ void do_test_list_concat_both_empty() {
 
   list_concat(l1, l2);
 
+  assert_int_equal(0, l2->size);
+
   assert_int_equal(0, l1->size);
   assert_null(list_pop(l1));
   assert_int_equal(0, l1->size);
 
   list_del(l1);
+  list_del(l2);
 }
 #endif
 

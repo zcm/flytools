@@ -1324,7 +1324,7 @@ static inline void sllistnode_head_init(sllistnode * restrict head) {
   head->next = head;
 }
 
-static inline void *listnode_alloc(void * restrict l, size_t node_size) {
+static inline void *listnode_alloc(size_t node_size) {
   void *node;
 
   if (!(node = malloc(node_size))) {
@@ -1355,7 +1355,7 @@ static void dllist_del(dllist *l) {
 static void _unsafe_dllist_push(dllist *l, void *data) {
   dllistnode *node;
 
-  if (!(node = listnode_alloc(l, sizeof (dllistnode)))) {
+  if (!(node = listnode_alloc(sizeof (dllistnode)))) {
     return;
   }
 
@@ -1375,7 +1375,7 @@ FLYAPI void dllist_push(dllist *l, void *data) {
 static void _unsafe_dllist_unshift(dllist *l, void *data) {
   dllistnode *node;
 
-  if (!(node = listnode_alloc(l, sizeof (dllistnode)))) {
+  if (!(node = listnode_alloc(sizeof (dllistnode)))) {
     return;
   }
 
@@ -1428,19 +1428,55 @@ FLYAPI void *dllist_shift(dllist *l) {
   return list_end_remove_op(l, _unsafe_dllist_shift);
 }
 
-FLYAPI void dllist_concat(dllist *l1, dllist *l2) {
-  size_t newsize = l1->size + l2->size;
+FLYAPI void dllist_concat(dllist * restrict dst, dllist * restrict src) {
+  FLY_BAIL_IF_NULL(dst && src);
 
-  l1->head->prev->next = l2->head->next;
-  l2->head->next->prev = l1->head->prev;
-  l2->head->prev->next = l1->head;
-  l1->head->prev = l2->head->prev;
-  l1->size = newsize;
-  // set the size to 0 so that destroy avoids destroying the inner nodes
-  // (because they are now part of the first list's structure)
-  l2->size = 0;
+  dllistnode *node, *dead, *last = dst->head->prev;
 
-  list_del((list *) l2);
+  for (dllistnode *cur = src->head->next; cur != src->head; cur = cur->next) {
+    if (!(node = listnode_alloc(sizeof (dllistnode)))) {
+      goto out_of_memory_unwind;
+    }
+    node->data = cur->data;
+    last->next = node;
+    node->prev = last;
+    last = node;
+  }
+
+  dst->head->prev = last;
+  last->next = dst->head;
+  dst->size += src->size;
+  return;
+
+out_of_memory_unwind:
+  node = dst->head->prev;
+
+  if (node == last) {
+    return;
+  }
+
+  node = node->next;
+
+  do {
+    dead = node;
+    node = node->next;
+    free(dead);
+  } while (dead != last);
+
+  dst->head->prev->next = dst->head;
+}
+
+FLYAPI void dllist_move(dllist * restrict dst, dllist * restrict src) {
+  FLY_BAIL_IF_NULL(dst && src);
+
+  dst->head->prev->next = src->head->next;
+  src->head->next->prev = dst->head->prev;
+  src->head->prev->next = dst->head;
+  dst->head->prev = src->head->prev;
+  src->head->next = src->head->prev = src->head;
+
+  dst->size += src->size;
+  src->size = 0;
 }
 
 static void _unsafe_dllist_append_array(dllist *l, size_t n, void **items) {
@@ -1493,7 +1529,7 @@ void sllist_del(sllist *l) {
 static void _unsafe_sllist_push(sllist *l, void *data) {
   sllistnode *node;
 
-  if (!(node = listnode_alloc(l, sizeof (sllistnode)))) {
+  if (!(node = listnode_alloc(sizeof (sllistnode)))) {
     return;
   }
 
@@ -1513,7 +1549,7 @@ FLYAPI void sllist_push(sllist *l, void *data) {
 static void _unsafe_sllist_unshift(sllist *l, void *data) {
   sllistnode *node;
 
-  if (!(node = listnode_alloc(l, sizeof (sllistnode)))) {
+  if (!(node = listnode_alloc(sizeof (sllistnode)))) {
     return;
   }
 
@@ -1579,19 +1615,53 @@ FLYAPI void *sllist_shift(sllist *l) {
   return list_end_remove_op(l, &_unsafe_sllist_shift);
 }
 
-FLYAPI void sllist_concat(sllist *l1, sllist *l2) {
-  size_t newsize = l1->size + l2->size;
+FLYAPI void sllist_concat(sllist * restrict dst, sllist * restrict src) {
+  FLY_BAIL_IF_NULL(dst && src);
 
-  l1->last->next = l2->head->next;
-  l1->last = l2->last;
-  l1->last->next = l1->head;
+  sllistnode *node, *dead, *last = dst->last;
 
-  l1->size = newsize;
-  // set the size to 0 so that destroy avoids destroying the inner nodes
-  // (because they are now part of the first list's structure)
-  l2->size = 0;
+  for (sllistnode *cur = src->head->next; cur != src->head; cur = cur->next) {
+    if (!(node = listnode_alloc(sizeof (sllistnode)))) {
+      goto out_of_memory_unwind;
+    }
+    node->data = cur->data;
+    last->next = node;
+    last = node;
+  }
 
-  list_del((list *) l2);
+  dst->last = last;
+  last->next = dst->head;
+  dst->size += src->size;
+  return;
+
+out_of_memory_unwind:
+  node = dst->last;
+
+  if (node == last) {
+    return;
+  }
+
+  node = node->next;
+
+  do {
+    dead = node;
+    node = node->next;
+    free(dead);
+  } while (dead != last);
+
+  dst->last->next = dst->head;
+}
+
+FLYAPI void sllist_move(sllist * restrict dst, sllist * restrict src) {
+  FLY_BAIL_IF_NULL(dst && src);
+
+  dst->last->next = src->head->next;
+  dst->last = src->last;
+  dst->last->next = dst->head;
+  src->last = src->head->next = src->head;
+
+  dst->size += src->size;
+  src->size = 0;
 }
 
 static void _unsafe_sllist_append_array(sllist *l, size_t n, void **items) {
