@@ -30,6 +30,8 @@ static void **state;
 #define TEST(name, def) void name() def
 #endif
 
+#include "mockmem.h"
+
 #ifdef _MSC_VER
 #define restrict __restrict
 #else
