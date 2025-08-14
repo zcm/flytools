@@ -2513,6 +2513,36 @@ void do_test_list_e_null_ptr() {
 
 TESTCALL(test_list_e_null_ptr, do_test_list_e_null_ptr())
 
+#ifndef METHODS_ONLY
+void do_test_list_new_oom() {
+  void *l;
+
+  for (int i = 0; i <= 0; i++) {
+    assert_null(mockmem_peek());
+    mockmem_queue(NULL);
+    assert_non_null(mockmem_peek());
+
+    fly_status = FLY_OK;
+
+    switch (i) {
+      case 0:
+        l = list_new();
+        break;
+      default:
+        _fail(__FILE__, __LINE__);
+        l = NULL;
+        break;
+    }
+
+    assert_null(l);
+    assert_null(mockmem_peek());
+    assert_fly_status(FLY_E_OUT_OF_MEMORY);
+  }
+}
+#endif
+
+TESTCALL(test_list_new_oom, do_test_list_new_oom())
+
 #undef ARLIST_DEFAULT_CAPACITY
 
 #ifndef _WINDLL

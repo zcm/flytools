@@ -20,7 +20,7 @@ typedef struct mock_alloc {
 static thread_local mock_alloc *playlist = NULL;
 static thread_local mock_alloc *playlist_end = NULL;
 
-void mockmem_playlist_queue(void *ptr) {
+void mockmem_queue(void *ptr) {
   mock_alloc *mock = (mock_alloc *) __real_malloc(sizeof (mock_alloc));
   mock->next = NULL;
   mock->ptr = ptr;
@@ -34,6 +34,10 @@ void mockmem_playlist_queue(void *ptr) {
   }
 
   playlist_end = mock;
+}
+
+void *mockmem_peek() {
+  return (void *) playlist;
 }
 
 void *__wrap_malloc(size_t size) {
