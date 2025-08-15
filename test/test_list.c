@@ -404,43 +404,80 @@ TESTCALL(test_sllist_shift_empty, do_test_list_shift_empty(LISTKIND_SLINK))
 TESTCALL(test_sllist_del_nonempty, do_test_list_del_nonempty(LISTKIND_SLINK))
 
 #ifndef METHODS_ONLY
-void do_test_list_get(listkind *kind) {
-  list *l;
+void *testthunk_list_get(list *l, ptrdiff_t i) {
+  return list_get(l, i);
+}
 
+void *testthunk_arlist_get(list *l, ptrdiff_t i) {
+  return arlist_get((arlist *) l, i);
+}
+
+void *testthunk_deque_get(list *l, ptrdiff_t i) {
+  return deque_get((deque *) l, i);
+}
+
+void *testthunk_dllist_get(list *l, ptrdiff_t i) {
+  return dllist_get((dllist *) l, i);
+}
+
+void *testthunk_sllist_get(list *l, ptrdiff_t i) {
+  return sllist_get((sllist *) l, i);
+}
+
+void do_test_list_get(listkind *kind, int use_dedicated) {
+  list *l;
+  void *(*get)(list *, ptrdiff_t);
+
+  if (use_dedicated) {
+    get = &testthunk_list_get;
+  } else if (kind == LISTKIND_ARRAY) {
+    get = &testthunk_arlist_get;
+  } else if (kind == LISTKIND_DEQUE) {
+    get = &testthunk_deque_get;
+  } else if (kind == LISTKIND_DLINK) {
+    get = &testthunk_dllist_get;
+  } else if (kind == LISTKIND_SLINK) {
+    get = &testthunk_sllist_get;
+  } else {
+    _fail(__FILE__, __LINE__);
+    return;
+  }
+
+  assert_non_null(get);
   assert_non_null(l = list_new_kind(kind));
   assert_int_equal(0, l->size);
   assert_fly_status(FLY_OK);
 
-  assert_null(list_get(l, 0));
+  assert_null(get(l, 0));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, 1));
+  assert_null(get(l, 1));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, -1));
+  assert_null(get(l, -1));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, PTRDIFF_MAX));
+  assert_null(get(l, PTRDIFF_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, PTRDIFF_MIN));
+  assert_null(get(l, PTRDIFF_MIN));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, PTRINDEX_MAX));
+  assert_null(get(l, PTRINDEX_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, l->size));
+  assert_null(get(l, l->size));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
   if (l->kind == LISTKIND_ARRAY) {
-    assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_null(get(l, ((arlist *) l)->capacity));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
   }
 
@@ -451,40 +488,40 @@ void do_test_list_get(listkind *kind) {
   assert_fly_status(FLY_OK);
   fly_status = FLY_NOT_FOUND;
 
-  assert_int_equal(123, (uintptr_t) list_get(l, 0));
+  assert_int_equal(123, (uintptr_t) get(l, 0));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_int_equal(123, (uintptr_t) list_get(l, -1));
+  assert_int_equal(123, (uintptr_t) get(l, -1));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, 1));
+  assert_null(get(l, 1));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, -2));
+  assert_null(get(l, -2));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRDIFF_MAX));
+  assert_null(get(l, PTRDIFF_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRDIFF_MIN));
+  assert_null(get(l, PTRDIFF_MIN));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRINDEX_MAX));
+  assert_null(get(l, PTRINDEX_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_OK;
 
-  assert_null(list_get(l, l->size));
+  assert_null(get(l, l->size));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
   if (l->kind == LISTKIND_ARRAY) {
-    assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_null(get(l, ((arlist *) l)->capacity));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
   }
 
@@ -492,41 +529,41 @@ void do_test_list_get(listkind *kind) {
   assert_int_equal(2, l->size);
   assert_fly_status(FLY_OK);
 
-  assert_null(list_get(l, 2));
+  assert_null(get(l, 2));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_int_equal(456, (uintptr_t) list_get(l, 0));
+  assert_int_equal(456, (uintptr_t) get(l, 0));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_int_equal(456, (uintptr_t) list_get(l, -2));
+  assert_int_equal(456, (uintptr_t) get(l, -2));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRDIFF_MAX));
+  assert_null(get(l, PTRDIFF_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRDIFF_MIN));
-  assert_null(list_get(l, PTRINDEX_MAX));
+  assert_null(get(l, PTRDIFF_MIN));
+  assert_null(get(l, PTRINDEX_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_int_equal(123, (uintptr_t) list_get(l, 1));
+  assert_int_equal(123, (uintptr_t) get(l, 1));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_int_equal(123, (uintptr_t) list_get(l, -1));
+  assert_int_equal(123, (uintptr_t) get(l, -1));
   assert_fly_status(FLY_OK);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, l->size));
+  assert_null(get(l, l->size));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
   if (l->kind == LISTKIND_ARRAY) {
-    assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_null(get(l, ((arlist *) l)->capacity));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
@@ -536,43 +573,43 @@ void do_test_list_get(listkind *kind) {
       fly_status = FLY_E_TOO_BIG;
     }
 
-    assert_int_equal(10664, (uintptr_t) list_get(l, 0));
+    assert_int_equal(10664, (uintptr_t) get(l, 0));
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_int_equal(456, (uintptr_t) list_get(l, l->size - 2));
+    assert_int_equal(456, (uintptr_t) get(l, l->size - 2));
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_int_equal(456, (uintptr_t) list_get(l, -2));
+    assert_int_equal(456, (uintptr_t) get(l, -2));
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_int_equal(123, (uintptr_t) list_get(l, l->size - 1));
+    assert_int_equal(123, (uintptr_t) get(l, l->size - 1));
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_int_equal(123, (uintptr_t) list_get(l, -1));
+    assert_int_equal(123, (uintptr_t) get(l, -1));
     assert_fly_status(FLY_OK);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_null(list_get(l, PTRDIFF_MAX));
+    assert_null(get(l, PTRDIFF_MAX));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_null(list_get(l, PTRDIFF_MIN));
+    assert_null(get(l, PTRDIFF_MIN));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_null(list_get(l, PTRINDEX_MAX));
+    assert_null(get(l, PTRINDEX_MAX));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_null(list_get(l, l->size));
+    assert_null(get(l, l->size));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
-    assert_null(list_get(l, l->size + 1));
+    assert_null(get(l, l->size + 1));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
 
@@ -584,48 +621,52 @@ void do_test_list_get(listkind *kind) {
     fly_status = FLY_E_TOO_BIG;
   }
 
-  assert_null(list_get(l, 0));
+  assert_null(get(l, 0));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, 1));
+  assert_null(get(l, 1));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, -1));
+  assert_null(get(l, -1));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, SIZE_MAX));
+  assert_null(get(l, SIZE_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRDIFF_MAX));
+  assert_null(get(l, PTRDIFF_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, PTRINDEX_MAX));
+  assert_null(get(l, PTRINDEX_MAX));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
-  assert_null(list_get(l, l->size));
+  assert_null(get(l, l->size));
   assert_fly_status(FLY_E_OUT_OF_RANGE);
   fly_status = FLY_E_TOO_BIG;
 
   if (l->kind == LISTKIND_ARRAY) {
-    assert_null(list_get(l, ((arlist *) l)->capacity));
+    assert_null(get(l, ((arlist *) l)->capacity));
     assert_fly_status(FLY_E_OUT_OF_RANGE);
     fly_status = FLY_E_TOO_BIG;
   }
 
   list_del(l);
+
+  if (use_dedicated) {
+    do_test_list_get(kind, 0);
+  }
 }
 #endif
 
-TESTCALL(test_arlist_get, do_test_list_get(LISTKIND_ARRAY))
-TESTCALL(test_deque_get, do_test_list_get(LISTKIND_DEQUE))
-TESTCALL(test_dllist_get, do_test_list_get(LISTKIND_DLINK))
-TESTCALL(test_sllist_get, do_test_list_get(LISTKIND_SLINK))
+TESTCALL(test_arlist_get, do_test_list_get(LISTKIND_ARRAY, 1))
+TESTCALL(test_deque_get, do_test_list_get(LISTKIND_DEQUE, 1))
+TESTCALL(test_dllist_get, do_test_list_get(LISTKIND_DLINK, 1))
+TESTCALL(test_sllist_get, do_test_list_get(LISTKIND_SLINK, 1))
 
 #ifndef METHODS_ONLY
 void do_test_list_capacity(listkind *kind) {

@@ -294,7 +294,7 @@ FLYAPI void *dllist_get(dllist *l, ptrdiff_t i) {
   if (list_bad_call(l, i)) {
     return NULL;
   }
-  return _unsafe_sllist_get((sllist *) l, i);
+  return _unsafe_dllist_get(l, i);
 }
 
 FLYAPI void *sllist_get(sllist *l, ptrdiff_t i) {
