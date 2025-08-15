@@ -33,12 +33,18 @@
     <ClCompile Include="..\test_random.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\mockmem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="adapters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mockmem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

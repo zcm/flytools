@@ -3,6 +3,8 @@
 #define METHODS_ONLY
 #define TEST(name, def) void name();
 
+#include "mockmem.h"
+
 extern "C" {
 #include "test_dict.c"
 #include "test_list.c"
@@ -18,6 +20,14 @@ extern "C" {
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace flytools {
+  TEST_MODULE_INITIALIZE(ModuleInitialize) {
+    DWORD err = hook_malloc(GetModuleHandle(L"flytools.dll"));
+
+    if (err) {
+      throw std::runtime_error("Failed to hook malloc()");
+    }
+  }
+
 	TEST_CLASS(dict) {
 		public:
 #include "test_dict.c"

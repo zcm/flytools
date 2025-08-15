@@ -178,6 +178,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\mockmem.c" />
     <ClCompile Include="..\test_dict.c" />
     <ClCompile Include="..\test_hash.c" />
     <ClCompile Include="..\test_list.c" />
@@ -186,6 +187,7 @@
     <ClCompile Include="mstest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\mockmem.h" />
     <ClInclude Include="..\tests.h" />
     <ClInclude Include="adapters.h" />
   </ItemGroup>
