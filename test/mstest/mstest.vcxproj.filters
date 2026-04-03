@@ -36,6 +36,9 @@
     <ClCompile Include="..\mockmem.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\test_arena.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="adapters.h">

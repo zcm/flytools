@@ -179,6 +179,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\mockmem.c" />
+    <ClCompile Include="..\test_arena.c" />
     <ClCompile Include="..\test_dict.c" />
     <ClCompile Include="..\test_hash.c" />
     <ClCompile Include="..\test_list.c" />

@@ -10,6 +10,7 @@ extern "C" {
 #include "test_list.c"
 #include "test_hash.c"
 #include "test_random.c"
+#include "test_arena.c"
 }
 
 #undef TEST
@@ -40,5 +41,8 @@ namespace flytools {
 	};
 	TEST_CLASS(random) {
 #include "test_random.c"
+	};
+	TEST_CLASS(arena) {
+#include "test_arena.c"
 	};
 }
