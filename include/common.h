@@ -28,6 +28,16 @@
 #endif
 #endif /* thread_local */
 
+#ifndef __cplusplus
+#if (defined(_MSC_VER) || __STDC_VERSION__ < 201112L) && !defined(max_align_t)
+typedef union {
+  long double ld;
+  void *p;
+  unsigned long long u64;
+} max_align_t;
+#endif
+#endif
+
 #if __STDC_VERSION__ < 199901L
 
 #ifndef restrict

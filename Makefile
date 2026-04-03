@@ -4,7 +4,7 @@ CC := clang
 
 OBJ = \
 	src/common.o src/generics.o src/dict.o src/hash.o src/list.o \
-	src/fastrange.o src/random.o src/entropy.o
+	src/fastrange.o src/random.o src/entropy.o src/arena.o
 
 CFLAGS += \
 	-Iinclude -Wall -DFLYAPIBUILD -D_GNU_SOURCE -std=c2x
@@ -29,6 +29,7 @@ src/list.o: list.h common.h
 src/fastrange.o: jargon.h common.h fastrange.h
 src/random.o: random.h common.h fastrange.h entropy.h pcg_variants.h
 src/entropy.o: entropy.h pcg_variants.h
+src/arena.o: arena.h common.h jargon.h
 
 # uncomment to enable compilation of scanner code
 #src/scanner.c: scanner.h

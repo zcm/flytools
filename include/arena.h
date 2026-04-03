@@ -3,23 +3,34 @@
 
 #include <stdint.h>
 
+#include "common.h"
+#include "jargon.h"
+
 typedef struct fly_arena {
-  uint8_t *data, *next;
+  uint8_t *next;
+  uint8_t data[];
 } arena;
 
-FLYAPI arena *arena_new();
+FLYAPI arena *arena_new(size_t size);
 FLYAPI void arena_del(arena *a);
 
 __attribute__((alloc_size(2)))
 FLYAPI void *arena_alloc(arena *a, size_t size);
 
+__attribute__((alloc_size(2)))
+FLYAPI void *arena_alloc_aligned(arena *a, size_t size, size_t align);
+
 __attribute__((alloc_size(2, 3)))
-FLYAPI void arena_calloc(arena *a, size_t num, size_t size);
+FLYAPI void *arena_calloc(arena *a, size_t num, size_t size);
+
+__attribute__((alloc_size(2, 3)))
+FLYAPI void *arena_calloc_aligned(
+    arena *a, size_t num, size_t size, size_t align);
 
 FLYAPI void arena_free(arena *a, void *ptr);
 
 FLYAPI void arena_clear(arena *a);
-FLYAPI void arena_push_context(arena *a);
-FLYAPI void arena_pop_context(arena *a);
+//FLYAPI void arena_push_context(arena *a);
+//FLYAPI void arena_pop_context(arena *a);
 
 #endif
