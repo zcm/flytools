@@ -31,12 +31,12 @@ FLYAPI void *arena_alloc(arena *a, size_t size) {
 }
 
 FLYAPI void *arena_alloc_aligned(arena *a, size_t size, size_t align) {
-  size = (size + align - 1) & ~(align - 1);
+  uintptr_t aligned = ((uintptr_t) a->next + align - 1) & ~(align - 1);
+  uintptr_t next = aligned + size;
 
-  void *ret = a->next;
-  a->next += size;
+  a->next = (uint8_t *) next;
 
-  return ret;
+  return (void *) aligned;
 }
 
 FLYAPI void *arena_calloc(arena *a, size_t num, size_t size) {
@@ -65,5 +65,5 @@ FLYAPI void arena_free(arena *a, void *ptr) {
 }
 
 FLYAPI void arena_clear(arena *a) {
-  a->next = (uint8_t *) (a + 1);
+  a->next = a->data;
 }

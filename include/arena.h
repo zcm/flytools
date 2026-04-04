@@ -8,7 +8,7 @@
 
 typedef struct fly_arena {
   uint8_t *next;
-  uint8_t data[];
+  alignas (max_align_t) uint8_t data[];
 } arena;
 
 #ifndef ARENA_DEFAULT_SIZE
