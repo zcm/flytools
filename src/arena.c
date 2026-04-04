@@ -6,6 +6,10 @@
 #include "arena.h"
 
 FLYAPI arena *arena_new(size_t size) {
+  if (!size) {
+    size = ARENA_DEFAULT_SIZE;
+  }
+
   arena *ret = (arena *) malloc(sizeof (arena) + size);
 
   if (ret) {

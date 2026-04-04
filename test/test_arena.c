@@ -18,8 +18,8 @@ int arena_teardown(void **state) {
 #endif
 
 #ifndef METHODS_ONLY
-void do_test_arena_new() {
-  arena *a = arena_new(64 * 1024);
+void do_test_arena_new(size_t size) {
+  arena *a = arena_new(size);
 
   assert_non_null(a);
   assert_fly_status(FLY_OK);
@@ -29,7 +29,8 @@ void do_test_arena_new() {
 }
 #endif
 
-TESTCALL(test_arena_new, do_test_arena_new())
+TESTCALL(test_arena_new_default, do_test_arena_new(0))
+TESTCALL(test_arena_new_sized, do_test_arena_new(ARENA_DEFAULT_SIZE / 2))
 
 #ifndef _WINDLL
 #ifndef METHODS_ONLY

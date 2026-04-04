@@ -11,6 +11,10 @@ typedef struct fly_arena {
   uint8_t data[];
 } arena;
 
+#ifndef ARENA_DEFAULT_SIZE
+#define ARENA_DEFAULT_SIZE (64 * 1024)
+#endif
+
 FLYAPI arena *arena_new(size_t size);
 FLYAPI void arena_del(arena *a);
 
