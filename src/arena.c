@@ -15,6 +15,8 @@ FLYAPI arena *arena_new(size_t size) {
   if (ret) {
     fly_status = FLY_OK;
     arena_clear(ret);
+
+    ret->end = (uintptr_t) (ret->data + size);
   } else {
     fly_status = FLY_E_OUT_OF_MEMORY;
   }
@@ -33,6 +35,13 @@ FLYAPI void *arena_alloc(arena *a, size_t size) {
 FLYAPI void *arena_alloc_aligned(arena *a, size_t size, size_t align) {
   uintptr_t aligned = ((uintptr_t) a->next + align - 1) & ~(align - 1);
   uintptr_t next = aligned + size;
+
+  if (next > a->end) {
+    fly_status = FLY_E_OUT_OF_MEMORY;
+    return NULL;
+  } else {
+    fly_status = FLY_OK;
+  }
 
   a->next = (uint8_t *) next;
 
