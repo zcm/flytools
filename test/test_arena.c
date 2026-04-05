@@ -26,7 +26,7 @@ arena *new_test_arena(size_t size) {
 
   assert_non_null(a);
   assert_fly_status(FLY_OK);
-  assert_ptr_equal(a->next, a->data);
+  assert_ptr_equal(a->next, a->block->data);
 
   return a;
 }
@@ -56,7 +56,7 @@ void do_test_arena_alloc(bool aligned) {
   }
 
   assert_non_null(first);
-  assert_true(a->next - first >= size);
+  assert_true(a->next - first >= (ptrdiff_t) size);
   assert_true((uintptr_t) first % align == 0);
 
   if (!aligned) {
@@ -68,7 +68,7 @@ void do_test_arena_alloc(bool aligned) {
   }
 
   assert_non_null(second);
-  assert_true(a->next - second >= size);
+  assert_true(a->next - second >= (ptrdiff_t) size);
   assert_true((uintptr_t) second % align == 0);
 
   arena_del(a);
@@ -77,10 +77,14 @@ void do_test_arena_alloc(bool aligned) {
 
   if (!aligned) {
     assert_non_null(arena_alloc(a, 1));
-    assert_null(arena_alloc(a, 1));
+    assert_null(a->block->prev);  // If this fails, arena_block is misaligned
+    assert_non_null(arena_alloc(a, 1));
+    assert_non_null(a->block->prev);
   } else {
     assert_non_null(arena_alloc_aligned(a, 1, 1));
-    assert_null(arena_alloc_aligned(a, 1, 1));
+    assert_null(a->block->prev);
+    assert_non_null(arena_alloc_aligned(a, 1, 1));
+    assert_non_null(a->block->prev);
   }
 
   arena_del(a);
@@ -91,25 +95,33 @@ void do_test_arena_alloc(bool aligned) {
 
   if (!aligned) {
     assert_non_null(last = arena_alloc(a, 1));
+    assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
     assert_non_null(current = arena_alloc(a, 2));
     assert_ptr_not_equal(last, current);
+    assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
-    assert_null(arena_alloc(a, 3));
-    assert_fly_status(FLY_E_OUT_OF_MEMORY);
+    assert_non_null(current = arena_alloc(a, 3));
+    assert_ptr_not_equal(last, current);
+    assert_non_null(a->block->prev);
+    assert_fly_status(FLY_OK);
   } else {
     assert_non_null(last = arena_alloc_aligned(a, 1, 1));
+    assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
     assert_non_null(current = arena_alloc_aligned(a, 2, 2));
     assert_ptr_not_equal(last, current);
+    assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
     last = current;
     assert_non_null(current = arena_alloc_aligned(a, 3, 4));
     assert_ptr_not_equal(last, current);
+    assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
     last = current;
     assert_non_null(current = arena_alloc_aligned(a, 5, alignof (max_align_t)));
     assert_ptr_not_equal(last, current);
+    assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
 
     for (size_t i = 6; i <= alignof (max_align_t); i++) {
@@ -117,8 +129,9 @@ void do_test_arena_alloc(bool aligned) {
       assert_fly_status(FLY_OK);
     }
 
-    assert_null(arena_alloc_aligned(a, 1, 1));
-    assert_fly_status(FLY_E_OUT_OF_MEMORY);
+    assert_non_null(arena_alloc_aligned(a, 1, 1));
+    assert_non_null(a->block->prev);
+    assert_fly_status(FLY_OK);
   }
 
   arena_del(a);

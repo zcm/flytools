@@ -1,15 +1,22 @@
 #ifndef __ZCM_ARENA_H__
 #define __ZCM_ARENA_H__
 
+#include <stdalign.h>
 #include <stdint.h>
 
 #include "common.h"
 #include "jargon.h"
 
-typedef struct fly_arena {
-  uint8_t *next;
-  uintptr_t end;
+struct arena_block {
+  struct arena_block *prev;
+  uint8_t *end;
   alignas (max_align_t) uint8_t data[];
+};
+
+typedef struct arena {
+  uint8_t *next;
+  uint8_t *end;
+  struct arena_block *block;
 } arena;
 
 #ifndef ARENA_DEFAULT_SIZE
