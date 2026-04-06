@@ -7,7 +7,7 @@
 #define BLOCK_ALIGNMENT_PADDING (sizeof (arena) % alignof (max_align_t))
 
 FLYAPI arena *arena_new(size_t size) {
-  if (!size) {
+  if (size < ARENA_MINIMUM_SIZE) {
     size = ARENA_DEFAULT_SIZE;
   }
 
@@ -18,6 +18,7 @@ FLYAPI arena *arena_new(size_t size) {
   if (ret) {
     fly_status = FLY_OK;
 
+    ret->large = NULL;
     ret->block = (struct arena_block *)
       ((uintptr_t) (ret + 1) + BLOCK_ALIGNMENT_PADDING);
 
@@ -33,6 +34,10 @@ FLYAPI arena *arena_new(size_t size) {
 }
 
 static inline void arena_unwind(arena *a) {
+  while (a->large) {
+    free(a->large->data);
+    a->large = a->large->prev;
+  }
   while (a->block->prev) {
     struct arena_block *abp = a->block->prev;
     free(a->block);
@@ -57,11 +62,23 @@ retry:
   next = aligned + size;
 
   if (next > (uintptr_t) a->end) {
-    size_t next_size = 2 * (a->end - a->block->data);
+    size_t block_size = a->end - a->block->data;
 
-    if (next_size < size) {
-      next_size = size;
+    if (size > block_size || (size_t) (a->end - a->next) >= block_size / 64) {
+      // ARENA_MINIMUM_SIZE should prevent this from recurring forever.
+      struct arena_large_alloc *large =
+        arena_alloc_type(a, struct arena_large_alloc);
+
+      if (!large) {
+        fly_status = FLY_E_OUT_OF_MEMORY;
+        return NULL;
+      }
+
+      large->prev = a->large;
+      return (a->large = large)->data = malloc(size);
     }
+
+    size_t next_size = 2 * block_size;
 
     struct arena_block *next_block =
       (struct arena_block *) malloc(sizeof (struct arena_block) + next_size);

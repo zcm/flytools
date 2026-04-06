@@ -13,13 +13,20 @@ struct arena_block {
   alignas (max_align_t) uint8_t data[];
 };
 
+struct arena_large_alloc {
+  struct arena_large_alloc *prev;
+  void *data;
+};
+
 typedef struct arena {
   uint8_t *next;
   uint8_t *end;
+  struct arena_large_alloc *large;
   struct arena_block *block;
 } arena;
 
 #define ARENA_DEFAULT_SIZE (64 * 1024)
+#define ARENA_MINIMUM_SIZE (64 * sizeof (struct arena_large_alloc))
 
 FLYAPI arena *arena_new(size_t size);
 FLYAPI void arena_del(arena *a);
@@ -48,5 +55,7 @@ FLYAPI void arena_free(arena *a, void *ptr);
 FLYAPI void arena_clear(arena *a);
 //FLYAPI void arena_push_context(arena *a);
 //FLYAPI void arena_pop_context(arena *a);
+
+#include "unjargon.h"
 
 #endif

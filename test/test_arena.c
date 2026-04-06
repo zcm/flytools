@@ -73,63 +73,87 @@ void do_test_arena_alloc(bool aligned) {
 
   arena_del(a);
 
-  a = new_test_arena(1);
+  a = new_test_arena(ARENA_MINIMUM_SIZE);
 
   if (!aligned) {
-    assert_non_null(arena_alloc(a, 1));
+    assert_non_null(arena_alloc(a, ARENA_MINIMUM_SIZE));
     assert_null(a->block->prev);  // If this fails, arena_block is misaligned
-    assert_non_null(arena_alloc(a, 1));
+    assert_non_null(arena_alloc(a, ARENA_MINIMUM_SIZE));
     assert_non_null(a->block->prev);
   } else {
-    assert_non_null(arena_alloc_aligned(a, 1, 1));
+    assert_non_null(arena_alloc_aligned(a, ARENA_MINIMUM_SIZE, 1));
     assert_null(a->block->prev);
-    assert_non_null(arena_alloc_aligned(a, 1, 1));
+    assert_non_null(arena_alloc_aligned(a, ARENA_MINIMUM_SIZE, 1));
     assert_non_null(a->block->prev);
   }
 
   arena_del(a);
 
-  a = new_test_arena(alignof (max_align_t) * 2);
+  a = new_test_arena(2 * ARENA_MINIMUM_SIZE);
 
   void *last, *current;
 
   if (!aligned) {
-    assert_non_null(last = arena_alloc(a, 1));
+    assert_non_null(last = arena_alloc(a, ARENA_MINIMUM_SIZE));
+    assert_null(a->large);
     assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
-    assert_non_null(current = arena_alloc(a, 2));
+
+    assert_non_null(current = arena_alloc(a, ARENA_MINIMUM_SIZE - 7));
     assert_ptr_not_equal(last, current);
+    assert_null(a->large);
     assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
-    assert_non_null(current = arena_alloc(a, 3));
+
+    assert_non_null(current = arena_alloc(a, 7));
     assert_ptr_not_equal(last, current);
+    assert_null(a->large);
     assert_non_null(a->block->prev);
     assert_fly_status(FLY_OK);
   } else {
     assert_non_null(last = arena_alloc_aligned(a, 1, 1));
+    assert_null(a->large);
     assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
+
     assert_non_null(current = arena_alloc_aligned(a, 2, 2));
-    assert_ptr_not_equal(last, current);
+    assert_int_equal(2, (char *) current - (char *) last);
+    assert_null(a->large);
     assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
+
     last = current;
     assert_non_null(current = arena_alloc_aligned(a, 3, 4));
-    assert_ptr_not_equal(last, current);
+    assert_int_equal(2, (char *) current - (char *) last);
+    assert_null(a->large);
     assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
+
     last = current;
     assert_non_null(current = arena_alloc_aligned(a, 5, alignof (max_align_t)));
-    assert_ptr_not_equal(last, current);
+    assert_int_equal(
+        alignof (max_align_t) - 4,
+        (char *) current - (char *) last);
+    assert_null(a->large);
+    assert_null(a->block->prev);
+    assert_fly_status(FLY_OK);
+
+    last = current;
+    assert_non_null(current = arena_alloc_aligned(
+          a, 2 * (ARENA_MINIMUM_SIZE - alignof (max_align_t)), 1));
+    assert_null(a->large);
     assert_null(a->block->prev);
     assert_fly_status(FLY_OK);
 
     for (size_t i = 6; i <= alignof (max_align_t); i++) {
       assert_non_null(arena_alloc_aligned(a, 1, 1));
+      assert_null(a->large);
+      assert_null(a->block->prev);
       assert_fly_status(FLY_OK);
     }
 
     assert_non_null(arena_alloc_aligned(a, 1, 1));
+    assert_null(a->large);
     assert_non_null(a->block->prev);
     assert_fly_status(FLY_OK);
   }
