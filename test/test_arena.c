@@ -136,6 +136,36 @@ void do_test_arena_alloc(bool aligned) {
 
   arena_del(a);
 }
+
+void do_test_arena_alloc_type() {
+  arena *a = new_test_arena(0);
+
+  int *i = arena_alloc_type(a, int);
+  double *d = arena_alloc_type(a, double);
+  void **p = arena_alloc_type(a, void *);
+  unsigned short *u = arena_alloc_type(a, unsigned short);
+  struct test_obj *o = arena_alloc_type(a, struct test_obj);
+
+  *i = 1234;
+  *d = 56.789;
+  *p = (void *) 0xF0F0;
+  *u = 108u;
+  o->_1 = (void *) 0x1;
+  o->_2 = (void *) 0x2;
+  o->_3 = (void *) 0x3;
+  o->_4 = (void *) 0x4;
+
+  assert_int_equal(1234, *i);
+  assert_true(*d == 56.789);
+  assert_ptr_equal((void *) 0xF0F0, *p);
+  assert_int_equal(108u, *u);
+  assert_ptr_equal((void *) 0x1, o->_1);
+  assert_ptr_equal((void *) 0x2, o->_2);
+  assert_ptr_equal((void *) 0x3, o->_3);
+  assert_ptr_equal((void *) 0x4, o->_4);
+
+  arena_del(a);
+}
 #endif
 
 TESTCALL(test_arena_new_default, do_test_arena_new(0))
@@ -143,6 +173,7 @@ TESTCALL(test_arena_new_sized, do_test_arena_new(ARENA_DEFAULT_SIZE / 2))
 
 TESTCALL(test_arena_alloc, do_test_arena_alloc(false))
 TESTCALL(test_arena_alloc_aligned, do_test_arena_alloc(true))
+TESTCALL(test_arena_alloc_type, do_test_arena_alloc_type())
 
 #ifndef _WINDLL
 #ifndef METHODS_ONLY

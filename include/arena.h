@@ -19,9 +19,7 @@ typedef struct arena {
   struct arena_block *block;
 } arena;
 
-#ifndef ARENA_DEFAULT_SIZE
 #define ARENA_DEFAULT_SIZE (64 * 1024)
-#endif
 
 FLYAPI arena *arena_new(size_t size);
 FLYAPI void arena_del(arena *a);
@@ -38,6 +36,12 @@ FLYAPI void *arena_calloc(arena *a, size_t num, size_t size);
 __attribute__((alloc_size(2, 3)))
 FLYAPI void *arena_calloc_aligned(
     arena *a, size_t num, size_t size, size_t align);
+
+#define arena_alloc_type(a, T) \
+  (T *) arena_alloc_aligned((a), sizeof (T), alignof (T))
+
+#define arena_calloc_type(a, n, T) \
+  (T *) arena_calloc_type((a), (n), sizeof (T), alignof (T))
 
 FLYAPI void arena_free(arena *a, void *ptr);
 
