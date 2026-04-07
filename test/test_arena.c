@@ -27,6 +27,7 @@ arena *new_test_arena(size_t size) {
   assert_non_null(a);
   assert_fly_status(FLY_OK);
   assert_ptr_equal(a->next, a->block->data);
+  assert_null(a->large);
 
   return a;
 }
@@ -159,6 +160,47 @@ void do_test_arena_alloc(bool aligned) {
   }
 
   arena_del(a);
+
+  if (aligned) {
+    a = new_test_arena(ARENA_MINIMUM_SIZE + 13);
+
+    assert_non_null(last = arena_alloc(a, ARENA_MINIMUM_SIZE));
+    assert_ptr_equal(a->block->data, last);
+    assert_int_equal(ARENA_MINIMUM_SIZE, a->next - (uint8_t *) last);
+    assert_null(a->large);
+    assert_null(a->block->prev);
+    assert_fly_status(FLY_OK);
+
+    uint8_t *data = a->block->data;
+
+    assert_non_null(current = arena_alloc_aligned(a, 13, 1));
+    assert_int_equal(ARENA_MINIMUM_SIZE, (char *) current - (char *) last);
+    assert_int_equal(13, a->next - (uint8_t *) current);
+    assert_null(a->large);
+    assert_null(a->block->prev);
+    assert_fly_status(FLY_OK);
+
+    assert_non_null(current = arena_alloc_aligned(a, 1, 1));
+    assert_ptr_equal(a->block->data, current);
+    assert_int_equal(1, a->next - (uint8_t *) current);
+    assert_ptr_not_equal(last, current);
+    assert_ptr_not_equal(data, a->block->data);
+    assert_null(a->large);
+    assert_non_null(a->block->prev);
+    assert_fly_status(FLY_OK);
+
+    assert_int_equal(2 * (ARENA_MINIMUM_SIZE + 13) - 1, a->end - a->next);
+
+    arena_clear(a);
+
+    assert_ptr_equal(data, a->block->data);
+    assert_null(a->block->prev);
+    assert_null(a->large);
+    assert_int_equal(ARENA_MINIMUM_SIZE + 13, a->end - a->next);
+    assert_ptr_equal(data, a->next);
+
+    arena_del(a);
+  }
 }
 
 void do_test_arena_alloc_type() {
@@ -190,6 +232,76 @@ void do_test_arena_alloc_type() {
 
   arena_del(a);
 }
+
+size_t count_large_allocs(arena *a) {
+  size_t ret = 0;
+
+  for (struct arena_large_alloc *ala = a->large; ala; ala = ala->prev) {
+    ++ret;
+  }
+
+  return ret;
+}
+
+void do_test_arena_alloc_large() {
+  arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
+
+  uint8_t *alloc;
+
+  size_t size = ARENA_MINIMUM_SIZE + 1;
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), a->next);
+  assert_int_equal(1, count_large_allocs(a));
+  assert_ptr_equal(a->large->data, alloc);
+  assert_null(a->block->prev);
+
+  size = ARENA_MINIMUM_SIZE / 2;
+  assert_non_null(alloc = arena_alloc(a, size));
+  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), alloc);
+  assert_int_equal(1, count_large_allocs(a));
+  assert_ptr_not_equal(a->large->data, alloc);
+  assert_int_equal(size - sizeof (struct arena_large_alloc), a->end - a->next);
+  assert_null(a->block->prev);
+
+  size = ARENA_MINIMUM_SIZE / 2 - sizeof (struct arena_large_alloc) + 1;
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(
+      a->block->data + ARENA_MINIMUM_SIZE / 2
+        + 2 * sizeof (struct arena_large_alloc),
+      a->next);
+  assert_int_equal(2, count_large_allocs(a));
+  assert_ptr_equal(a->large->data, alloc);
+  assert_null(a->block->prev);
+
+  size = size - 1 - 3 * sizeof (struct arena_large_alloc) / 2;
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->end - sizeof (struct arena_large_alloc) / 2, a->next);
+  assert_int_equal(2, count_large_allocs(a));
+  assert_null(a->block->prev);
+
+  size = ARENA_MINIMUM_SIZE + 1;
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), a->next);
+  assert_int_equal(3, count_large_allocs(a));
+  assert_ptr_equal(a->large->data, alloc);
+  assert_non_null(a->block->prev);
+  assert_int_equal(
+      2 * ARENA_MINIMUM_SIZE - sizeof (struct arena_large_alloc),
+      a->end - a->next);
+
+  size = 2 * ARENA_MINIMUM_SIZE - 3 * sizeof (struct arena_large_alloc);
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->end - 2 * sizeof (struct arena_large_alloc), a->next);
+  assert_int_equal(3, count_large_allocs(a));
+
+  size = 2 * ARENA_MINIMUM_SIZE;
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->end - sizeof (struct arena_large_alloc), a->next);
+  assert_int_equal(4, count_large_allocs(a));
+  assert_ptr_equal(a->large->data, alloc);
+
+  arena_del(a);
+}
 #endif
 
 TESTCALL(test_arena_new_default, do_test_arena_new(0))
@@ -198,6 +310,7 @@ TESTCALL(test_arena_new_sized, do_test_arena_new(ARENA_DEFAULT_SIZE / 2))
 TESTCALL(test_arena_alloc, do_test_arena_alloc(false))
 TESTCALL(test_arena_alloc_aligned, do_test_arena_alloc(true))
 TESTCALL(test_arena_alloc_type, do_test_arena_alloc_type())
+TESTCALL(test_arena_alloc_large, do_test_arena_alloc_large())
 
 #ifndef _WINDLL
 #ifndef METHODS_ONLY
