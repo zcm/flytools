@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "common.h"
+#include "generics.h"
 #include "jargon.h"
 
 struct arena_block {
@@ -18,11 +19,24 @@ struct arena_large_alloc {
   void *data;
 };
 
-typedef struct arena {
-  uint8_t *next;
-  uint8_t *end;
-  struct arena_large_alloc *large;
+#define ARENA_CONTEXT_DEFINITION \
+  uint8_t *next; \
+  struct arena_large_alloc *large; \
   struct arena_block *block;
+
+struct arena_context {
+  ARENA_CONTEXT_DEFINITION
+};
+
+struct arena_frame {
+  struct arena_context context;
+  struct arena_frame *prev;
+};
+
+typedef struct arena {
+  UNIFY_OBJECT_DEF(struct arena_context context, ARENA_CONTEXT_DEFINITION)
+  uint8_t *end;
+  struct arena_frame *frame;
 } arena;
 
 #define ARENA_DEFAULT_SIZE (64 * 1024)
@@ -53,8 +67,10 @@ FLYAPI void *arena_calloc_aligned(
 FLYAPI void arena_free(arena *a, void *ptr);
 
 FLYAPI void arena_clear(arena *a);
-//FLYAPI void arena_push_context(arena *a);
-//FLYAPI void arena_pop_context(arena *a);
+
+FLYAPI void arena_push(arena *a);
+FLYAPI void arena_pop(arena *a);
+FLYAPI void arena_commit(arena *a);
 
 #include "unjargon.h"
 

@@ -132,4 +132,43 @@ FLYAPI void arena_clear(arena *a) {
   arena_unwind(a);
   a->next = a->block->data;
   a->end = a->block->end;
+  a->frame = NULL;
+}
+
+FLYAPI void arena_push(arena *a) {
+  struct arena_context context = a->context;
+  struct arena_frame *frame = arena_alloc_type(a, struct arena_frame);
+
+  if (!frame) {
+    fly_status = FLY_E_OUT_OF_MEMORY;
+    return;
+  } else {
+    fly_status = FLY_OK;
+  }
+
+  frame->context = context;
+  frame->prev = a->frame;
+  a->frame = frame;
+}
+
+FLYAPI void arena_pop(arena *a) {
+  if (!a->frame) {
+    fly_status = FLY_EMPTY;
+    return;
+  }
+
+  fly_status = FLY_OK;
+  a->context = a->frame->context;
+  a->frame = a->frame->prev;
+}
+
+FLYAPI void arena_commit(arena *a) {
+  if (!a->frame) {
+    fly_status = FLY_EMPTY;
+    return;
+  }
+
+  fly_status = FLY_OK;
+  fly_status = a->frame ? FLY_OK : FLY_EMPTY;
+  a->frame = a->frame->prev;
 }
