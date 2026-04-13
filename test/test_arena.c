@@ -243,53 +243,85 @@ size_t count_large_allocs(arena *a) {
   return ret;
 }
 
+void test_arena__alloc_entire_block_plus_one(arena *a, size_t expected_large) {
+  uint8_t *alloc;
+
+  size_t size = (size_t) (a->end - a->block->data) + 1;
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), a->next);
+  assert_int_equal(expected_large, count_large_allocs(a));
+  assert_ptr_equal(a->large->data, alloc);
+}
+
+void test_arena__alloc_half_block_after_large(arena *a, size_t expected_large) {
+  uint8_t *alloc;
+
+  size_t size = ARENA_MINIMUM_SIZE / 2;
+  assert_non_null(alloc = arena_alloc(a, size));
+  assert_ptr_equal(
+      a->block->data + sizeof (struct arena_large_alloc) * expected_large,
+      alloc);
+  assert_int_equal(expected_large, count_large_allocs(a));
+  assert_ptr_not_equal(a->large->data, alloc);
+  assert_int_equal(
+      size - sizeof (struct arena_large_alloc) * expected_large,
+      a->end - a->next);
+  assert_null(a->block->prev);
+}
+
+void test_arena__alloc_one_byte_beyond_block_after_half_is_large(
+    arena *a, size_t expected_large) {
+  uint8_t *alloc;
+
+  // one less expected_large because we haven't allocated yet
+  size_t size = ARENA_MINIMUM_SIZE / 2
+    - sizeof (struct arena_large_alloc) * (expected_large - 1)
+    + 1;
+
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(
+      a->block->data + ARENA_MINIMUM_SIZE / 2
+        + sizeof (struct arena_large_alloc) * expected_large,
+      a->next);
+  assert_int_equal(expected_large, count_large_allocs(a));
+  assert_ptr_equal(a->large->data, alloc);
+  assert_null(a->block->prev);
+}
+
+void test_arena__alloc_all_but_half_large_struct_remaining(
+    arena *a, size_t expected_large) {
+  uint8_t *alloc;
+
+  size_t size = ARENA_MINIMUM_SIZE / 2
+    - (2 * expected_large + 1) * sizeof (struct arena_large_alloc) / 2;
+
+  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
+  assert_ptr_equal(a->end - sizeof (struct arena_large_alloc) / 2, a->next);
+  assert_int_equal(expected_large, count_large_allocs(a));
+  assert_null(a->block->prev);
+}
+
 void do_test_arena_alloc_large() {
   arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
 
   uint8_t *alloc;
 
-  size_t size = ARENA_MINIMUM_SIZE + 1;
-  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
-  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), a->next);
-  assert_int_equal(1, count_large_allocs(a));
-  assert_ptr_equal(a->large->data, alloc);
+  test_arena__alloc_entire_block_plus_one(a, 1);
   assert_null(a->block->prev);
 
-  size = ARENA_MINIMUM_SIZE / 2;
-  assert_non_null(alloc = arena_alloc(a, size));
-  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), alloc);
-  assert_int_equal(1, count_large_allocs(a));
-  assert_ptr_not_equal(a->large->data, alloc);
-  assert_int_equal(size - sizeof (struct arena_large_alloc), a->end - a->next);
-  assert_null(a->block->prev);
+  test_arena__alloc_half_block_after_large(a, 1);
+  test_arena__alloc_one_byte_beyond_block_after_half_is_large(a, 2);
+  test_arena__alloc_all_but_half_large_struct_remaining(a, 2);
 
-  size = ARENA_MINIMUM_SIZE / 2 - sizeof (struct arena_large_alloc) + 1;
-  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
-  assert_ptr_equal(
-      a->block->data + ARENA_MINIMUM_SIZE / 2
-        + 2 * sizeof (struct arena_large_alloc),
-      a->next);
-  assert_int_equal(2, count_large_allocs(a));
-  assert_ptr_equal(a->large->data, alloc);
-  assert_null(a->block->prev);
-
-  size = size - 1 - 3 * sizeof (struct arena_large_alloc) / 2;
-  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
-  assert_ptr_equal(a->end - sizeof (struct arena_large_alloc) / 2, a->next);
-  assert_int_equal(2, count_large_allocs(a));
-  assert_null(a->block->prev);
-
-  size = ARENA_MINIMUM_SIZE + 1;
-  assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
-  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), a->next);
-  assert_int_equal(3, count_large_allocs(a));
-  assert_ptr_equal(a->large->data, alloc);
+  // This should cause a large allocation that also triggers a block allocation
+  // to make room for the arena_large_alloc struct
+  test_arena__alloc_entire_block_plus_one(a, 3);
   assert_non_null(a->block->prev);
   assert_int_equal(
       2 * ARENA_MINIMUM_SIZE - sizeof (struct arena_large_alloc),
       a->end - a->next);
 
-  size = 2 * ARENA_MINIMUM_SIZE - 3 * sizeof (struct arena_large_alloc);
+  size_t size = 2 * ARENA_MINIMUM_SIZE - 3 * sizeof (struct arena_large_alloc);
   assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
   assert_ptr_equal(a->end - 2 * sizeof (struct arena_large_alloc), a->next);
   assert_int_equal(3, count_large_allocs(a));
