@@ -248,12 +248,34 @@ size_t count_large_allocs(arena *a) {
   return ret;
 }
 
+size_t count_arena_frames(arena *a) {
+  size_t ret = 0;
+
+  for (struct arena_frame *af = a->frame; af; af = af->prev) {
+    ++ret;
+  }
+
+  return ret;
+}
+
 void test_arena__alloc_entire_block_plus_one(arena *a, size_t expected_large) {
-  uint8_t *alloc;
+  uint8_t *alloc, *before;
+
+  if (a->end - a->next < (ptrdiff_t) sizeof (struct arena_large_alloc)) {
+    // Expect a new block because the struct won't fit
+    before = NULL;
+  } else {
+    before = a->next;
+  }
 
   size_t size = (size_t) (a->end - a->block->data) + 1;
   assert_non_null(alloc = arena_alloc_aligned(a, size, 1));
-  assert_ptr_equal(a->block->data + sizeof (struct arena_large_alloc), a->next);
+
+  if (!before) {
+    before = a->block->data;
+  }
+
+  assert_ptr_equal(before + sizeof (struct arena_large_alloc), a->next);
   assert_int_equal(expected_large, count_large_allocs(a));
   assert_ptr_equal(a->large->data, alloc);
 }
@@ -340,6 +362,24 @@ void do_test_arena_alloc_large() {
   arena_del(a);
 }
 
+uint8_t *test__arena_push(
+    arena *a, size_t expected_large, size_t expected_frames) {
+  uint8_t *before = a->next;
+  uint8_t *expected_after = before + sizeof (struct arena_frame);
+
+  arena_push(a);
+  assert_fly_status(FLY_OK);
+  assert_ptr_equal(expected_after, a->next);
+  assert_int_equal(expected_large, count_large_allocs(a));
+  assert_null(a->block->prev);
+  assert_int_equal(expected_frames, count_arena_frames(a));
+  assert_ptr_equal(before, a->frame->context.next);
+  assert_ptr_equal(a->large, a->frame->context.large);
+  assert_ptr_equal(a->block, a->frame->context.block);
+
+  return before;
+}
+
 void do_test_arena_push_pop() {
   arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
 
@@ -354,10 +394,38 @@ void do_test_arena_push_pop() {
   assert_ptr_equal(initial_next + sizeof (struct arena_frame), a->next);
   assert_null(a->block->prev);
   assert_null(a->large);
-  assert_non_null(a->frame);
+  assert_int_equal(1, count_arena_frames(a));
 
   arena_pop(a);
   validate_new_arena(a);
+
+  test_arena__alloc_entire_block_plus_one(a, 1);
+  assert_null(a->block->prev);
+  assert_int_equal(0, count_arena_frames(a));
+
+  uint8_t *before = test__arena_push(a, 1, 1);
+
+  double *d = arena_alloc_type(a, double);
+  assert_non_null(d);
+  assert_ptr_not_equal(before, a->next);
+
+  arena_pop(a);
+  assert_ptr_equal(before, a->next);
+  assert_int_equal(1, count_large_allocs(a));
+  assert_null(a->block->prev);
+  assert_int_equal(0, count_arena_frames(a));
+
+  before = test__arena_push(a, 1, 1);
+
+  test_arena__alloc_entire_block_plus_one(a, 2);
+  assert_null(a->block->prev);
+  assert_int_equal(1, count_arena_frames(a));
+
+  arena_pop(a);
+  assert_ptr_equal(before, a->next);
+  assert_int_equal(1, count_large_allocs(a));
+  assert_null(a->block->prev);
+  assert_int_equal(0, count_arena_frames(a));
 
   arena_del(a);
 }

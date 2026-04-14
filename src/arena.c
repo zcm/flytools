@@ -157,6 +157,13 @@ FLYAPI void arena_pop(arena *a) {
     return;
   }
 
+  for (struct arena_large_alloc *current = a->large,
+                                *target = a->frame->context.large;
+       current && current != target;
+       current = current->prev) {
+    free(current->data);
+  }
+
   fly_status = FLY_OK;
   a->context = a->frame->context;
   a->frame = a->frame->prev;
@@ -168,7 +175,6 @@ FLYAPI void arena_commit(arena *a) {
     return;
   }
 
-  fly_status = FLY_OK;
   fly_status = a->frame ? FLY_OK : FLY_EMPTY;
   a->frame = a->frame->prev;
 }
