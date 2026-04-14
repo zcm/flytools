@@ -21,13 +21,18 @@ int arena_teardown(void **state) {
 #endif
 
 #ifndef METHODS_ONLY
-arena *new_test_arena(size_t size) {
-  arena *a = arena_new(size);
-
+void validate_new_arena(arena *a) {
   assert_non_null(a);
   assert_fly_status(FLY_OK);
   assert_ptr_equal(a->next, a->block->data);
   assert_null(a->large);
+  assert_null(a->frame);
+}
+
+arena *new_test_arena(size_t size) {
+  arena *a = arena_new(size);
+
+  validate_new_arena(a);
 
   return a;
 }
@@ -334,6 +339,28 @@ void do_test_arena_alloc_large() {
 
   arena_del(a);
 }
+
+void do_test_arena_push_pop() {
+  arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
+
+  arena_pop(a);
+  assert_fly_status(FLY_EMPTY);
+  fly_status = FLY_OK;
+  validate_new_arena(a);
+
+  uint8_t *initial_next = a->next;
+
+  arena_push(a);
+  assert_ptr_equal(initial_next + sizeof (struct arena_frame), a->next);
+  assert_null(a->block->prev);
+  assert_null(a->large);
+  assert_non_null(a->frame);
+
+  arena_pop(a);
+  validate_new_arena(a);
+
+  arena_del(a);
+}
 #endif
 
 TESTCALL(test_arena_new_default, do_test_arena_new(0))
@@ -343,6 +370,8 @@ TESTCALL(test_arena_alloc, do_test_arena_alloc(false))
 TESTCALL(test_arena_alloc_aligned, do_test_arena_alloc(true))
 TESTCALL(test_arena_alloc_type, do_test_arena_alloc_type())
 TESTCALL(test_arena_alloc_large, do_test_arena_alloc_large())
+
+TESTCALL(test_arena_push_pop, do_test_arena_push_pop())
 
 #ifndef _WINDLL
 #ifndef METHODS_ONLY
