@@ -164,9 +164,18 @@ FLYAPI void arena_pop(arena *a) {
     free(current->data);
   }
 
+  struct arena_block *tip = a->block;
+
   fly_status = FLY_OK;
-  a->context = a->frame->context;
+  a->end = (a->context = a->frame->context).block->end;
   a->frame = a->frame->prev;
+
+  while (tip != a->block) {
+    struct arena_block *next_tip = tip->prev;
+
+    free(tip);
+    tip = next_tip;
+  }
 }
 
 FLYAPI void arena_commit(arena *a) {
