@@ -380,7 +380,7 @@ uint8_t *test__arena_push(
   return before;
 }
 
-void do_test_arena_push_pop() {
+void do_test_arena_pop_before_push() {
   arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
 
   arena_pop(a);
@@ -388,6 +388,11 @@ void do_test_arena_push_pop() {
   fly_status = FLY_OK;
   validate_new_arena(a);
 
+  arena_del(a);
+}
+
+void do_test_arena_push_then_pop() {
+  arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
   uint8_t *initial_next = a->next;
 
   arena_push(a);
@@ -398,6 +403,12 @@ void do_test_arena_push_pop() {
 
   arena_pop(a);
   validate_new_arena(a);
+
+  arena_del(a);
+}
+
+void do_test_arena_push_and_pop_large() {
+  arena *a = new_test_arena(ARENA_MINIMUM_SIZE);
 
   test_arena__alloc_entire_block_plus_one(a, 1);
   assert_null(a->block->prev);
@@ -439,7 +450,9 @@ TESTCALL(test_arena_alloc_aligned, do_test_arena_alloc(true))
 TESTCALL(test_arena_alloc_type, do_test_arena_alloc_type())
 TESTCALL(test_arena_alloc_large, do_test_arena_alloc_large())
 
-TESTCALL(test_arena_push_pop, do_test_arena_push_pop())
+TESTCALL(test_arena_pop_before_push, do_test_arena_pop_before_push())
+TESTCALL(test_arena_push_then_pop, do_test_arena_push_then_pop())
+TESTCALL(test_arena_push_and_pop_large, do_test_arena_push_and_pop_large())
 
 #ifndef _WINDLL
 #ifndef METHODS_ONLY
